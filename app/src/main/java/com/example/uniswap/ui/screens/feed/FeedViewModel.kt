@@ -5,13 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.uniswap.data.model.CampusItem
 import com.example.uniswap.data.model.ItemCategory
 import com.example.uniswap.data.repository.ItemRepository
-import com.example.uniswap.data.repository.MockItemRepository
+import com.example.uniswap.data.repository.NetworkItemRepository
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class FeedViewModel(
-    // We point to the Singleton MockItemRepository object
-    // so data is shared across all screens.
-    private val repository: ItemRepository = MockItemRepository
+    // Default to our new Network Repository
+    private val repository: ItemRepository = NetworkItemRepository()
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -20,35 +20,54 @@ class FeedViewModel(
     private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
     val selectedCategory = _selectedCategory.asStateFlow()
 
+    // Internal state to hold items fetched from the backend
+    private val _rawItems = MutableStateFlow<List<CampusItem>>(emptyList())
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
     /**
-     * UI State: This combines the raw items from the repository with the
-     * search query and category filters in real-time.
+     * UI State: Combines the raw items from the backend with
+     * search and category filters.
      */
     val filteredItems: StateFlow<List<CampusItem>> = combine(
-        repository.getAllItems(),
+        _rawItems,
         _searchQuery,
         _selectedCategory
     ) { items, query, category ->
         items.filter { item ->
-            // Filter logic: Check if title contains query AND matches category
             val matchesSearch = item.title.contains(query, ignoreCase = true)
             val matchesCategory = category == null || item.category == category
             matchesSearch && matchesCategory
         }
     }.stateIn(
         scope = viewModelScope,
-        // WhileSubscribed(5000) keeps the stream alive for 5 seconds after
-        // the user leaves the screen (e.g., during navigation) to avoid flickering.
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    init {
+        fetchItems()
+    }
+
+    /**
+     * Reaches out to the Spring Boot backend to get the latest items.
+     */
+    fun fetchItems() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            // Calls api.getItems() through the repository
+            val result = repository.getItems()
+            _rawItems.value = result
+            _isRefreshing.value = false
+        }
+    }
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
     }
 
     fun selectCategory(category: ItemCategory?) {
-        // Toggle logic: If user clicks the same category twice, it clears the filter.
         _selectedCategory.value = if (_selectedCategory.value == category) null else category
     }
 }
