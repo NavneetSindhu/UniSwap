@@ -13,12 +13,13 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.uniswap.ui.components.CustomBottomNav
 import com.example.uniswap.ui.navigation.Screen
+import com.example.uniswap.ui.screens.auth.LoginScreen
 import com.example.uniswap.ui.screens.chat.PickupChatScreen
 import com.example.uniswap.ui.screens.details.ItemDetailsScreen
 import com.example.uniswap.ui.screens.feed.CampusFeedScreen
 import com.example.uniswap.ui.screens.profile.ProfileScreen
 import com.example.uniswap.ui.screens.sell.SellScreen
-import com.example.uniswap.data.repository.NetworkItemRepository
+import com.example.uniswap.ui.screens.auth.SignupScreen // Import your new screen
 
 @Composable
 fun MainScreen() {
@@ -26,7 +27,7 @@ fun MainScreen() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Logic to hide bottom nav on sub-screens (Details & Chat)
+    // Logic to hide bottom nav on sub-screens and AUTH screens
     val showBottomNav = currentRoute in listOf(
         Screen.Feed.route,
         Screen.Profile.route,
@@ -51,15 +52,39 @@ fun MainScreen() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Feed.route,
+            // 1. Set Start Destination to Signup (or Login)
+            startDestination = "login",
             modifier = Modifier.padding(if (showBottomNav) innerPadding else PaddingValues(0.dp)),
-            // Smooth transitions for a premium feel
             enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { 1000 }) },
-            exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -1000 }) },
-            popEnterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { -1000 }) },
-            popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { 1000 }) }
+            exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -1000 }) }
         ) {
-            // 1. Campus Feed (Now connected to Spring Boot)
+
+            // --- AUTHENTICATION SECTION ---
+
+
+            composable("login") {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToSignup = { navController.navigate("signup") }
+                )
+            }
+
+            composable("signup") {
+                SignupScreen(onSignupSuccess = {
+                    // After signup, navigate to Feed and clear the auth stack
+                    navController.navigate(Screen.Feed.route) {
+                        popUpTo("signup") { inclusive = true }
+                    }
+                })
+            }
+
+            // --- APP SECTION ---
+
+            // 1. Campus Feed
             composable(Screen.Feed.route) {
                 CampusFeedScreen(onItemClick = { item ->
                     navController.navigate(Screen.Details.createRoute(item.id))
@@ -72,7 +97,6 @@ fun MainScreen() {
                 arguments = listOf(navArgument("itemId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
-
                 ItemDetailsScreen(
                     itemId = itemId,
                     onBackClick = { navController.popBackStack() },
@@ -80,26 +104,22 @@ fun MainScreen() {
                 )
             }
 
-            // 3. Pickup Chat (Removed Mock Fallback)
+            // 3. Pickup Chat
             composable(
                 route = Screen.Chat.route,
                 arguments = listOf(navArgument("itemId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
-
-                // Note: In a full-network app, PickupChatScreen should have its own ViewModel
-                // that fetches the item by ID from NetworkItemRepository.
                 PickupChatScreen(
                     itemId = itemId,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            // 4. Sell Screen (Redirects to Feed on success)
+            // 4. Sell Screen
             composable(Screen.Sell.route) {
                 SellScreen(onPostSuccess = {
                     navController.navigate(Screen.Feed.route) {
-                        // Clears the sell screen so pressing 'back' doesn't return to the form
                         popUpTo(Screen.Sell.route) { inclusive = true }
                     }
                 })

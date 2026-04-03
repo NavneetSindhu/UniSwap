@@ -1,9 +1,9 @@
 package com.example.uniswap.data.repository
 
 import android.util.Log
+import com.example.uniswap.data.api.RetrofitClient
 import com.example.uniswap.data.model.CampusItem
 // Ensure these point to the correct folder where you saved them!
-import com.example.uniswap.network.ApiService
 import java.lang.Exception
 
 /**
