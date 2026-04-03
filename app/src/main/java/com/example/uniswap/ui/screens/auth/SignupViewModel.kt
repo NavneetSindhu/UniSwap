@@ -7,7 +7,9 @@ import com.example.uniswap.data.model.SignupRequest
 import com.example.uniswap.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
-class SignupViewModel(private val repository: AuthRepository = AuthRepository()) : ViewModel() {
+// 1. Remove the "= AuthRepository()" default value.
+// Now it MUST be provided by the Factory.
+class SignupViewModel(private val repository: AuthRepository) : ViewModel() {
 
     var fullName by mutableStateOf("")
     var email by mutableStateOf("")
@@ -19,7 +21,8 @@ class SignupViewModel(private val repository: AuthRepository = AuthRepository())
     var isSuccess by mutableStateOf(false)
 
     fun onSignupClick() {
-        if (fullName.isBlank() || email.isBlank() || password.isBlank()) {
+        // Validation check
+        if (fullName.isBlank() || email.isBlank() || password.isBlank() || department.isBlank()) {
             errorMessage = "Please fill in all fields"
             return
         }
@@ -28,12 +31,15 @@ class SignupViewModel(private val repository: AuthRepository = AuthRepository())
             isLoading = true
             errorMessage = null
 
+            // The repository.signup() now automatically saves the JWT
+            // to DataStore thanks to the TokenManager we added earlier!
             val request = SignupRequest(fullName, email, password, department)
             val result = repository.signup(request)
 
             result.onSuccess {
                 isSuccess = true
             }.onFailure {
+                // Extracts the "Email already in use" or other errors from Spring
                 errorMessage = it.message ?: "Signup failed. Please try again."
             }
             isLoading = false

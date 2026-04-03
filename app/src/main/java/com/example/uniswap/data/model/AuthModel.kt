@@ -11,7 +11,9 @@ data class SignupRequest(
 )
 
 // To handle success/error messages from the server
+
 data class AuthResponse(
+    val token: String,
     val message: String
 )
 

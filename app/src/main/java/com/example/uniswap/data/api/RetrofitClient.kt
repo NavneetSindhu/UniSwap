@@ -1,7 +1,6 @@
 package com.example.uniswap.data.api
 
 import com.example.uniswap.network.ApiService
-import com.example.uniswap.data.network.AuthApiService // Ensure this import is correct
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory

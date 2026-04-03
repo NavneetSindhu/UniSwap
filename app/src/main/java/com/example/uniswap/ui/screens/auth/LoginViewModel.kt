@@ -7,7 +7,9 @@ import com.example.uniswap.data.model.LoginRequest
 import com.example.uniswap.data.repository.AuthRepository
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val repository: AuthRepository = AuthRepository()) : ViewModel() {
+// 1. Remove the default initialization (= AuthRepository())
+// This forces the ViewModel to use the repository passed by the Factory
+class LoginViewModel(private val repository: AuthRepository) : ViewModel() {
 
     var email by mutableStateOf("")
     var password by mutableStateOf("")
@@ -27,12 +29,16 @@ class LoginViewModel(private val repository: AuthRepository = AuthRepository()) 
             errorMessage = null
 
             val request = LoginRequest(email, password)
+
+            // 2. The repository now handles the JWT storage automatically!
             val result = repository.login(request)
 
             result.onSuccess {
+                println("LOGCAT_VIEWMODEL: Login Success! Setting isSuccess to true.")
                 isSuccess = true
             }.onFailure {
-                errorMessage = it.message ?: "Invalid email or password"
+                println("LOGCAT_VIEWMODEL: Login Failed! Error: ${it.message}")
+                errorMessage = it.message
             }
             isLoading = false
         }

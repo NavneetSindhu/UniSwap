@@ -1,23 +1,37 @@
 package com.example.uniswap.ui.screens.auth
 
+import AuthTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uniswap.data.repository.AuthRepository // Ensure this is imported
 
 @Composable
 fun LoginScreen(
+    repository: AuthRepository, // 1. Pass the repository from MainScreen
     onLoginSuccess: () -> Unit,
-    onNavigateToSignup: () -> Unit,
-    viewModel: LoginViewModel = viewModel()
+    onNavigateToSignup: () -> Unit
 ) {
+    // 2. Use the Factory to inject the AuthRepository into the LoginViewModel
+    val viewModel: LoginViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LoginViewModel(repository) as T
+            }
+        }
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,7 +89,11 @@ fun LoginScreen(
             enabled = !viewModel.isLoading
         ) {
             if (viewModel.isLoading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
             } else {
                 Text("Sign In", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
@@ -83,15 +101,20 @@ fun LoginScreen(
 
         TextButton(
             onClick = onNavigateToSignup,
-            modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally).padding(top = 16.dp)
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 16.dp)
         ) {
             Text("Don't have an account? Sign Up", color = Color.Gray)
         }
 
+        // Navigation Logic: Triggers when repository.login() saves the token
         LaunchedEffect(viewModel.isSuccess) {
-            if (viewModel.isSuccess) {
-                onLoginSuccess()
-            }
+            // Inside LoginScreen.kt
+
+                if (viewModel.isSuccess) {
+                    println("LOGCAT_UI: LaunchedEffect detected isSuccess = true. Calling onLoginSuccess().")
+                    onLoginSuccess()
+                }
+
         }
     }
 }

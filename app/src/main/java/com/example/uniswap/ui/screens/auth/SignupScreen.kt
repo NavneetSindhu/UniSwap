@@ -1,5 +1,6 @@
 package com.example.uniswap.ui.screens.auth
 
+import AuthTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,13 +17,26 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uniswap.data.repository.AuthRepository // Import Repo
 
 @Composable
 fun SignupScreen(
-    viewModel: SignupViewModel = viewModel(),
-    onSignupSuccess: () -> Unit // Navneet: This callback bridges the UI to the Navigator
+    repository: AuthRepository, // 1. Added Repository Parameter
+    onSignupSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit // Added for the "Back to Login" button
 ) {
+    // 2. Initialize ViewModel with a Factory to pass the Repository
+    val viewModel: SignupViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SignupViewModel(repository) as T
+            }
+        }
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -30,30 +44,24 @@ fun SignupScreen(
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Label
+        // --- TOP PROGRESS SECTION ---
         Text(
             text = "STEP 01 OF 03",
             color = Color.Gray,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Progress Bar (Academic Identity Phase)
         LinearProgressIndicator(
             progress = { 0.33f },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(CircleShape),
+            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
             color = Color(0xFFFF8A65),
             trackColor = Color.DarkGray
         )
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Heading
+        // --- HEADING ---
         Text(
             text = "Create your\nacademic identity.",
             style = MaterialTheme.typography.displaySmall.copy(
@@ -65,28 +73,25 @@ fun SignupScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Input Fields
+        // --- INPUT FIELDS ---
         AuthTextField(
             value = viewModel.fullName,
             onValueChange = { viewModel.fullName = it },
             label = "Full Name",
             placeholder = "Alex Rivers"
         )
-
         AuthTextField(
             value = viewModel.department,
             onValueChange = { viewModel.department = it },
             label = "Department",
             placeholder = "Select Department"
         )
-
         AuthTextField(
             value = viewModel.email,
             onValueChange = { viewModel.email = it },
             label = "University Email",
             placeholder = "student@university.edu"
         )
-
         AuthTextField(
             value = viewModel.password,
             onValueChange = { viewModel.password = it },
@@ -95,7 +100,7 @@ fun SignupScreen(
             isPassword = true
         )
 
-        // Error Message Display
+        // Error Message
         if (viewModel.errorMessage != null) {
             Text(
                 text = viewModel.errorMessage!!,
@@ -107,79 +112,34 @@ fun SignupScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Submit Button
+        // --- SUBMIT BUTTON ---
         Button(
             onClick = { viewModel.onSignupClick() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF8A65),
-                contentColor = Color.White
-            ),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A65)),
             shape = RoundedCornerShape(28.dp),
             enabled = !viewModel.isLoading
         ) {
             if (viewModel.isLoading) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text(
-                    text = "Join the Community",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Text(text = "Join the Community", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
 
-        // Navigation Logic on Success
+        // --- LOGIN REDIRECT ---
+        TextButton(
+            onClick = onNavigateToLogin,
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+        ) {
+            Text("Already have an account? Sign In", color = Color.Gray)
+        }
+
+        // --- NAVIGATION EFFECT ---
         LaunchedEffect(viewModel.isSuccess) {
             if (viewModel.isSuccess) {
-                // When Spring Boot returns success, we tell the Navigator to move
                 onSignupSuccess()
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AuthTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    isPassword: Boolean = false
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = Color.Gray,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        TextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text(placeholder, color = Color.Gray) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFF1A1A1A),
-                unfocusedContainerColor = Color(0xFF1A1A1A),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Color(0xFFFF8A65)
-            ),
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            singleLine = true
-        )
     }
 }

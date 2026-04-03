@@ -77,6 +77,7 @@ dependencies {
     // Security Library for saving Tokens
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Testing
     testImplementation(libs.junit)
