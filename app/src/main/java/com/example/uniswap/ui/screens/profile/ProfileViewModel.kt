@@ -2,34 +2,70 @@ package com.example.uniswap.ui.screens.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.uniswap.data.model.CampusItem
 import com.example.uniswap.data.model.ItemStatus
 import com.example.uniswap.data.repository.ItemRepository
-import com.example.uniswap.data.repository.MockItemRepository
+import com.example.uniswap.data.repository.NetworkItemRepository
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class ProfileViewModel(
-    private val repository: ItemRepository = MockItemRepository
+    // Default to the real Network Repository
+    private val repository: ItemRepository = NetworkItemRepository()
 ) : ViewModel() {
 
-    private val myUserId = "me_123" // Constant for current user
+    private val myUserId = "me_123" // This matches the sellerId we used in the SellViewModel
 
-    // Transform raw items into a structured UI State
-    val uiState: StateFlow<ProfileUiState> = repository.getAllItems()
-        .map { allItems ->
-            val myItems = allItems.filter { it.sellerId == myUserId }
+    private val _uiState = MutableStateFlow(ProfileUiState(isLoading = true))
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-            ProfileUiState(
-                lbsSaved = myItems.size * 2.5, // Logic: Avg 2.5 lbs per item
-                itemsRecycled = myItems.count { it.status == ItemStatus.SOLD },
-                sellingItems = myItems.filter { it.status == ItemStatus.AVAILABLE },
-                givenAwayItems = myItems.filter { it.status == ItemStatus.SOLD && it.isFree },
-                // For now, saved items is a subset of all items (Mock logic)
-                savedItems = allItems.take(2)
-            )
+    init {
+        fetchProfileData()
+    }
+
+    /**
+     * Fetches all items from Spring Boot and filters them for the current user's profile.
+     */
+    fun fetchProfileData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                val allItems = repository.getItems()
+
+                // Filter items where Navneet is the seller
+                val myItems = allItems.filter { it.sellerId == myUserId }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        lbsSaved = myItems.size * 2.5, // Logic: Avg 2.5 lbs of waste saved per item
+                        itemsRecycled = myItems.count { item -> item.status == ItemStatus.SOLD },
+                        sellingItems = myItems.filter { item -> item.status == ItemStatus.AVAILABLE },
+                        givenAwayItems = myItems.filter { item -> item.status == ItemStatus.SOLD && item.price == 0.0 },
+                        // Saved items logic (can be expanded later with a 'Favorites' table in your DB)
+                        savedItems = allItems.take(2),
+                        error = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, error = "Could not load stats. Is the server running?")
+                }
+            }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ProfileUiState(isLoading = true)
-        )
+    }
 }
+
+/**
+ * UI State for the Profile Screen
+ */
+data class ProfileUiState(
+    val lbsSaved: Double = 0.0,
+    val itemsRecycled: Int = 0,
+    val sellingItems: List<CampusItem> = emptyList(),
+    val givenAwayItems: List<CampusItem> = emptyList(),
+    val savedItems: List<CampusItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)

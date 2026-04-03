@@ -1,5 +1,6 @@
 package com.example.uniswap.ui.screens.chat
 
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,25 +24,35 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.uniswap.data.model.CampusItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PickupChatScreen(
-    item: CampusItem,
+    itemId: String, // Changed: Now receives the ID from MainScreen
     onBackClick: () -> Unit,
-    viewModel: ChatViewModel = viewModel() // Integrated ViewModel
+    viewModel: ChatViewModel = viewModel()
 ) {
-    // Collect the dynamic list of messages
+    // Collect state from ViewModel
+    // Note: Ensure your ChatViewModel has a 'loadItem(itemId)' call in its init or via LaunchedEffect
+    val item by viewModel.item.collectAsState()
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
+
+    // Trigger data fetch when the screen opens
+    LaunchedEffect(itemId) {
+        viewModel.loadItem(itemId)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text(item.sellerName, style = MaterialTheme.typography.titleMedium)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Show seller name if item is loaded, otherwise show "Loading..."
+                        Text(item?.sellerName ?: "Loading...", style = MaterialTheme.typography.titleMedium)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF8AB17D), modifier = Modifier.size(12.dp))
                             Spacer(modifier = Modifier.width(4.dp))
@@ -62,88 +73,95 @@ fun PickupChatScreen(
             )
         },
         bottomBar = {
-            // Controlled Input Bar
             ChatInputBar(
                 value = inputText,
                 onValueChange = { inputText = it },
                 onSend = {
                     if (inputText.isNotBlank()) {
                         viewModel.sendMessage(inputText)
-                        inputText = "" // Clear field after sending
+                        inputText = ""
                     }
                 }
             )
         }
     ) { innerPadding ->
+        val currentItem = item // Local reference for easier null-checking
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // 1. Item Status Header (Shows the item being discussed)
-            Surface(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-            ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImage(
-                        model = item.imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(item.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                        Text(
-                            text = if (item.isFree) "Free" else "$${item.price}",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+            if (currentItem == null) {
+                // Loading State
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // 1. Real-time Item Header
+                Surface(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        AsyncImage(
+                            model = currentItem.imageUrl,
+                            contentDescription = null,
+                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(currentItem.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
+                            Text(
+                                text = if (currentItem.price == 0.0) "Free" else "₹${currentItem.price}",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Surface(color = Color(0xFFF1F8E9), shape = RoundedCornerShape(8.dp)) {
+                            Text("Pending", color = Color(0xFF43A047), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // 2. Chat Messages List
+                LazyColumn(
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(messages) { message ->
+                        ChatMessage(
+                            text = message.text,
+                            isFromMe = message.senderId == "me_123",
+                            time = message.timestamp
                         )
                     }
-                    Surface(color = Color(0xFFF1F8E9), shape = RoundedCornerShape(8.dp)) {
-                        Text("Pending", color = Color(0xFF43A047), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+
+                    item {
+                        LocationPinCard(locationName = currentItem.location)
                     }
                 }
-            }
 
-            // 2. Chat Messages List
-            LazyColumn(
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(messages) { message ->
-                    ChatMessage(
-                        text = message.text,
-                        isFromMe = message.senderId == "me_123", // Match your local user ID
-                        time = message.timestamp
-                    )
-                }
-
-                // Show the Location Pin as a special message
-                item {
-                    LocationPinCard(locationName = item.location)
-                }
-            }
-
-            // 3. Educational Tip
-            Surface(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                color = Color(0xFFFFF9C4).copy(alpha = 0.2f),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        "Use the QR Handshake to finalize when you meet!",
-                        fontSize = 12.sp,
-                        color = Color.DarkGray
-                    )
+                // 3. Safety Tip
+                Surface(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    color = Color(0xFFFFF9C4).copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Use the QR Handshake to finalize when you meet!",
+                            fontSize = 12.sp,
+                            color = Color.DarkGray
+                        )
+                    }
                 }
             }
         }

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.uniswap.data.model.CampusItem
+import java.util.*
 
 @Composable
 fun ItemDetailsScreen(
@@ -30,17 +31,18 @@ fun ItemDetailsScreen(
     onClaimClick: () -> Unit = {},
     viewModel: DetailsViewModel = viewModel()
 ) {
-    // 1. Observe state from the ViewModel
+    // Observe the UI state from the ViewModel (Loading, Item, or Error)
     val state by viewModel.uiState.collectAsState()
 
-    // 2. Fetch item details whenever the itemId changes
+    // Re-fetch item whenever the ID changes (e.g., navigating from another detail)
     LaunchedEffect(itemId) {
         viewModel.getItem(itemId)
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)) {
         when {
-            // Show Loading Spinner
             state.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
@@ -48,7 +50,6 @@ fun ItemDetailsScreen(
                 )
             }
 
-            // Show the actual Content
             state.item != null -> {
                 ItemDetailsContent(
                     item = state.item!!,
@@ -57,13 +58,17 @@ fun ItemDetailsScreen(
                 )
             }
 
-            // Show Error State
             state.error != null -> {
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                    Icon(
+                        Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(48.dp)
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = state.error!!, color = Color.Gray)
                     Button(onClick = onBackClick, modifier = Modifier.padding(top = 16.dp)) {
@@ -87,8 +92,10 @@ private fun ItemDetailsContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Hero Image Section
-            Box(modifier = Modifier.fillMaxWidth().height(380.dp)) {
+            // 1. Hero Image Section
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(380.dp)) {
                 AsyncImage(
                     model = item.imageUrl,
                     contentDescription = item.title,
@@ -96,7 +103,7 @@ private fun ItemDetailsContent(
                     contentScale = ContentScale.Crop
                 )
 
-                // Floating Action Buttons (Back & Favorite)
+                // Navigation Controls
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,7 +118,7 @@ private fun ItemDetailsContent(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                     IconButton(
-                        onClick = { /* Favorite Toggle Logic */ },
+                        onClick = { /* Save to Wishlist */ },
                         modifier = Modifier.background(Color.Black.copy(alpha = 0.3f), CircleShape)
                     ) {
                         Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = Color.White)
@@ -119,7 +126,7 @@ private fun ItemDetailsContent(
                 }
             }
 
-            // Information Content Area
+            // 2. Info Content Card (Overlapping the Image)
             Column(
                 modifier = Modifier
                     .offset(y = (-30).dp)
@@ -127,7 +134,7 @@ private fun ItemDetailsContent(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(24.dp)
             ) {
-                // Title and Pricing Row
+                // Title and Pricing
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,11 +151,11 @@ private fun ItemDetailsContent(
                     )
 
                     Surface(
-                        color = if (item.isFree) Color(0xFF14967F) else MaterialTheme.colorScheme.primary,
+                        color = if (item.price == 0.0) Color(0xFF14967F) else MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = if (item.isFree) "FREE" else "$${String.format("%.2f", item.price)}",
+                            text = if (item.price == 0.0) "FREE" else "₹${item.price.toInt()}",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -164,7 +171,7 @@ private fun ItemDetailsContent(
                     modifier = Modifier.padding(vertical = 12.dp)
                 )
 
-                // Meta Tags
+                // Meta Info Tags
                 Row(modifier = Modifier.padding(vertical = 8.dp)) {
                     DetailTag(Icons.Default.Stars, "Verified Seller")
                     DetailTag(
@@ -179,7 +186,7 @@ private fun ItemDetailsContent(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
                 )
 
-                // Seller Identity Section
+                // Seller Card
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
@@ -189,7 +196,7 @@ private fun ItemDetailsContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = item.sellerName.take(1),
+                            text = item.sellerName.take(1).uppercase(),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -199,7 +206,7 @@ private fun ItemDetailsContent(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(item.sellerName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Active Student • ${item.location}", fontSize = 12.sp, color = Color.Gray)
+                        Text("Active Student • Hisar Center", fontSize = 12.sp, color = Color.Gray)
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -210,10 +217,10 @@ private fun ItemDetailsContent(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Description Text
+                // Description
                 Text("Description", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = item.description.ifEmpty { "This student hasn't provided a detailed description yet. Feel free to ask for more details via chat!" },
+                    text = item.description.ifEmpty { "No detailed description provided." },
                     style = MaterialTheme.typography.bodyMedium,
                     lineHeight = 24.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
@@ -235,17 +242,16 @@ private fun ItemDetailsContent(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(item.location, fontWeight = FontWeight.Bold)
-                            Text("Official campus exchange zone", fontSize = 12.sp, color = Color.Gray)
+                            Text("Official Exchange Zone", fontSize = 12.sp, color = Color.Gray)
                         }
                     }
                 }
 
-                // Ensures the content doesn't get hidden behind the sticky button
-                Spacer(modifier = Modifier.height(140.dp))
+                Spacer(modifier = Modifier.height(140.dp)) // Padding for the sticky bottom bar
             }
         }
 
-        // Sticky Interaction Bar (Bottom)
+        // 3. Sticky Bottom Action Bar
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -261,7 +267,7 @@ private fun ItemDetailsContent(
             ) {
                 // Secondary Chat Action
                 IconButton(
-                    onClick = { /* Open Chat Flow */ },
+                    onClick = onClaimClick, // Usually leads to Chat
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(16.dp))
@@ -272,7 +278,7 @@ private fun ItemDetailsContent(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Primary Transaction Action
+                // Primary Action Button
                 Button(
                     onClick = onClaimClick,
                     modifier = Modifier
@@ -285,7 +291,7 @@ private fun ItemDetailsContent(
                         Icon(Icons.Default.ElectricBolt, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (item.isFree) "Claim Instantly" else "Make an Offer",
+                            text = if (item.price == 0.0) "Claim Now" else "Chat to Buy",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )

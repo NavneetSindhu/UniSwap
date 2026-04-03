@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox // Essential for the refresh feature
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,20 +31,21 @@ fun CampusFeedScreen(
     onItemClick: (CampusItem) -> Unit,
     viewModel: FeedViewModel = viewModel()
 ) {
+    // Collecting StateFlows from ViewModel
     val items by viewModel.filteredItems.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            // Re-adding the Branding + Search + Categories Header
             Surface(
                 color = MaterialTheme.colorScheme.background,
                 tonalElevation = 0.dp
             ) {
                 Column(modifier = Modifier.statusBarsPadding()) {
-                    // 1. Branding Header
+                    // 1. Branding Header (Hisar Context)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -60,19 +62,18 @@ fun CampusFeedScreen(
                                 )
                             )
                             Text(
-                                text = "Hisar Regional Center", // Your hometown context
+                                text = "Hisar Regional Center",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = Color.Gray
                             )
                         }
 
-                        // Small impact badge in top right
                         Surface(
                             color = Color(0xFF8AB17D).copy(alpha = 0.1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = "♻️ 1.2k shared",
+                                text = "♻️ Shared Gear",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF14967F),
@@ -94,9 +95,7 @@ fun CampusFeedScreen(
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -114,11 +113,10 @@ fun CampusFeedScreen(
                                 onClick = { viewModel.selectCategory(null) }
                             )
                         }
-                        items(ItemCategory.entries) { category ->
+                        items(ItemCategory.entries.toTypedArray()) { category ->
                             CategoryChip(
-                                text = category.name.replace("_", " ")
-                                    .lowercase()
-                                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                                text = category.name.replace("_", " ").lowercase()
+                                    .replaceFirstChar { it.uppercase() },
                                 isSelected = selectedCategory == category,
                                 onClick = { viewModel.selectCategory(category) }
                             )
@@ -129,17 +127,23 @@ fun CampusFeedScreen(
             }
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            if (items.isEmpty()) {
-                // Empty State logic remains the same
+        // PullToRefreshBox handles the refresh UI state
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.fetchItems() },
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            if (items.isEmpty() && !isRefreshing) {
+                // Empty State / Backend Offline State
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("No items found on campus.", color = Color.Gray)
-                    TextButton(onClick = { viewModel.updateSearchQuery("") }) {
-                        Text("Clear Search")
+                    Text("No gear found on campus.", color = Color.Gray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { viewModel.fetchItems() }) {
+                        Text("Refresh Feed")
                     }
                 }
             } else {
@@ -147,9 +151,11 @@ fun CampusFeedScreen(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    items(items) { item ->
+                    // Use item.id as the key for better performance during list updates
+                    items(items, key = { it.id }) { item ->
                         ItemCard(
                             item = item,
                             onClick = { onItemClick(item) }
