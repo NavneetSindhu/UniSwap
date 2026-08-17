@@ -4,7 +4,17 @@ import java.util.UUID
 
 // Using an Enum makes it easier for your Spring Boot backend to validate categories
 enum class ItemCategory {
-    ARCHITECTURE, DORM_ESSENTIALS, ENGINEERING, ELECTRONICS, OTHER
+    ARCHITECTURE, DORM_ESSENTIALS, ENGINEERING, ELECTRONICS, OTHER;
+
+    fun getPlaceholderUrl(): String {
+        return when (this) {
+            ARCHITECTURE -> "https://images.unsplash.com/photo-1503387762-592dea58ef21?q=80&w=800"
+            DORM_ESSENTIALS -> "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800"
+            ENGINEERING -> "https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=800"
+            ELECTRONICS -> "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=800"
+            OTHER -> "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800"
+        }
+    }
 }
 
 data class CampusItem(

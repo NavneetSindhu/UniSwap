@@ -75,7 +75,7 @@ class SellViewModel @Inject constructor(
                 sellerId = "navneet_77", // Field required by your model
                 sellerName = "Navneet Sindhu",
                 timeAgo = "Just now",
-                imageUrl = if (_selectedImages.value.isNotEmpty()) _selectedImages.value[0].toString() else "",
+                imageUrl = if (_selectedImages.value.isNotEmpty()) _selectedImages.value[0].toString() else _selectedCategory.value.getPlaceholderUrl(),
                 isVerified = false,
                 status = ItemStatus.AVAILABLE // Pass the Enum object
             )
