@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox // Essential for the refresh feature
 import androidx.compose.runtime.*
@@ -38,13 +39,14 @@ fun CampusFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Surface(
                 color = MaterialTheme.colorScheme.background,
                 tonalElevation = 0.dp
             ) {
-                Column(modifier = Modifier.statusBarsPadding()) {
+                Column {
                     // 1. Branding Header (Hisar Context)
                     Row(
                         modifier = Modifier
@@ -140,9 +142,23 @@ fun CampusFeedScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("No gear found on campus.", color = Color.Gray)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.fetchItems() }) {
+                    Text(
+                        text = "No gear found on campus.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "Be the first to list something!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = { viewModel.fetchItems() },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text("Refresh Feed")
                     }
                 }

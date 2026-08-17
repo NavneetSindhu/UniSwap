@@ -11,6 +11,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,13 +44,32 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val isLoggedIn = remember { viewModel.isUserLoggedIn() }
+    // Use a state for the auth check result to avoid white flashes
+    var authCheckComplete by remember { mutableStateOf(false) }
+    var startDestination by remember { mutableStateOf("login") }
+
+    LaunchedEffect(Unit) {
+        val isLoggedIn = viewModel.isUserLoggedIn()
+        startDestination = if (isLoggedIn) Screen.Feed.route else "login"
+        authCheckComplete = true
+    }
 
     val showBottomNav = currentRoute in listOf(
         Screen.Feed.route,
         Screen.Profile.route,
         Screen.Sell.route
     )
+
+    if (!authCheckComplete) {
+        // Professional splash/loading state
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     Scaffold(
         bottomBar = {
@@ -64,7 +90,7 @@ fun MainScreen(
 
         NavHost(
             navController = navController,
-            startDestination = if (isLoggedIn) Screen.Feed.route else "login",
+            startDestination = startDestination,
             modifier = Modifier.padding(if (showBottomNav) innerPadding else PaddingValues(0.dp)),
             enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { 1000 }) },
             exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -1000 }) }
