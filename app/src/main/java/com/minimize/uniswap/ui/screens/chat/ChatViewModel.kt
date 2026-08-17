@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.Message
+import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,10 +17,11 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val itemRepository: ItemRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val myUserId = "me_123"
+    private val myUserId = authRepository.getCurrentUserId() ?: ""
 
     // State for the specific item being discussed
     private val _item = MutableStateFlow<CampusItem?>(null)

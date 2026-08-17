@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemStatus
+import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -12,10 +13,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ItemRepository
+    private val repository: ItemRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val myUserId = "me_123" // This matches the sellerId we used in the SellViewModel
+    private val myUserId = authRepository.getCurrentUserId() ?: ""
 
     private val _uiState = MutableStateFlow(ProfileUiState(isLoading = true))
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()

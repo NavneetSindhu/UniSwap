@@ -36,7 +36,6 @@ fun SellScreen(
     val price by viewModel.price.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val selectedImages by viewModel.selectedImages.collectAsState()
-    val isScanning by viewModel.isScanning.collectAsState()
     val isPosting by viewModel.isPosting.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
@@ -78,25 +77,6 @@ fun SellScreen(
                 Column {
                     Text("New Listing", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
                     Text("Details & Media", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                }
-
-                // COMPACT AI BUTTON
-                IconButton(
-                    onClick = { viewModel.performAIScan() },
-                    enabled = selectedImages.isNotEmpty() && !isScanning,
-                    modifier = Modifier
-                        .background(
-                            if (selectedImages.isNotEmpty()) Color(0xFFE9C46A).copy(alpha = 0.2f)
-                            else Color.Gray.copy(alpha = 0.1f),
-                            CircleShape
-                        )
-                ) {
-                    if (isScanning) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Icon(
-                        Icons.Default.AutoAwesome,
-                        contentDescription = "AI Scan",
-                        tint = if (selectedImages.isNotEmpty()) Color(0xFFD4A017) else Color.Gray
-                    )
                 }
             }
 

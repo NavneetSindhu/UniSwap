@@ -38,4 +38,8 @@ class FirebaseAuthRepository @Inject constructor(
     override fun isUserLoggedIn(): Boolean {
         return firebaseAuth.currentUser != null
     }
+
+    override fun getCurrentUserId(): String? {
+        return firebaseAuth.currentUser?.uid
+    }
 }

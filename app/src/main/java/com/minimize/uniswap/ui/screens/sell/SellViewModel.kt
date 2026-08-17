@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.data.model.ItemStatus
+import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SellViewModel @Inject constructor(
-    private val repository: ItemRepository
+    private val repository: ItemRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _title = MutableStateFlow("")
@@ -32,9 +34,6 @@ class SellViewModel @Inject constructor(
     private val _selectedImages = MutableStateFlow<List<Uri>>(emptyList())
     val selectedImages = _selectedImages.asStateFlow()
 
-    private val _isScanning = MutableStateFlow(false)
-    val isScanning = _isScanning.asStateFlow()
-
     private val _isPosting = MutableStateFlow(false)
     val isPosting = _isPosting.asStateFlow()
 
@@ -46,22 +45,12 @@ class SellViewModel @Inject constructor(
         _selectedImages.value = uris.take(5)
     }
 
-    fun performAIScan() {
-        viewModelScope.launch {
-            _isScanning.value = true
-            delay(1500)
-            _title.value = "Premium Engineering Drafter"
-            _selectedCategory.value = ItemCategory.ENGINEERING
-            _price.value = "25.0"
-            _isScanning.value = false
-        }
-    }
-
     fun postItem(onSuccess: () -> Unit) {
         viewModelScope.launch {
             val currentPrice = _price.value.toDoubleOrNull() ?: 0.0
             if (_title.value.isBlank()) return@launch
 
+            val userId = authRepository.getCurrentUserId() ?: return@launch
             _isPosting.value = true
 
             // Match exactly with your CampusItem data class parameters
@@ -72,8 +61,8 @@ class SellViewModel @Inject constructor(
                 price = currentPrice,
                 category = _selectedCategory.value, // Pass the Enum object
                 location = "Library Foyer",
-                sellerId = "navneet_77", // Field required by your model
-                sellerName = "Navneet Sindhu",
+                sellerId = userId, // Field required by your model
+                sellerName = "Campus User", // You could fetch real name from Firestore profile
                 timeAgo = "Just now",
                 imageUrl = if (_selectedImages.value.isNotEmpty()) _selectedImages.value[0].toString() else _selectedCategory.value.getPlaceholderUrl(),
                 isVerified = false,
