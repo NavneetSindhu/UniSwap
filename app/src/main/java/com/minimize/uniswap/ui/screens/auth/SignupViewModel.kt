@@ -5,11 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.SignupRequest
 import com.minimize.uniswap.data.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-// 1. Remove the "= AuthRepository()" default value.
-// Now it MUST be provided by the Factory.
-class SignupViewModel(private val repository: AuthRepository) : ViewModel() {
+@HiltViewModel
+class SignupViewModel @Inject constructor(private val repository: AuthRepository) : ViewModel() {
 
     var fullName by mutableStateOf("")
     var email by mutableStateOf("")

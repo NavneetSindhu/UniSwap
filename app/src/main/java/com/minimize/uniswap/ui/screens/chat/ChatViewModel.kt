@@ -5,17 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.Message
 import com.minimize.uniswap.data.repository.ItemRepository
-import com.minimize.uniswap.data.repository.NetworkItemRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
-class ChatViewModel(
-    // Default to the network repository to fetch real item data
-    private val repository: ItemRepository = NetworkItemRepository()
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val repository: ItemRepository
 ) : ViewModel() {
 
     private val myUserId = "me_123"

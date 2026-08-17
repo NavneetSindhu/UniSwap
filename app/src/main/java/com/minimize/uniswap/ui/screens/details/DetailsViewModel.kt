@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.repository.ItemRepository
-import com.minimize.uniswap.data.repository.NetworkItemRepository
-import kotlinx.coroutines.delay
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 // Simple UI State holder to manage Loading, Data, and Errors
 data class DetailsUiState(
@@ -19,9 +19,9 @@ data class DetailsUiState(
     val error: String? = null
 )
 
-class DetailsViewModel(
-    // Defaulting to the real Network Repository now
-    private val repository: ItemRepository = NetworkItemRepository()
+@HiltViewModel
+class DetailsViewModel @Inject constructor(
+    private val repository: ItemRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailsUiState(isLoading = true))

@@ -12,26 +12,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.minimize.uniswap.data.repository.AuthRepository // Ensure this is imported
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun LoginScreen(
-    repository: AuthRepository, // 1. Pass the repository from MainScreen
     onLoginSuccess: () -> Unit,
-    onNavigateToSignup: () -> Unit
+    onNavigateToSignup: () -> Unit,
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
-    // 2. Use the Factory to inject the AuthRepository into the LoginViewModel
-    val viewModel: LoginViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return LoginViewModel(repository) as T
-            }
-        }
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()

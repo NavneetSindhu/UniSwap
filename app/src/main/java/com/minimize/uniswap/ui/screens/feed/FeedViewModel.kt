@@ -48,16 +48,28 @@ class FeedViewModel @Inject constructor(
     )
 
     init {
-        fetchItems()
+        // fetchItems() - We can remove the manual fetch and use the flow
+        observeItems()
     }
 
     /**
-     * Reaches out to the Spring Boot backend to get the latest items.
+     * Observes real-time updates from Firestore.
+     */
+    private fun observeItems() {
+        repository.getItemsFlow()
+            .onEach { result ->
+                _rawItems.value = result
+                _isRefreshing.value = false
+            }
+            .launchIn(viewModelScope)
+    }
+
+    /**
+     * Reaches out to the backend to get the latest items manually.
      */
     fun fetchItems() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            // Calls api.getItems() through the repository
             val result = repository.getItems()
             _rawItems.value = result
             _isRefreshing.value = false

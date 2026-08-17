@@ -22,7 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +30,7 @@ import coil.compose.AsyncImage
 fun PickupChatScreen(
     itemId: String, // Changed: Now receives the ID from MainScreen
     onBackClick: () -> Unit,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
     // Collect state from ViewModel
     // Note: Ensure your ChatViewModel has a 'loadItem(itemId)' call in its init or via LaunchedEffect

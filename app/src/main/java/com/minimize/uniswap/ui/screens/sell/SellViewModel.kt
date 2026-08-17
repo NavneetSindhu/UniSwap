@@ -7,16 +7,17 @@ import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.data.model.ItemStatus
 import com.minimize.uniswap.data.repository.ItemRepository
-import com.minimize.uniswap.data.repository.NetworkItemRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
+import javax.inject.Inject
 
-class SellViewModel(
-    // We initialize the real repository here
-    private val repository: ItemRepository = NetworkItemRepository()
+@HiltViewModel
+class SellViewModel @Inject constructor(
+    private val repository: ItemRepository
 ) : ViewModel() {
 
     private val _title = MutableStateFlow("")

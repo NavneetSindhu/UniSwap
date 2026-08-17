@@ -3,6 +3,8 @@ package com.minimize.uniswap.data.repository
 import android.util.Log
 import com.minimize.uniswap.data.api.RetrofitClient
 import com.minimize.uniswap.data.model.CampusItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 // Ensure these point to the correct folder where you saved them!
 import java.lang.Exception
 import javax.inject.Inject
@@ -29,6 +31,10 @@ class NetworkItemRepository @Inject constructor() : ItemRepository {
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    override fun getItemsFlow(): Flow<List<CampusItem>> = flow {
+        emit(getItems())
     }
 
     /**

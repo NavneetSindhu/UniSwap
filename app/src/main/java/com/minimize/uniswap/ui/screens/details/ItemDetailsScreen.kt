@@ -19,7 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.CampusItem
 import java.util.*
@@ -29,7 +29,7 @@ fun ItemDetailsScreen(
     itemId: String,
     onBackClick: () -> Unit = {},
     onClaimClick: () -> Unit = {},
-    viewModel: DetailsViewModel = viewModel()
+    viewModel: DetailsViewModel = hiltViewModel()
 ) {
     // Observe the UI state from the ViewModel (Loading, Item, or Error)
     val state by viewModel.uiState.collectAsState()

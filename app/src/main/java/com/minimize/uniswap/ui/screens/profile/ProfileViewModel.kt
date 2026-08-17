@@ -5,13 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemStatus
 import com.minimize.uniswap.data.repository.ItemRepository
-import com.minimize.uniswap.data.repository.NetworkItemRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProfileViewModel(
-    // Default to the real Network Repository
-    private val repository: ItemRepository = NetworkItemRepository()
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val repository: ItemRepository
 ) : ViewModel() {
 
     private val myUserId = "me_123" // This matches the sellerId we used in the SellViewModel

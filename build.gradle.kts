@@ -7,5 +7,5 @@ plugins {
     // Add these two for Hilt and Annotation Processing
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.kotlin.kapt) apply false
-    alias(libs.plugins.google.services) apply false
+    id("com.google.gms.google-services") version "4.5.0" apply false
 }

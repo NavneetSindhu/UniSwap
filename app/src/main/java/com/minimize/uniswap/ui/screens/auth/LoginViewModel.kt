@@ -5,11 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.LoginRequest
 import com.minimize.uniswap.data.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-// 1. Remove the default initialization (= AuthRepository())
-// This forces the ViewModel to use the repository passed by the Factory
-class LoginViewModel(private val repository: AuthRepository) : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(private val repository: AuthRepository) : ViewModel() {
 
     var email by mutableStateOf("")
     var password by mutableStateOf("")

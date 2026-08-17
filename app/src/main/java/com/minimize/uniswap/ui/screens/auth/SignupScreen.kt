@@ -17,26 +17,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.minimize.uniswap.data.repository.AuthRepository // Import Repo
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun SignupScreen(
-    repository: AuthRepository, // 1. Added Repository Parameter
     onSignupSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit // Added for the "Back to Login" button
+    onNavigateToLogin: () -> Unit, // Added for the "Back to Login" button
+    viewModel: SignupViewModel = hiltViewModel()
 ) {
-    // 2. Initialize ViewModel with a Factory to pass the Repository
-    val viewModel: SignupViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return SignupViewModel(repository) as T
-            }
-        }
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.ItemCategory
 import java.util.*
@@ -30,7 +30,7 @@ import java.util.*
 @Composable
 fun SellScreen(
     onPostSuccess: () -> Unit,
-    viewModel: SellViewModel = viewModel()
+    viewModel: SellViewModel = hiltViewModel()
 ) {
     val title by viewModel.title.collectAsState()
     val price by viewModel.price.collectAsState()
