@@ -4,11 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.Message
+import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -16,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val repository: ItemRepository
+    private val itemRepository: ItemRepository,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     private val myUserId = "me_123"
@@ -25,23 +25,25 @@ class ChatViewModel @Inject constructor(
     private val _item = MutableStateFlow<CampusItem?>(null)
     val item = _item.asStateFlow()
 
-    // Mock initial messages
-    private val _messages = MutableStateFlow(listOf(
-        Message(senderId = "other", text = "Hey! Is this still available?", timestamp = "10:42 AM"),
-        Message(senderId = "other", text = "I can meet at the Library Foyer.", timestamp = "10:43 AM")
-    ))
+    // Real-time messages from Firestore
+    private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
+    private var messageJob: kotlinx.coroutines.Job? = null
+
     /**
-     * Fetches the specific item details from the backend using the ID.
+     * Fetches the specific item details and starts observing messages.
      */
     fun loadItem(itemId: String) {
         viewModelScope.launch {
             try {
-                val allItems = repository.getItems()
-                // Find the item that matches the ID passed from the navigation
+                val allItems = itemRepository.getItems()
                 val foundItem = allItems.find { it.id == itemId }
                 _item.value = foundItem
+
+                foundItem?.let {
+                    observeMessages(it.id, it.sellerId)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 _item.value = null
@@ -49,7 +51,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun observeMessages(itemId: String, sellerId: String) {
+        messageJob?.cancel()
+        messageJob = chatRepository.getMessages(itemId, myUserId, sellerId)
+            .onEach { _messages.value = it }
+            .launchIn(viewModelScope)
+    }
+
     fun sendMessage(text: String) {
+        val currentItem = _item.value ?: return
         if (text.isBlank()) return
 
         val newMessage = Message(
@@ -58,6 +68,8 @@ class ChatViewModel @Inject constructor(
             timestamp = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date())
         )
 
-        _messages.update { it + newMessage }
+        viewModelScope.launch {
+            chatRepository.sendMessage(currentItem.id, myUserId, currentItem.sellerId, newMessage)
+        }
     }
 }
