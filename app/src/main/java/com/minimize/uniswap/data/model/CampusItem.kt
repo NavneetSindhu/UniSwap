@@ -1,5 +1,7 @@
 package com.minimize.uniswap.data.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.util.UUID
 
 // Using an Enum makes it easier for your Spring Boot backend to validate categories
@@ -17,8 +19,9 @@ enum class ItemCategory {
     }
 }
 
+@Entity(tableName = "items")
 data class CampusItem(
-    val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val title: String,
     val description: String = "",
     val price: Double,

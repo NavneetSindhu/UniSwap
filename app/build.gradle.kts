@@ -66,6 +66,11 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.messaging)
 
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
+
     // Dagger Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)

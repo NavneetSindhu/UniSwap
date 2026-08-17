@@ -1,11 +1,16 @@
 package com.minimize.uniswap.di
 
+import android.content.Context
+import androidx.room.Room
+import com.minimize.uniswap.data.local.UniSwapDatabase
+import com.minimize.uniswap.data.local.dao.ItemDao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -24,4 +29,17 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): UniSwapDatabase {
+        return Room.databaseBuilder(
+            context,
+            UniSwapDatabase::class.java,
+            "uniswap_db"
+        ).build()
+    }
+
+    @Provides
+    fun provideItemDao(db: UniSwapDatabase): ItemDao = db.itemDao()
 }
