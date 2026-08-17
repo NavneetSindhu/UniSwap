@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.kapt)
     id("com.google.gms.google-services")
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -62,6 +63,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
 
     // Dagger Hilt
     implementation(libs.hilt.android)

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "528542780411",
+    "project_id": "healthapp-244aa",
+    "storage_bucket": "healthapp-244aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528542780411:android:9221f5bfc7c6e505bb995e",
+        "android_client_info": {
+          "package_name": "com.minimize.uniswap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528542780411-q023u67a1cqth5m27ckdur2a5i9vt66e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlGuvvWqv9tl7vOGWWskP_hXBvJyvdADU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528542780411-q023u67a1cqth5m27ckdur2a5i9vt66e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
