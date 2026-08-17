@@ -1,8 +1,10 @@
 package com.minimize.uniswap.di
 
 import com.minimize.uniswap.data.repository.AuthRepository
+import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import com.minimize.uniswap.data.repository.firebase.FirebaseAuthRepository
+import com.minimize.uniswap.data.repository.firebase.FirestoreChatRepository
 import com.minimize.uniswap.data.repository.firebase.FirestoreItemRepository
 import dagger.Binds
 import dagger.Module
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         firebaseAuthRepository: FirebaseAuthRepository
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepository(
+        firestoreChatRepository: FirestoreChatRepository
+    ): ChatRepository
 }
