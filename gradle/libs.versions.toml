@@ -14,12 +14,13 @@ composeBom = "2024.09.00"
 navigation = "2.8.0-beta01"
 hilt = "2.55"
 googleFonts = "1.6.3"
-coil = "2.6.0"
-retrofit = "2.9.0"
+coil = "2.7.0"
+retrofit = "2.11.0"
 firebaseBom = "34.17.0"
 googleServices = "4.5.0"
 firebaseCrashlytics = "3.0.7"
 room = "2.6.1"
+hiltNavigation = "1.2.0"
 
 [libraries]
 # --- Core AndroidX ---
@@ -58,9 +59,9 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
-androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.2.0" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigation" }
 
-# --- Networking (For your Java Spring Boot Backend) ---
+# --- Networking (Legacy Support) ---
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 
