@@ -2,6 +2,7 @@ package com.minimize.uniswap.di
 
 import android.content.Context
 import androidx.room.Room
+import com.minimize.uniswap.UniSwapApplication
 import com.minimize.uniswap.data.local.UniSwapDatabase
 import com.minimize.uniswap.data.local.dao.ItemDao
 import com.google.firebase.auth.FirebaseAuth
@@ -12,6 +13,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import javax.inject.Singleton
 
 @Module
@@ -42,4 +44,10 @@ object AppModule {
 
     @Provides
     fun provideItemDao(db: UniSwapDatabase): ItemDao = db.itemDao()
+
+    @Provides
+    @Singleton
+    fun provideApplicationScope(@ApplicationContext context: Context): CoroutineScope {
+        return (context as UniSwapApplication).applicationScope
+    }
 }

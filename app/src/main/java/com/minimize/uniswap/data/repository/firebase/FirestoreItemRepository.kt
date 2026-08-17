@@ -1,59 +1,81 @@
 package com.minimize.uniswap.data.repository.firebase
 
+import com.minimize.uniswap.data.local.dao.ItemDao
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.data.model.ItemStatus
 import com.minimize.uniswap.data.repository.ItemRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class FirestoreItemRepository @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val itemDao: ItemDao,
+    private val applicationScope: CoroutineScope
 ) : ItemRepository {
 
     private val itemsCollection = firestore.collection("items")
 
     override suspend fun getItems(): List<CampusItem> {
         return try {
-            itemsCollection
+            val items = itemsCollection
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .await()
                 .toObjects(CampusItem::class.java)
+            
+            // Sync with local cache
+            itemDao.clearAll()
+            itemDao.insertItems(items)
+            
+            items
         } catch (e: Exception) {
-            emptyList()
+            // If network fails, return cached items (first item in the flow)
+            itemDao.getAllItems().first()
         }
     }
 
     /**
-     * Real-time stream of items from Firestore.
+     * Real-time stream: Drives UI from Room, while Firestore updates Room.
      */
-    fun getItemsFlow(): Flow<List<CampusItem>> = callbackFlow {
-        val subscription = itemsCollection
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
+    override fun getItemsFlow(): Flow<List<CampusItem>> {
+        // Start the Firestore listener to update Room
+        val firestoreFlow = callbackFlow {
+            val subscription = itemsCollection
+                .whereEqualTo("status", ItemStatus.AVAILABLE.name) // Filter at source
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
+                    if (snapshot != null) {
+                        val items = snapshot.toObjects(CampusItem::class.java)
+                        trySend(items)
+                    }
                 }
-                if (snapshot != null) {
-                    val items = snapshot.toObjects(CampusItem::class.java)
-                    trySend(items)
-                }
-            }
-        awaitClose { subscription.remove() }
+            awaitClose { subscription.remove() }
+        }
+
+        // Return the Room flow as the source of truth
+        return itemDao.getAllItems().onStart {
+            // Trigger a background sync when the flow starts
+            firestoreFlow.onEach { items ->
+                itemDao.clearAll()
+                itemDao.insertItems(items)
+            }.launchIn(applicationScope) // Using injected application scope
+        }
     }
 
     override suspend fun postItem(item: CampusItem): Boolean {
         return try {
-            // Add a timestamp for ordering
-            val itemWithTimestamp = item.copy(timeAgo = "Just now") // You might want a server timestamp
-            itemsCollection.document(item.id).set(itemWithTimestamp).await()
+            itemsCollection.document(item.id).set(item).await()
+            // Room will be updated automatically by the SnapshotListener in getItemsFlow
             true
         } catch (e: Exception) {
             false
