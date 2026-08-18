@@ -1,8 +1,9 @@
 package com.minimize.uniswap.data.model
 
-import com.google.gson.annotations.SerializedName
-
-// This matches your Spring Boot SignupRequest DTO exactly
+/**
+ * Request model for User Signup.
+ * Used for local validation and parameter passing.
+ */
 data class SignupRequest(
     val fullName: String,
     val email: String,
@@ -10,15 +11,10 @@ data class SignupRequest(
     val department: String
 )
 
-// To handle success/error messages from the server
-
-data class AuthResponse(
-    val token: String,
-    val message: String
-)
-
+/**
+ * Request model for User Login.
+ */
 data class LoginRequest(
     val email: String,
-    val password: String,
-
+    val password: String
 )

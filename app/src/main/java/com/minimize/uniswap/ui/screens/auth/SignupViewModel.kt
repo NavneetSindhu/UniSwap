@@ -32,8 +32,7 @@ class SignupViewModel @Inject constructor(private val repository: AuthRepository
             isLoading = true
             errorMessage = null
 
-            // The repository.signup() now automatically saves the JWT
-            // to DataStore thanks to the TokenManager we added earlier!
+            // The repository.signup() handles authentication via FirebaseAuth
             val request = SignupRequest(fullName, email, password, department)
             val result = repository.signup(request)
 

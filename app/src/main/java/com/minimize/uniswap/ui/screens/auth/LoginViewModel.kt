@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.LoginRequest
 import com.minimize.uniswap.data.repository.AuthRepository
+import com.minimize.uniswap.util.GoogleAuthHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(private val repository: AuthRepository) : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val repository: AuthRepository,
+    private val googleAuthHelper: GoogleAuthHelper
+) : ViewModel() {
 
     var email by mutableStateOf("")
     var password by mutableStateOf("")
@@ -31,15 +35,33 @@ class LoginViewModel @Inject constructor(private val repository: AuthRepository)
 
             val request = LoginRequest(email, password)
 
-            // 2. The repository now handles the JWT storage automatically!
+            // The repository now handles authentication via FirebaseAuth
             val result = repository.login(request)
 
             result.onSuccess {
-                println("LOGCAT_VIEWMODEL: Login Success! Setting isSuccess to true.")
                 isSuccess = true
             }.onFailure {
-                println("LOGCAT_VIEWMODEL: Login Failed! Error: ${it.message}")
                 errorMessage = it.message
+            }
+            isLoading = false
+        }
+    }
+
+    fun onGoogleLoginClick(webClientId: String) {
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+
+            val idToken = googleAuthHelper.getGoogleIdToken(webClientId)
+            if (idToken != null) {
+                val result = repository.signInWithGoogle(idToken)
+                result.onSuccess {
+                    isSuccess = true
+                }.onFailure {
+                    errorMessage = it.message ?: "Google Login failed"
+                }
+            } else {
+                errorMessage = "Could not get Google ID Token"
             }
             isLoading = false
         }
