@@ -7,11 +7,7 @@ import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,7 +15,13 @@ data class DetailsUiState(
     val item: CampusItem? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val currentUserId: String = ""
+    val currentUserId: String = "",
+    val isEmailVerified: Boolean = false,
+    val userEmail: String = "",
+    val showNudge: Boolean = false,
+    val showVerificationFlow: Boolean = false,
+    val isVerificationSent: Boolean = false,
+    val isProcessingVerification: Boolean = false
 )
 
 @HiltViewModel
@@ -34,7 +36,57 @@ class DetailsViewModel @Inject constructor(
     private var observeJob: Job? = null
 
     init {
-        _uiState.update { it.copy(currentUserId = authRepository.getCurrentUserId() ?: "") }
+        val currentUid = authRepository.getCurrentUserId() ?: ""
+        _uiState.update { it.copy(currentUserId = currentUid) }
+        
+        // Observe User Profile for verification status
+        authRepository.getUserFlow()
+            .onEach { user ->
+                _uiState.update { 
+                    it.copy(
+                        isEmailVerified = user?.isEmailVerified ?: false,
+                        userEmail = user?.email ?: ""
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun onClaimAttempt(onSuccess: () -> Unit) {
+        if (_uiState.value.isEmailVerified) {
+            onSuccess()
+        } else {
+            _uiState.update { it.copy(showNudge = true) }
+        }
+    }
+
+    fun dismissNudge() {
+        _uiState.update { it.copy(showNudge = false, showVerificationFlow = false) }
+    }
+
+    fun startVerificationFlow() {
+        _uiState.update { it.copy(showNudge = false, showVerificationFlow = true) }
+    }
+
+    fun sendVerificationEmail() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingVerification = true) }
+            val result = authRepository.sendVerificationEmail()
+            _uiState.update { 
+                it.copy(
+                    isProcessingVerification = false,
+                    isVerificationSent = result.isSuccess
+                )
+            }
+        }
+    }
+
+    fun checkVerificationStatus() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingVerification = true) }
+            authRepository.reloadUser()
+            _uiState.update { it.copy(isProcessingVerification = false) }
+        }
     }
 
     fun getItem(itemId: String) {

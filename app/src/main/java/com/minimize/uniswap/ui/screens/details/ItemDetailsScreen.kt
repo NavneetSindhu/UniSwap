@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
+import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
 import java.util.Locale
 
 @Composable
@@ -38,6 +40,26 @@ fun ItemDetailsScreen(
 
     LaunchedEffect(itemId) {
         viewModel.getItem(itemId)
+    }
+
+    // Email Verification Nudge Barrier
+    if (state.showNudge) {
+        VerificationNudgeDialog(
+            onDismiss = { viewModel.dismissNudge() },
+            onVerifyClick = { viewModel.startVerificationFlow() }
+        )
+    }
+
+    if (state.showVerificationFlow) {
+        EmailVerificationFlow(
+            email = state.userEmail,
+            onSendEmail = { viewModel.sendVerificationEmail() },
+            onCheckStatus = { viewModel.checkVerificationStatus() },
+            isProcessing = state.isProcessingVerification,
+            isSent = state.isVerificationSent,
+            isVerified = state.isEmailVerified,
+            onDismiss = { viewModel.dismissNudge() }
+        )
     }
 
     Box(
@@ -58,7 +80,7 @@ fun ItemDetailsScreen(
                     item = state.item!!,
                     currentUserId = state.currentUserId,
                     onBackClick = onBackClick,
-                    onClaimClick = onClaimClick
+                    onClaimClick = { viewModel.onClaimAttempt(onClaimClick) }
                 )
             }
 

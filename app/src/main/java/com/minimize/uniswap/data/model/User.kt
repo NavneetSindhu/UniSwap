@@ -1,10 +1,16 @@
 package com.minimize.uniswap.data.model
 
+/**
+ * Domain model for UniSwap User.
+ * Stored in Firestore users collection.
+ */
 data class User(
-    val id: String,
-    val name: String,
-    val major: String,
-    val year: String,
-    val level: String = "Eco-Warrior Level 1",
-    val profileImageUrl: String = ""
+    val uid: String = "",
+    val email: String = "",
+    val displayName: String = "",
+    val isEmailVerified: Boolean = false,
+    val lbsSaved: Double = 0.0,
+    val itemsRecycled: Int = 0,
+    val campusCenter: String = "Main Campus",
+    val profilePicUrl: String = ""
 )

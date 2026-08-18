@@ -41,6 +41,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.ui.components.AppBottomSheet
+import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
+import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
 import java.util.Locale
 
 private val PrimaryGreen = Color(0xFF146345)
@@ -58,11 +60,32 @@ fun SellScreen(
     onBackClick: () -> Unit = {},
     viewModel: SellViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val title by viewModel.title.collectAsStateWithLifecycle()
     val price by viewModel.price.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val selectedImages by viewModel.selectedImages.collectAsStateWithLifecycle()
     val isPosting by viewModel.isPosting.collectAsStateWithLifecycle()
+
+    // Email Verification Nudge Barrier
+    if (uiState.showNudge) {
+        VerificationNudgeDialog(
+            onDismiss = { viewModel.dismissNudge() },
+            onVerifyClick = { viewModel.startVerificationFlow() }
+        )
+    }
+
+    if (uiState.showVerificationFlow) {
+        EmailVerificationFlow(
+            email = uiState.userEmail,
+            onSendEmail = { viewModel.sendVerificationEmail() },
+            onCheckStatus = { viewModel.checkVerificationStatus() },
+            isProcessing = uiState.isProcessingVerification,
+            isSent = uiState.isVerificationSent,
+            isVerified = uiState.isEmailVerified,
+            onDismiss = { viewModel.dismissNudge() }
+        )
+    }
 
     var showCategorySheet by remember { mutableStateOf(false) }
     var categorySearchQuery by remember { mutableStateOf("") }
@@ -122,7 +145,7 @@ fun SellScreen(
                         .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp)
                 ) {
                     Button(
-                        onClick = { viewModel.postItem(onPostSuccess) },
+                        onClick = { viewModel.onPostAttempt(onPostSuccess) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
