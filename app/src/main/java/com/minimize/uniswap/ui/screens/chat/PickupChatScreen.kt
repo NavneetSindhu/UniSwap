@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
+import com.minimize.uniswap.data.model.MessageStatus
+import java.text.SimpleDateFormat
+import java.util.*
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PickupChatScreen(
@@ -138,7 +142,8 @@ fun PickupChatScreen(
                         ChatMessage(
                             text = message.text,
                             isFromMe = message.senderId == viewModel.currentUserId,
-                            time = message.timestamp.toString()
+                            time = formatTime(message.timestamp),
+                            status = message.status
                         )
                     }
 
@@ -169,7 +174,7 @@ fun PickupChatScreen(
 }
 
 @Composable
-fun ChatMessage(text: String, isFromMe: Boolean, time: String) {
+fun ChatMessage(text: String, isFromMe: Boolean, time: String, status: MessageStatus = MessageStatus.SENT) {
     val alignment = if (isFromMe) Alignment.End else Alignment.Start
     val bgColor = if (isFromMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     val textColor = if (isFromMe) Color.White else MaterialTheme.colorScheme.onSurface
@@ -186,13 +191,32 @@ fun ChatMessage(text: String, isFromMe: Boolean, time: String) {
         ) {
             Text(text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), color = textColor, fontSize = 15.sp)
         }
-        Text(
-            time,
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.Gray,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp)
-        )
+        ) {
+            Text(
+                time,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+            if (isFromMe) {
+                Spacer(modifier = Modifier.width(4.dp))
+                val icon = when (status) {
+                    MessageStatus.SENDING -> Icons.Default.AccessTime
+                    MessageStatus.SENT -> Icons.Default.Done
+                    MessageStatus.FAILED -> Icons.Default.Error
+                }
+                val iconTint = if (status == MessageStatus.FAILED) Color.Red else Color.Gray
+                Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = iconTint)
+            }
+        }
     }
+}
+
+private fun formatTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
 
 @Composable

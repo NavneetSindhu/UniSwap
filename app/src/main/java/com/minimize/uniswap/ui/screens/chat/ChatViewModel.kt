@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.Message
+import com.minimize.uniswap.data.model.MessageStatus
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
@@ -36,28 +37,17 @@ class ChatViewModel @Inject constructor(
 
         itemJob?.cancel()
 
-        // 1. Observe item from local Room cache
         itemJob = viewModelScope.launch {
             itemRepository.getItemByIdFlow(itemId)
                 .filterNotNull()
                 .collect { campusItem ->
                     _item.value = campusItem
-                    // Determine buyer ID (current user if they are not the seller)
-                    val buyerId = if (currentUserId == campusItem.sellerId) {
-                        // If current user is seller, fallback to buyer parameter or active conversation
-                        currentUserId
-                    } else {
-                        currentUserId
-                    }
+                    // In a 1-to-1 chat for a specific item, the participants are the buyer and the seller.
+                    // If current user is seller, they are chatting with the person who initiated (buyerId).
+                    // For simplicity in this v1, we assume currentUserId is the one initiating if they aren't the seller.
+                    val buyerId = currentUserId 
                     observeMessages(campusItem.id, buyerId, campusItem.sellerId)
                 }
-        }
-
-        // 2. Fetch fresh item metadata from network in background
-        viewModelScope.launch {
-            try {
-                itemRepository.fetchItemById(itemId)
-            } catch (_: Exception) {}
         }
     }
 
@@ -72,12 +62,13 @@ class ChatViewModel @Inject constructor(
         val currentItem = _item.value ?: return
         if (text.isBlank() || currentUserId.isBlank()) return
 
-        val buyerId = if (currentUserId == currentItem.sellerId) currentUserId else currentUserId
+        val buyerId = currentUserId // Consistent with observeMessages
 
         val newMessage = Message(
             senderId = currentUserId,
             text = text.trim(),
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            status = MessageStatus.SENDING // Optimistic state
         )
 
         viewModelScope.launch {
