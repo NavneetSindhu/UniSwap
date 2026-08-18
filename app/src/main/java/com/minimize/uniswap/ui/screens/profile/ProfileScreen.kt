@@ -27,16 +27,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.theme.UniSwapTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,32 +48,33 @@ fun ProfileScreen(
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Selling", "Given Away", "Saved")
 
-    val screenBackground = Color(0xFFFBFBF9)
+    val dimens = UniSwapTheme.dimens
+    val colors = UniSwapTheme.colors
 
     Scaffold(
-        containerColor = screenBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = dimens.spaceLarge, vertical = dimens.spaceSmall),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     modifier = Modifier
                         .size(44.dp)
-                        .shadow(2.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.08f)),
+                        .shadow(2.dp, CircleShape),
                     shape = CircleShape,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     onClick = onBackClick
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color(0xFF1E293B),
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -83,16 +83,16 @@ fun ProfileScreen(
                 Surface(
                     modifier = Modifier
                         .size(44.dp)
-                        .shadow(2.dp, CircleShape, spotColor = Color.Black.copy(alpha = 0.08f)),
+                        .shadow(2.dp, CircleShape),
                     shape = CircleShape,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     onClick = onSettingsClick
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.Outlined.Settings,
                             contentDescription = "Settings",
-                            tint = Color(0xFF1E293B),
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -109,8 +109,8 @@ fun ProfileScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                contentPadding = PaddingValues(horizontal = dimens.spaceLarge, vertical = dimens.spaceSmall),
+                verticalArrangement = Arrangement.spacedBy(dimens.spaceLarge)
             ) {
                 // 1. User Avatar & Details
                 item {
@@ -132,19 +132,18 @@ fun ProfileScreen(
                                 contentScale = ContentScale.Crop
                             )
 
-                            // Edit Icon Badge
                             Surface(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .shadow(4.dp, CircleShape),
                                 shape = CircleShape,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.surface
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.Edit,
                                         contentDescription = "Edit Profile",
-                                        tint = Color(0xFF0F8A5F),
+                                        tint = colors.wasteMetricGreen,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -157,8 +156,7 @@ fun ProfileScreen(
                             text = "Alex Johnson",
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif,
-                                color = Color(0xFF111827)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         )
 
@@ -167,7 +165,7 @@ fun ProfileScreen(
                         Text(
                             text = "@alexj_eco • Junior",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color(0xFF8E8E93),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                         )
@@ -179,42 +177,39 @@ fun ProfileScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(28.dp))
+                            .clip(RoundedCornerShape(dimens.cardRadius))
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color(0xFFE5F9EE),
-                                        Color(0xFFF3FCF7)
+                                        colors.wasteMetricGreen.copy(alpha = 0.15f),
+                                        colors.wasteMetricGreen.copy(alpha = 0.05f)
                                     )
                                 )
                             )
                             .padding(24.dp)
                     ) {
                         Column {
-                            // Card Title
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Eco,
                                     contentDescription = null,
-                                    tint = Color(0xFF0F8A5F),
+                                    tint = colors.wasteMetricGreen,
                                     modifier = Modifier.size(24.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(dimens.spaceSmall))
                                 Text(
                                     text = "Sustainability Impact",
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Serif,
-                                        color = Color(0xFF111827)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // First Row: Impact Score & Waste Diverted
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -224,52 +219,49 @@ fun ProfileScreen(
                                         text = "450",
                                         style = MaterialTheme.typography.headlineMedium.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Serif,
-                                            color = Color(0xFF0F8A5F)
+                                            color = colors.wasteMetricGreen
                                         )
                                     )
                                     Text(
                                         text = "Impact Score",
                                         style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = Color(0xFF859A90)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
                                 }
 
                                 Column(modifier = Modifier.weight(1f)) {
+                                    val lbsText = "%.1f lbs".format(state.lbsSaved)
                                     Text(
-                                        text = "12 lbs",
+                                        text = lbsText,
                                         style = MaterialTheme.typography.titleLarge.copy(
                                             fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Serif,
-                                            color = Color(0xFF111827)
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     )
                                     Text(
                                         text = "Waste Diverted",
                                         style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = Color(0xFF859A90)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(dimens.spaceMedium))
 
-                            // Second Row: Items Recycled
                             Column {
                                 Text(
-                                    text = "4",
+                                    text = state.itemsRecycled.toString(),
                                     style = MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Serif,
-                                        color = Color(0xFF111827)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 )
                                 Text(
                                     text = "Items Recycled",
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = Color(0xFF859A90)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -281,7 +273,7 @@ fun ProfileScreen(
                 item {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color(0xFFEAEAEA),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Row(
@@ -294,7 +286,7 @@ fun ProfileScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(20.dp))
-                                        .background(if (isSelected) Color.White else Color.Transparent)
+                                        .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
                                         .then(
                                             if (isSelected) Modifier.shadow(1.dp, RoundedCornerShape(20.dp))
                                             else Modifier
@@ -312,7 +304,7 @@ fun ProfileScreen(
                                         text = title,
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) Color(0xFF111827) else Color(0xFF8E8E93)
+                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
                                 }
@@ -338,7 +330,7 @@ fun ProfileScreen(
                         ) {
                             Text(
                                 text = state.error ?: "No items found here.",
-                                color = Color(0xFF8E8E93),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -349,7 +341,7 @@ fun ProfileScreen(
                         ProfileItemCard(
                             item = item,
                             metaIcon = if (selectedTabIndex == 2) Icons.Outlined.FavoriteBorder else Icons.Outlined.Visibility,
-                            metaText = if (selectedTabIndex == 2) "3 saves" else "12 views"
+                            metaText = if (selectedTabIndex == 2) "Saved" else "Available"
                         )
                     }
                 }
@@ -362,14 +354,16 @@ fun ProfileScreen(
 fun ProfileItemCard(
     item: CampusItem,
     metaIcon: ImageVector = Icons.Outlined.Visibility,
-    metaText: String = "12 views"
+    metaText: String = "Available"
 ) {
+    val dimens = UniSwapTheme.dimens
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(1.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.05f)),
-        shape = RoundedCornerShape(24.dp),
-        color = Color.White
+            .shadow(1.dp, RoundedCornerShape(dimens.cardRadius)),
+        shape = RoundedCornerShape(dimens.cardRadius),
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -377,28 +371,25 @@ fun ProfileItemCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Item Thumbnail
             AsyncImage(
-                model = item.imageUrl.ifBlank { "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=400" },
+                model = item.imageUrl.ifBlank { item.category.getPlaceholderUrl() },
                 contentDescription = item.title,
                 modifier = Modifier
                     .size(76.dp)
-                    .clip(RoundedCornerShape(16.dp)),
+                    .clip(RoundedCornerShape(dimens.chipRadius)),
                 contentScale = ContentScale.Crop
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(dimens.spaceMedium))
 
-            // Details Column
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = item.title.ifBlank { "TI-84 Graphing Calc" },
+                    text = item.title,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Serif,
-                        color = Color(0xFF111827)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -407,10 +398,10 @@ fun ProfileItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = if (item.price == 0.0) "FREE" else "$${item.price.toInt()}",
+                    text = if (item.price == 0.0) "FREE" else "₹${item.price}",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F8A5F)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 )
 
@@ -422,20 +413,19 @@ fun ProfileItemCard(
                     Icon(
                         imageVector = metaIcon,
                         contentDescription = null,
-                        tint = Color(0xFF8E8E93),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = metaText,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color(0xFF8E8E93)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
             }
 
-            // More Options Icon
             IconButton(
                 onClick = { /* Handle item actions */ },
                 modifier = Modifier.size(32.dp)
@@ -443,7 +433,7 @@ fun ProfileItemCard(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More Options",
-                    tint = Color(0xFF8E8E93)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

@@ -2,17 +2,19 @@ package com.minimize.uniswap.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Brand Identity
-val PrimaryOrange = Color(0xFFFF6B35) // Main buttons/highlights
-val MutedGreen = Color(0xFF8AB17D)   // Sustainability tags
-val AccentYellow = Color(0xFFE9C46A) // Eco badges
+// UniSwap Brand Core
+val UniSwapEmerald = Color(0xFF146345)
+val WasteMetricGreen = Color(0xFF0F8A5F)
+val CampusAmber = Color(0xFFFFB300)
+val SuccessGreen = Color(0xFF43A047)
+val ErrorRed = Color(0xFFB3261E)
 
-// Light Mode (Warm & Organic)
-val BackgroundLight = Color(0xFFFDFBF7) // Warm cream
-val SurfaceLight = Color(0xFFFFFFFF)
-val OnSurfaceLight = Color(0xFF264653)  // Dark teal text
+// Neutrals
+val BoneWhite = Color(0xFFFDFBF7)
+val DeepTeal = Color(0xFF264653)
+val Onyx = Color(0xFF121212)
+val Slate = Color(0xFF1E1E1E)
+val LightGrey = Color(0xFFF5F5F5)
 
-// Dark Mode (High Contrast)
-val BackgroundDark = Color(0xFF121212)  // Deep onyx
-val SurfaceDark = Color(0xFF1E1E1E)     // Elevated card background
-val OnSurfaceDark = Color(0xFFFDFBF7)   // Light text
+// Dynamic Color Base (When not using system colors)
+val DefaultAccent = UniSwapEmerald
