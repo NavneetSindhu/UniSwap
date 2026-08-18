@@ -39,7 +39,6 @@ class DetailsViewModel @Inject constructor(
         observeJob?.cancel()
         _uiState.update { it.copy(isLoading = true, error = null) }
 
-        // 1. Observe from Room Flow (Single Source of Truth)
         observeJob = viewModelScope.launch {
             repository.getItemByIdFlow(itemId)
                 .catch { e ->
@@ -47,32 +46,15 @@ class DetailsViewModel @Inject constructor(
                         it.copy(isLoading = false, error = e.localizedMessage ?: "Error loading item.")
                     }
                 }
-                .collect { cachedItem ->
-                    if (cachedItem != null) {
-                        _uiState.update {
-                            it.copy(item = cachedItem, isLoading = false, error = null)
-                        }
-                    } else if (_uiState.value.item == null && !_uiState.value.isLoading) {
-                        _uiState.update {
-                            it.copy(error = "Item not found.")
-                        }
-                    }
-                }
-        }
-
-        // 2. Trigger Firestore sync to update Room
-        viewModelScope.launch {
-            try {
-                repository.fetchItemById(itemId)
-            } catch (e: Exception) {
-                if (_uiState.value.item == null) {
+                .collect { item ->
                     _uiState.update {
-                        it.copy(isLoading = false, error = "Unable to fetch item from cloud.")
+                        it.copy(
+                            item = item,
+                            isLoading = false,
+                            error = if (item == null) "Item not found." else null
+                        )
                     }
                 }
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
         }
     }
 }

@@ -21,16 +21,11 @@ class FeedViewModel @Inject constructor(
     private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
     val selectedCategory = _selectedCategory.asStateFlow()
 
-    // Internal state to hold items fetched from the backend
     private val _rawItems = MutableStateFlow<List<CampusItem>>(emptyList())
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    /**
-     * UI State: Combines the raw items from the backend with
-     * search and category filters.
-     */
     val filteredItems: StateFlow<List<CampusItem>> = combine(
         _rawItems,
         _searchQuery,
@@ -48,26 +43,22 @@ class FeedViewModel @Inject constructor(
     )
 
     init {
-        // fetchItems() - We can remove the manual fetch and use the flow
         observeItems()
     }
 
-    /**
-     * Observes real-time updates from Firestore.
-     */
     private fun observeItems() {
+        _isRefreshing.value = true
         repository.getItemsFlow()
             .onEach { result ->
                 _rawItems.value = result
                 _isRefreshing.value = false
             }
+            .catch { _isRefreshing.value = false }
             .launchIn(viewModelScope)
     }
 
-    /**
-     * Reaches out to the backend to get the latest items manually.
-     */
     fun fetchItems() {
+        // Manual refresh still uses the flow observation, but we can trigger a one-shot fetch if desired
         viewModelScope.launch {
             _isRefreshing.value = true
             val result = repository.getItems()

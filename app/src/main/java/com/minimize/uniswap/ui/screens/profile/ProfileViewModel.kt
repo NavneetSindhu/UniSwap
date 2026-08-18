@@ -53,7 +53,7 @@ class ProfileViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isLoading = false, error = "Could not load stats. Is the server running?")
+                    it.copy(isLoading = false, error = "Could not load profile stats.")
                 }
             }
         }
