@@ -1,9 +1,5 @@
 package com.minimize.uniswap.data.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-
 enum class ItemCategory {
     ARCHITECTURE, DORM_ESSENTIALS, ENGINEERING, ELECTRONICS, OTHER;
 
@@ -22,9 +18,7 @@ enum class ItemStatus {
     AVAILABLE, PENDING, SOLD
 }
 
-@Entity(tableName = "items")
 data class CampusItem(
-    @PrimaryKey
     val id: String = "",
     val title: String = "",
     val description: String = "",
