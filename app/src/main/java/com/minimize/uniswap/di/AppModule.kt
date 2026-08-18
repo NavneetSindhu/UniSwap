@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.minimize.uniswap.UniSwapApplication
 import com.minimize.uniswap.data.local.UniSwapDatabase
+import com.minimize.uniswap.data.local.dao.MessageDao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -38,8 +39,12 @@ object AppModule {
             context,
             UniSwapDatabase::class.java,
             "uniswap_db"
-        ).build()
+        ).fallbackToDestructiveMigration() // Important for dev
+            .build()
     }
+
+    @Provides
+    fun provideMessageDao(db: UniSwapDatabase): MessageDao = db.messageDao()
 
     @Provides
     @Singleton

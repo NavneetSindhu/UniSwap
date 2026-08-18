@@ -2,9 +2,13 @@ package com.minimize.uniswap.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.minimize.uniswap.data.model.CampusItem
+import androidx.room.TypeConverters
+import com.minimize.uniswap.data.local.converter.UniSwapConverters
+import com.minimize.uniswap.data.local.dao.MessageDao
+import com.minimize.uniswap.data.local.entity.MessageEntity
 
-@Database(entities = [CampusItem::class], version = 2, exportSchema = false)
+@Database(entities = [MessageEntity::class], version = 3, exportSchema = false)
+@TypeConverters(UniSwapConverters::class)
 abstract class UniSwapDatabase : RoomDatabase() {
-    // DAO will be added in Commit 4
+    abstract fun messageDao(): MessageDao
 }
