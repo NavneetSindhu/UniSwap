@@ -12,6 +12,12 @@ interface ItemDao {
     @Query("SELECT * FROM items")
     fun getAllItems(): Flow<List<CampusItem>>
 
+    @Query("SELECT * FROM items WHERE id = :itemId LIMIT 1")
+    fun getItemById(itemId: String): Flow<CampusItem?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertItem(item: CampusItem)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItems(items: List<CampusItem>)
 

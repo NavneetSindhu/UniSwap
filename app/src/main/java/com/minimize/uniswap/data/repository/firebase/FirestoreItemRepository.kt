@@ -81,4 +81,19 @@ class FirestoreItemRepository @Inject constructor(
             false
         }
     }
+    override fun getItemByIdFlow(itemId: String): Flow<CampusItem?> {
+        return itemDao.getItemById(itemId)
+    }
+
+    override suspend fun fetchItemById(itemId: String) {
+        try {
+            val snapshot = itemsCollection.document(itemId).get().await()
+            val item = snapshot.toObject(CampusItem::class.java)
+            if (item != null) {
+                itemDao.insertItem(item)
+            }
+        } catch (_: Exception) {
+            // Local Room cache will still serve whatever was already cached
+        }
+    }
 }

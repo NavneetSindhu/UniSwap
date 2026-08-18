@@ -1,4 +1,4 @@
-package com.minimize.uniswap.network
+package com.minimize.uniswap.data.api
 
 import com.minimize.uniswap.data.model.CampusItem
 import retrofit2.http.Body

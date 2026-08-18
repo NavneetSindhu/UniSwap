@@ -4,9 +4,11 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
 
-    // Add these two for Hilt and Annotation Processing
+    // Dependency Injection & Annotation Processing
     alias(libs.plugins.hilt) apply false
-    alias(libs.plugins.kotlin.kapt) apply false
-    id("com.google.gms.google-services") version "4.5.0" apply false
+    alias(libs.plugins.ksp) apply false
+
+    // Google Services & Firebase
+    alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
 }

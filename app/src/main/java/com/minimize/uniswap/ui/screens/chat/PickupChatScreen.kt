@@ -137,8 +137,8 @@ fun PickupChatScreen(
                     items(messages) { message ->
                         ChatMessage(
                             text = message.text,
-                            isFromMe = message.senderId == "me_123",
-                            time = message.timestamp
+                            isFromMe = message.senderId == viewModel.currentUserId,
+                            time = message.timestamp.toString()
                         )
                     }
 

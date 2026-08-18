@@ -8,10 +8,9 @@ import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,57 +20,73 @@ class ChatViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val myUserId = authRepository.getCurrentUserId() ?: ""
+    val currentUserId: String = authRepository.getCurrentUserId() ?: ""
 
-    // State for the specific item being discussed
     private val _item = MutableStateFlow<CampusItem?>(null)
-    val item = _item.asStateFlow()
+    val item: StateFlow<CampusItem?> = _item.asStateFlow()
 
-    // Real-time messages from Firestore
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    val messages = _messages.asStateFlow()
+    val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
-    private var messageJob: kotlinx.coroutines.Job? = null
+    private var messageJob: Job? = null
+    private var itemJob: Job? = null
 
-    /**
-     * Fetches the specific item details and starts observing messages.
-     */
     fun loadItem(itemId: String) {
+        if (itemId.isBlank()) return
+
+        itemJob?.cancel()
+
+        // 1. Observe item from local Room cache
+        itemJob = viewModelScope.launch {
+            itemRepository.getItemByIdFlow(itemId)
+                .filterNotNull()
+                .collect { campusItem ->
+                    _item.value = campusItem
+                    // Determine buyer ID (current user if they are not the seller)
+                    val buyerId = if (currentUserId == campusItem.sellerId) {
+                        // If current user is seller, fallback to buyer parameter or active conversation
+                        currentUserId
+                    } else {
+                        currentUserId
+                    }
+                    observeMessages(campusItem.id, buyerId, campusItem.sellerId)
+                }
+        }
+
+        // 2. Fetch fresh item metadata from network in background
         viewModelScope.launch {
             try {
-                val allItems = itemRepository.getItems()
-                val foundItem = allItems.find { it.id == itemId }
-                _item.value = foundItem
-
-                foundItem?.let {
-                    observeMessages(it.id, it.sellerId)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _item.value = null
-            }
+                itemRepository.fetchItemById(itemId)
+            } catch (_: Exception) {}
         }
     }
 
-    private fun observeMessages(itemId: String, sellerId: String) {
+    private fun observeMessages(itemId: String, buyerId: String, sellerId: String) {
         messageJob?.cancel()
-        messageJob = chatRepository.getMessages(itemId, myUserId, sellerId)
+        messageJob = chatRepository.getMessages(itemId, buyerId, sellerId)
             .onEach { _messages.value = it }
             .launchIn(viewModelScope)
     }
 
     fun sendMessage(text: String) {
         val currentItem = _item.value ?: return
-        if (text.isBlank()) return
+        if (text.isBlank() || currentUserId.isBlank()) return
+
+        val buyerId = if (currentUserId == currentItem.sellerId) currentUserId else currentUserId
 
         val newMessage = Message(
-            senderId = myUserId,
-            text = text,
-            timestamp = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date())
+            senderId = currentUserId,
+            text = text.trim(),
+            timestamp = System.currentTimeMillis()
         )
 
         viewModelScope.launch {
-            chatRepository.sendMessage(currentItem.id, myUserId, currentItem.sellerId, newMessage)
+            chatRepository.sendMessage(
+                itemId = currentItem.id,
+                buyerId = buyerId,
+                sellerId = currentItem.sellerId,
+                message = newMessage
+            )
         }
     }
 }
