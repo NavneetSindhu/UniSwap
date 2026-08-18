@@ -6,6 +6,7 @@ import com.minimize.uniswap.data.model.SignupRequest
 interface AuthRepository {
     suspend fun signup(request: SignupRequest): Result<String>
     suspend fun login(request: LoginRequest): Result<String>
+    suspend fun signInWithGoogle(idToken: String): Result<String>
     suspend fun logout()
     fun isUserLoggedIn(): Boolean
     fun getCurrentUserId(): String?

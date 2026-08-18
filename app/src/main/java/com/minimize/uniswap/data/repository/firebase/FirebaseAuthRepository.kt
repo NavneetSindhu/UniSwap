@@ -4,6 +4,7 @@ import com.minimize.uniswap.data.model.LoginRequest
 import com.minimize.uniswap.data.model.SignupRequest
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,6 +27,16 @@ class FirebaseAuthRepository @Inject constructor(
         return try {
             firebaseAuth.signInWithEmailAndPassword(request.email, request.password).await()
             Result.success("Login successful")
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun signInWithGoogle(idToken: String): Result<String> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            firebaseAuth.signInWithCredential(credential).await()
+            Result.success("Google sign-in successful")
         } catch (e: Exception) {
             Result.failure(e)
         }

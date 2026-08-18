@@ -14,6 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+import com.minimize.uniswap.util.LottieAnimationWrapper
+import com.minimize.uniswap.R
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
@@ -23,22 +28,31 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0A0A))
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Lottie Animation (Placeholder ID, user needs to add a real one to res/raw)
+        // LottieAnimationWrapper(
+        //    resId = R.raw.login_animation,
+        //    modifier = Modifier.size(200.dp)
+        // )
+
         Text(
             text = "Welcome back.",
             style = MaterialTheme.typography.displaySmall.copy(
                 fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+                color = MaterialTheme.colorScheme.onBackground
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         Text(
             text = "Log in to your academic identity.",
-            color = Color.Gray,
-            fontSize = 16.sp
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 16.sp,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -72,19 +86,33 @@ fun LoginScreen(
         Button(
             onClick = { viewModel.onLoginClick() },
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A65)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(28.dp),
             enabled = !viewModel.isLoading
         ) {
             if (viewModel.isLoading) {
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp
                 )
             } else {
                 Text("Sign In", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Google Sign-In Button
+        OutlinedButton(
+            onClick = { viewModel.onGoogleLoginClick("YOUR_WEB_CLIENT_ID") },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(28.dp),
+            enabled = !viewModel.isLoading
+        ) {
+            Icon(Icons.Default.AccountCircle, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Sign in with Google", fontWeight = FontWeight.SemiBold)
         }
 
         TextButton(
