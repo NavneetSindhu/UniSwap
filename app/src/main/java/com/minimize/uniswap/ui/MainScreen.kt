@@ -11,15 +11,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -31,13 +25,14 @@ import androidx.navigation.navArgument
 import com.minimize.uniswap.ui.components.CustomBottomNav
 import com.minimize.uniswap.ui.navigation.Screen
 import com.minimize.uniswap.ui.screens.auth.LoginScreen
-import com.minimize.uniswap.ui.screens.auth.SignupScreen
 import com.minimize.uniswap.ui.screens.chat.PickupChatScreen
 import com.minimize.uniswap.ui.screens.details.ItemDetailsScreen
 import com.minimize.uniswap.ui.screens.feed.CampusFeedScreen
+import com.minimize.uniswap.ui.screens.onboarding.OnboardingScreen
 import com.minimize.uniswap.ui.screens.profile.ProfileScreen
 import com.minimize.uniswap.ui.screens.sell.SellScreen
 import com.minimize.uniswap.ui.screens.settings.SettingsScreen
+import com.minimize.uniswap.ui.screens.splash.SplashScreen
 
 private const val TAG = "LOGCAT_NAV"
 
@@ -49,31 +44,12 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    var authCheckComplete by remember { mutableStateOf(false) }
-    var startDestination by remember { mutableStateOf(Screen.Login.route) }
-
-    LaunchedEffect(Unit) {
-        val isLoggedIn = viewModel.isUserLoggedIn()
-        startDestination = if (isLoggedIn) Screen.Feed.route else Screen.Login.route
-        authCheckComplete = true
-    }
-
     // Bottom navigation visible only on core top-level tabs
     val showBottomNav = currentRoute in listOf(
         Screen.Feed.route,
         Screen.Profile.route,
         Screen.Sell.route
     )
-
-    if (!authCheckComplete) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -96,13 +72,36 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = startDestination,
+            startDestination = Screen.Onboarding.route,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = if (showBottomNav) innerPadding.calculateBottomPadding() else innerPadding.calculateBottomPadding()),
             enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { 1000 }) },
             exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -1000 }) }
         ) {
+
+            // --- SPLASH & ONBOARDING ---
+            composable(Screen.Splash.route) {
+                SplashScreen(
+                    onSplashFinished = {
+                        val isLoggedIn = viewModel.isUserLoggedIn()
+                        val targetRoute = if (isLoggedIn) Screen.Feed.route else Screen.Onboarding.route
+                        navController.navigate(targetRoute) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.Onboarding.route) {
+                OnboardingScreen(
+                    onComplete = {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
 
             // --- AUTHENTICATION ---
             composable(Screen.Login.route) {
@@ -112,23 +111,6 @@ fun MainScreen(
                         navController.navigate(Screen.Feed.route) {
                             popUpTo(0) { inclusive = true }
                         }
-                    },
-                    onNavigateToSignup = {
-                        navController.navigate(Screen.Signup.route)
-                    }
-                )
-            }
-
-            composable(Screen.Signup.route) {
-                SignupScreen(
-                    onSignupSuccess = {
-                        Log.d(TAG, "onSignupSuccess triggered! Navigating to: ${Screen.Feed.route}")
-                        navController.navigate(Screen.Feed.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    onNavigateToLogin = {
-                        navController.navigate(Screen.Login.route)
                     }
                 )
             }
@@ -141,11 +123,14 @@ fun MainScreen(
             }
 
             composable(Screen.Sell.route) {
-                SellScreen(onPostSuccess = {
-                    navController.navigate(Screen.Feed.route) {
-                        popUpTo(Screen.Sell.route) { inclusive = true }
-                    }
-                })
+                SellScreen(
+                    onPostSuccess = {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(Screen.Sell.route) { inclusive = true }
+                        }
+                    },
+                    onBackClick = { navController.popBackStack() }
+                )
             }
 
             composable(Screen.Profile.route) {

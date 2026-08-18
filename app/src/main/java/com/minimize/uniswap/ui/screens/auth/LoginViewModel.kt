@@ -3,7 +3,7 @@ package com.minimize.uniswap.ui.screens.auth
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.minimize.uniswap.data.model.LoginRequest
+import com.minimize.uniswap.BuildConfig
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.util.GoogleAuthHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,26 +33,24 @@ class LoginViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
 
-            val request = LoginRequest(email, password)
-
-            // The repository now handles authentication via FirebaseAuth
-            val result = repository.login(request)
+            // Unified authentication: login if exists, else signup
+            val result = repository.authenticate(email, password)
 
             result.onSuccess {
                 isSuccess = true
             }.onFailure {
-                errorMessage = it.message
+                errorMessage = it.message ?: "Authentication failed"
             }
             isLoading = false
         }
     }
 
-    fun onGoogleLoginClick(webClientId: String) {
+    fun onGoogleLoginClick() {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
 
-            val idToken = googleAuthHelper.getGoogleIdToken(webClientId)
+            val idToken = googleAuthHelper.getGoogleIdToken(BuildConfig.WEB_CLIENT_ID)
             if (idToken != null) {
                 val result = repository.signInWithGoogle(idToken)
                 result.onSuccess {
@@ -61,7 +59,7 @@ class LoginViewModel @Inject constructor(
                     errorMessage = it.message ?: "Google Login failed"
                 }
             } else {
-                errorMessage = "Could not get Google ID Token"
+                errorMessage = "Google ID Token not found. Ensure Web Client ID is correct."
             }
             isLoading = false
         }

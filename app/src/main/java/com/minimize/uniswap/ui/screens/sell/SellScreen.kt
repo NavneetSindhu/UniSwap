@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -20,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.Search
@@ -42,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.ItemCategory
+import com.minimize.uniswap.ui.components.AppBottomSheet
 import java.util.Locale
 
 private val PrimaryGreen = Color(0xFF146345)
@@ -67,7 +66,6 @@ fun SellScreen(
 
     var showCategorySheet by remember { mutableStateOf(false) }
     var categorySearchQuery by remember { mutableStateOf("") }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -360,7 +358,6 @@ fun SellScreen(
                     OutlinedTextField(
                         value = price,
                         onValueChange = { input ->
-                            // Restrict to positive numbers only (digits and optional single decimal)
                             if (input.isEmpty() || input.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
                                 viewModel.onPriceChange(input)
                             }
@@ -400,7 +397,7 @@ fun SellScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Searchable Category Bottom Sheet
+        // Searchable Category Sheet using AppBottomSheet
         if (showCategorySheet) {
             val filteredCategories = remember(categorySearchQuery) {
                 ItemCategory.entries.filter {
@@ -408,17 +405,14 @@ fun SellScreen(
                 }
             }
 
-            ModalBottomSheet(
+            AppBottomSheet(
                 onDismissRequest = { showCategorySheet = false },
-                sheetState = sheetState,
-                containerColor = CardBackground,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                containerColor = CardBackground
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .padding(horizontal = 20.dp)
-                        .navigationBarsPadding()
                 ) {
                     Text(
                         text = "Select Category",
@@ -430,7 +424,7 @@ fun SellScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    // Search field inside sheet
+                    // Search field
                     OutlinedTextField(
                         value = categorySearchQuery,
                         onValueChange = { categorySearchQuery = it },
@@ -456,9 +450,7 @@ fun SellScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 340.dp)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredCategories) { category ->
                             val isSelected = selectedCategory == category
@@ -497,7 +489,6 @@ fun SellScreen(
                             HorizontalDivider(thickness = 0.8.dp, color = Color(0xFFF1F3F2))
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

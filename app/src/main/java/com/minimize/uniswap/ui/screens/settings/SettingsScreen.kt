@@ -291,6 +291,7 @@ private fun AccentColorPicker(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsTopBar(onBackClick: () -> Unit) {
     CenterAlignedTopAppBar(

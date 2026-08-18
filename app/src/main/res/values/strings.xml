@@ -1,3 +1,15 @@
 <resources>
+    <!-- Brand / Splash -->
     <string name="app_name">UniSwap</string>
+    <string name="splash_tagline">DROP IT. FIND IT.</string>
+
+    <!-- Onboarding Common -->
+    <string name="action_skip">Skip &gt;</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_get_started">Get Started</string>
+
+    <!-- Onboarding Pages -->
+    <string name="onboarding_title_1">Buy, sell and exchange with students around you.</string>
+    <string name="onboarding_title_2">Verified students. Local deals. Safer meetups.</string>
+    <string name="onboarding_title_3">List it. Find a buyer.\nKeep it moving.</string>
 </resources>

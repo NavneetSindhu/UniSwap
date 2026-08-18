@@ -1,8 +1,9 @@
 package com.minimize.uniswap.ui.navigation
 
 enum class Screen(val route: String) {
+    Splash("splash"),
+    Onboarding("onboarding"),
     Login("login"),
-    Signup("signup"),
     Feed("feed"),
     Details("details/{itemId}"),
     Chat("chat/{itemId}"),

@@ -56,6 +56,7 @@ fun ItemDetailsScreen(
             state.item != null -> {
                 ItemDetailsContent(
                     item = state.item!!,
+                    currentUserId = state.currentUserId,
                     onBackClick = onBackClick,
                     onClaimClick = onClaimClick
                 )
@@ -95,16 +96,21 @@ fun ItemDetailsScreen(
 @Composable
 private fun ItemDetailsContent(
     item: CampusItem,
+    currentUserId: String,
     onBackClick: () -> Unit,
     onClaimClick: () -> Unit
 ) {
+    val isSeller = item.sellerId == currentUserId
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0), // Full-bleed hero image support
         bottomBar = {
-            StickyBottomActionBar(
-                price = item.price,
-                onClaimClick = onClaimClick
-            )
+            if (!isSeller) {
+                StickyBottomActionBar(
+                    price = item.price,
+                    onClaimClick = onClaimClick
+                )
+            }
         }
     ) { innerPadding ->
         Box(

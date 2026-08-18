@@ -3,6 +3,7 @@ package com.minimize.uniswap.ui.screens.details
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -17,18 +18,24 @@ import javax.inject.Inject
 data class DetailsUiState(
     val item: CampusItem? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val currentUserId: String = ""
 )
 
 @HiltViewModel
 class DetailsViewModel @Inject constructor(
-    private val repository: ItemRepository
+    private val repository: ItemRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailsUiState(isLoading = true))
     val uiState: StateFlow<DetailsUiState> = _uiState.asStateFlow()
 
     private var observeJob: Job? = null
+
+    init {
+        _uiState.update { it.copy(currentUserId = authRepository.getCurrentUserId() ?: "") }
+    }
 
     fun getItem(itemId: String) {
         if (itemId.isBlank()) {
