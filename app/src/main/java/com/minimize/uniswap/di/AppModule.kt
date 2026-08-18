@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import com.minimize.uniswap.UniSwapApplication
 import com.minimize.uniswap.data.local.UniSwapDatabase
-import com.minimize.uniswap.data.local.dao.ItemDao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -41,9 +40,6 @@ object AppModule {
             "uniswap_db"
         ).build()
     }
-
-    @Provides
-    fun provideItemDao(db: UniSwapDatabase): ItemDao = db.itemDao()
 
     @Provides
     @Singleton
