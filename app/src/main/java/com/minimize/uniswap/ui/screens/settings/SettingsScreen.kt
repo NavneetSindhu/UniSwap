@@ -1,5 +1,7 @@
 package com.minimize.uniswap.ui.screens.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,40 +24,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.graphics.toColorInt
+import com.minimize.uniswap.data.preferences.ThemeMode
+import com.minimize.uniswap.data.preferences.TypographyStyle
+import com.minimize.uniswap.ui.theme.UniSwapTheme
 
-private val PrimaryGreen = Color(0xFF146345)
-private val SectionTitleGreen = Color(0xFF147A53)
-private val DarkText = Color(0xFF181C20)
-private val SubtitleGray = Color(0xFF707772)
-private val ArrowGray = Color(0xFFB0B8B2)
-private val DividerColor = Color(0xFFF1F3F2)
-private val CardBackground = Color.White
-private val ScreenBackground = Color(0xFFFBFBF9)
-private val LogoutRed = Color(0xFFB3261E)
-private val LogoutButtonBackground = Color(0xFFEDEFEF)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit = {},
-    onEditProfileClick: () -> Unit = {},
-    onChangeCampusClick: () -> Unit = {},
-    onBadgesClick: () -> Unit = {},
-    onCampusRulesClick: () -> Unit = {},
-    onVerifiedStatusClick: () -> Unit = {},
-    onHelpCenterClick: () -> Unit = {},
-    onTermsClick: () -> Unit = {},
-    onPrivacyPolicyClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    var pushNotificationsEnabled by remember { mutableStateOf(true) }
-    var emailDigestsEnabled by remember { mutableStateOf(false) }
+    val preferences by viewModel.preferences.collectAsState()
 
     Scaffold(
-        containerColor = ScreenBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             SettingsTopBar(onBackClick = onBackClick)
@@ -67,90 +56,77 @@ fun SettingsScreen(
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Screen Title
             item {
                 Text(
                     text = "Settings",
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Serif,
-                        color = DarkText,
-                        fontSize = 28.sp
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
 
-            // 1. Account Section
+            // 1. Theme & Appearance
+            item {
+                SettingsSectionCard(title = "APPEARANCE") {
+                    ThemeSelectionRow(
+                        selectedMode = preferences.themeMode,
+                        onModeSelected = { viewModel.onThemeModeChanged(it) }
+                    )
+                    SettingsDivider()
+                    SettingsSwitchItem(
+                        icon = Icons.Outlined.Palette,
+                        title = "Dynamic Color (Android 12+)",
+                        checked = preferences.dynamicColor,
+                        onCheckedChange = { viewModel.onDynamicColorChanged(it) }
+                    )
+                    SettingsDivider()
+                    TypographySelectionRow(
+                        selectedStyle = preferences.typographyStyle,
+                        onStyleSelected = { viewModel.onTypographyStyleChanged(it) }
+                    )
+                    SettingsDivider()
+                    AccentColorPicker(
+                        selectedHex = preferences.accentColorHex,
+                        onColorSelected = { viewModel.onAccentColorChanged(it) }
+                    )
+                }
+            }
+
+            // 2. Account Section
             item {
                 SettingsSectionCard(title = "ACCOUNT") {
                     SettingsNavigationItem(
                         icon = Icons.Outlined.Person,
                         title = "Edit Profile",
-                        onClick = onEditProfileClick
+                        onClick = { /* TODO */ }
                     )
                     SettingsDivider()
                     SettingsNavigationItem(
                         icon = Icons.Outlined.Place,
-                        title = "Change Campus",
-                        subtitle = "North Campus",
-                        onClick = onChangeCampusClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        icon = Icons.Outlined.MilitaryTech,
-                        title = "Sustainability Badges",
-                        onClick = onBadgesClick
+                        title = "Campus Center",
+                        subtitle = preferences.campusCenter,
+                        onClick = { viewModel.onCampusCenterChanged("Main Campus") } // Mock for now
                     )
                 }
             }
 
-            // 2. Notifications Section
+            // 3. Notifications Section
             item {
                 SettingsSectionCard(title = "NOTIFICATIONS") {
                     SettingsSwitchItem(
                         icon = Icons.Outlined.Notifications,
                         title = "Push Notifications",
-                        checked = pushNotificationsEnabled,
-                        onCheckedChange = { pushNotificationsEnabled = it }
+                        checked = preferences.pushNotificationsEnabled,
+                        onCheckedChange = { viewModel.onPushNotificationsChanged(it) }
                     )
                     SettingsDivider()
                     SettingsSwitchItem(
                         icon = Icons.Outlined.Mail,
                         title = "Email Digests",
-                        checked = emailDigestsEnabled,
-                        onCheckedChange = { emailDigestsEnabled = it }
-                    )
-                }
-            }
-
-            // 3. Community & Safety Section
-            item {
-                SettingsSectionCard(title = "COMMUNITY & SAFETY") {
-                    SettingsNavigationItem(
-                        icon = Icons.Outlined.Gavel,
-                        title = "Campus Rules",
-                        onClick = onCampusRulesClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        icon = Icons.Outlined.Shield,
-                        title = "Verified Student Status",
-                        trailingBadge = {
-                            Icon(
-                                imageVector = Icons.Outlined.CheckCircle,
-                                contentDescription = "Verified",
-                                tint = PrimaryGreen,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        onClick = onVerifiedStatusClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                        title = "Help Center",
-                        onClick = onHelpCenterClick
+                        checked = preferences.emailDigestEnabled,
+                        onCheckedChange = { viewModel.onEmailDigestChanged(it) }
                     )
                 }
             }
@@ -161,13 +137,13 @@ fun SettingsScreen(
                     SettingsNavigationItem(
                         icon = Icons.AutoMirrored.Outlined.Assignment,
                         title = "Terms of Service",
-                        onClick = onTermsClick
+                        onClick = { /* TODO */ }
                     )
                     SettingsDivider()
                     SettingsNavigationItem(
-                        icon = Icons.Outlined.Security,
-                        title = "Privacy Policy",
-                        onClick = onPrivacyPolicyClick
+                        icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                        title = "Help Center",
+                        onClick = { /* TODO */ }
                     )
                 }
             }
@@ -182,8 +158,8 @@ fun SettingsScreen(
                     Surface(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(onClick = onLogoutClick),
-                        color = LogoutButtonBackground,
+                            .clickable { viewModel.logout(onLogoutClick) },
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         shape = CircleShape
                     ) {
                         Row(
@@ -194,7 +170,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.Logout,
                                 contentDescription = null,
-                                tint = LogoutRed,
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -202,8 +178,7 @@ fun SettingsScreen(
                                 text = "Log Out",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = LogoutRed,
-                                    fontSize = 15.sp
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             )
                         }
@@ -215,41 +190,125 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsTopBar(onBackClick: () -> Unit) {
-    Surface(
-        color = ScreenBackground,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+private fun ThemeSelectionRow(
+    selectedMode: ThemeMode,
+    onModeSelected: (ThemeMode) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = "Theme Mode",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = PrimaryGreen,
-                    modifier = Modifier.size(24.dp)
+            ThemeMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = selectedMode == mode,
+                    onClick = { onModeSelected(mode) },
+                    label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                    modifier = Modifier.weight(1f)
                 )
             }
-
-            Text(
-                text = "Shared Gear",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    color = PrimaryGreen,
-                    fontSize = 22.sp
-                ),
-                modifier = Modifier.align(Alignment.Center)
-            )
         }
     }
+}
+
+@Composable
+private fun TypographySelectionRow(
+    selectedStyle: TypographyStyle,
+    onStyleSelected: (TypographyStyle) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = "Typography Style",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TypographyStyle.entries.forEach { style ->
+                FilterChip(
+                    selected = selectedStyle == style,
+                    onClick = { onStyleSelected(style) },
+                    label = { Text(style.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccentColorPicker(
+    selectedHex: String,
+    onColorSelected: (String) -> Unit
+) {
+    val colors = listOf("#146345", "#1E88E5", "#D81B60", "#FB8C00", "#7CB342")
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = "Accent Color",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            colors.forEach { hex ->
+                val color = Color(hex.toColorInt())
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                        .border(
+                            width = if (selectedHex == hex) 3.dp else 0.dp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            shape = CircleShape
+                        )
+                        .clickable { onColorSelected(hex) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectedHex == hex) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsTopBar(onBackClick: () -> Unit) {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
 }
 
 @Composable
@@ -260,9 +319,9 @@ private fun SettingsSectionCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(1.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.04f)),
+            .shadow(1.dp, RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
-        color = CardBackground
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -273,9 +332,8 @@ private fun SettingsSectionCard(
                 text = title,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = SectionTitleGreen,
-                    letterSpacing = 0.8.sp,
-                    fontSize = 12.sp
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 0.8.sp
                 ),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
@@ -289,57 +347,41 @@ private fun SettingsNavigationItem(
     icon: ImageVector,
     title: String,
     subtitle: String? = null,
-    trailingBadge: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
+            .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryGreen,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = DarkText,
-                    fontSize = 15.sp
-                )
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
             )
             if (subtitle != null) {
-                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = SubtitleGray,
-                        fontSize = 13.sp
-                    )
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-        if (trailingBadge != null) {
-            trailingBadge()
-        } else {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = ArrowGray,
-                modifier = Modifier.size(13.dp)
-            )
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            modifier = Modifier.size(13.dp)
+        )
     }
 }
 
@@ -359,29 +401,18 @@ private fun SettingsSwitchItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryGreen,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                color = DarkText,
-                fontSize = 15.sp
-            ),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
             modifier = Modifier.weight(1f)
         )
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = PrimaryGreen,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFD6DCD8),
-                uncheckedBorderColor = Color.Transparent
-            )
+            onCheckedChange = onCheckedChange
         )
     }
 }
@@ -390,7 +421,9 @@ private fun SettingsSwitchItem(
 private fun SettingsDivider() {
     HorizontalDivider(
         thickness = 1.dp,
-        color = DividerColor,
-        modifier = Modifier.padding(start = 38.dp)
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.padding(vertical = 8.dp)
     )
 }
+
+private fun String.capitalize(): String = this.replaceFirstChar { it.uppercase() }
