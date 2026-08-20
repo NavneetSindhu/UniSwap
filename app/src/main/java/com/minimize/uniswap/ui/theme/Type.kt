@@ -1,10 +1,12 @@
 package com.minimize.uniswap.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font // Added for local fonts (R.font...)
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.Font as GFont // Aliased to avoid clash
 import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.minimize.uniswap.R
@@ -17,9 +19,10 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-private val Inter = FontFamily(Font(googleFont = GoogleFont("Inter"), fontProvider = provider))
-private val Playfair = FontFamily(Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider))
-private val Roboto = FontFamily(Font(googleFont = GoogleFont("Roboto"), fontProvider = provider))
+// Use the aliased GFont for downloadable fonts
+private val Inter = FontFamily(GFont(googleFont = GoogleFont("Inter"), fontProvider = provider))
+private val Playfair = FontFamily(GFont(googleFont = GoogleFont("Playfair Display"), fontProvider = provider))
+private val Roboto = FontFamily(GFont(googleFont = GoogleFont("Roboto"), fontProvider = provider))
 
 fun getTypography(style: TypographyStyle): Typography {
     val headlineFont = if (style == TypographyStyle.EDITORIAL) Playfair else Inter
@@ -53,3 +56,21 @@ fun getTypography(style: TypographyStyle): Typography {
         )
     )
 }
+
+// Define the Matter font family using the standard local Font import
+val MatterFontFamily = FontFamily(
+    Font(R.font.matter_medium, FontWeight.Medium),
+    Font(R.font.matter_bold, FontWeight.Bold)
+)
+
+val AppTypography = Typography(
+    // Mapping the typography spec from image_ffa512.png
+    displayMedium = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 32.sp,
+        lineHeight = 33.6.sp, // 105% of 32
+        letterSpacing = (-0.64).sp, // -2% of 32
+        color = Color.White
+    )
+)

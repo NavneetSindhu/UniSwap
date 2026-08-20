@@ -2,6 +2,10 @@ package com.minimize.uniswap.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val OnboardingOverlay = Color(0xFF191919).copy(alpha = 0.20f) // From image_ffa5c5.png
+val ButtonBackground = Color.White // From image_ffa585.png
+val ButtonContent = Color(0xFF000000)
+
 // UniSwap Brand Core
 val UniSwapEmerald = Color(0xFF146345)
 val WasteMetricGreen = Color(0xFF0F8A5F)

@@ -1,5 +1,6 @@
 package com.minimize.uniswap.ui.screens.auth
 
+import android.content.Context
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,8 +34,7 @@ class LoginViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
 
-            // Unified authentication: login if exists, else signup
-            val result = repository.authenticate(email, password)
+            val result = repository.authenticate(email.trim(), password.trim())
 
             result.onSuccess {
                 isSuccess = true
@@ -45,12 +45,12 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun onGoogleLoginClick() {
+    fun onGoogleLoginClick(context: Context) {
         viewModelScope.launch {
             isLoading = true
             errorMessage = null
 
-            val idToken = googleAuthHelper.getGoogleIdToken(BuildConfig.WEB_CLIENT_ID)
+            val idToken = googleAuthHelper.getGoogleIdToken(context, BuildConfig.WEB_CLIENT_ID)
             if (idToken != null) {
                 val result = repository.signInWithGoogle(idToken)
                 result.onSuccess {
@@ -59,7 +59,7 @@ class LoginViewModel @Inject constructor(
                     errorMessage = it.message ?: "Google Login failed"
                 }
             } else {
-                errorMessage = "Google ID Token not found. Ensure Web Client ID is correct."
+                errorMessage = "Google ID Token not found. Check Logcat for details."
             }
             isLoading = false
         }
