@@ -53,11 +53,8 @@ class DetailsViewModel @Inject constructor(
     }
 
     fun onClaimAttempt(onSuccess: () -> Unit) {
-        if (_uiState.value.isEmailVerified) {
-            onSuccess()
-        } else {
-            _uiState.update { it.copy(showNudge = true) }
-        }
+        // Email verification requirement is disabled for now
+        onSuccess()
     }
 
     fun dismissNudge() {

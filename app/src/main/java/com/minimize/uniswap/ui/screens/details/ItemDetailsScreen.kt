@@ -2,10 +2,12 @@ package com.minimize.uniswap.ui.screens.details
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,21 +21,30 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.components.DotIndicator
 import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
 import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
 
 @Composable
 fun ItemDetailsScreen(
     itemId: String,
     onBackClick: () -> Unit = {},
-    onClaimClick: () -> Unit = {},
+    onChatClick: (String) -> Unit = {},
+    onOfferClick: (String, String) -> Unit = { _, _ -> },
     viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -80,7 +91,13 @@ fun ItemDetailsScreen(
                     item = state.item!!,
                     currentUserId = state.currentUserId,
                     onBackClick = onBackClick,
-                    onClaimClick = { viewModel.onClaimAttempt(onClaimClick) }
+                    onChatClick = {
+                        onChatClick(state.item!!.id)
+                    },
+                    onOfferClick = {
+                        val defaultOfferMessage = "Hi! I would like to buy ${state.item!!.title} for ₹${state.item!!.price.toInt()}."
+                        onOfferClick(state.item!!.id, defaultOfferMessage)
+                    }
                 )
             }
 
@@ -120,274 +137,246 @@ private fun ItemDetailsContent(
     item: CampusItem,
     currentUserId: String,
     onBackClick: () -> Unit,
-    onClaimClick: () -> Unit
+    onChatClick: () -> Unit,
+    onOfferClick: () -> Unit
 ) {
     val isSeller = item.sellerId == currentUserId
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0), // Full-bleed hero image support
-        bottomBar = {
-            if (!isSeller) {
-                StickyBottomActionBar(
-                    price = item.price,
-                    onClaimClick = onClaimClick
-                )
-            }
-        }
-    ) { innerPadding ->
+    val themeColors = UniSwapTheme.colors
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(themeColors.background)
+    ) {
+        // 1. Top Component: Full-Bleed Product Showcase Header
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
+                .fillMaxWidth()
+                .height(410.dp)
+                .background(themeColors.cardSurface)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
+            // Product Showcase Image (Full bleed crop fill)
+            AsyncImage(
+                model = item.imageUrl.ifBlank { item.category.getPlaceholderUrl() },
+                contentDescription = item.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Top subtle gradient scrim for back button contrast
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.45f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            // Top Left Circular Back Button (Ellipse 12: 38x38)
+            Box(
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(start = 24.dp, top = 8.dp)
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(themeColors.btnBackBg)
+                    .clickable(onClick = onBackClick),
+                contentAlignment = Alignment.Center
             ) {
-                // 1. Hero Image Header
-                item {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_back),
+                    contentDescription = stringResource(R.string.action_back),
+                    tint = themeColors.textPrimary,
+                    modifier = Modifier
+                        .width(18.dp)
+                        .height(10.dp)
+                )
+            }
+
+            // Dot Indicator (Centered under shoe, 6dp dots with 12dp gap)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(4) { index ->
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(380.dp)
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (index == 0) PagerDotActive else PagerDotInactive)
+                    )
+                }
+            }
+        }
+
+        // 2. Bottom Component: Overlapping Card with 50dp Top Rounded Corners
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 370.dp)
+                .clip(RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp))
+                .background(themeColors.cardSurface)
+        ) {
+            // Scrollable Content Area
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 28.dp)
+            ) {
+                // Title & Price Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // Product Title
+                    Text(
+                        text = item.title.ifBlank { stringResource(R.string.sample_details_title) },
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 26.sp,
+                        lineHeight = 32.sp,
+                        letterSpacing = (-0.5).sp,
+                        color = themeColors.textPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Price: INR Format
+                    val priceText = if (item.price == 0.0) {
+                        stringResource(R.string.price_free)
+                    } else {
+                        stringResource(R.string.price_inr_format, item.price.toInt())
+                    }
+                    Text(
+                        text = priceText,
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 26.sp,
+                        letterSpacing = (-0.48).sp,
+                        color = themeColors.textPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Description of product Heading
+                Text(
+                    text = stringResource(R.string.description_header),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
+                    letterSpacing = (-0.2).sp,
+                    color = themeColors.textPrimary
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Description Body
+                Text(
+                    text = item.description.ifBlank {
+                        stringResource(R.string.sample_details_description)
+                    },
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    letterSpacing = (-0.2).sp,
+                    color = themeColors.textSecondary
+                )
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                // Seller Profile Row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Avatar (34x34, Circle)
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.btnBackBg)
                     ) {
                         AsyncImage(
-                            model = item.imageUrl,
-                            contentDescription = item.title,
+                            model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150",
+                            contentDescription = "Seller Avatar",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                        // Top gradient overlay to improve button visibility
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp)
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Black.copy(alpha = 0.5f),
-                                            Color.Transparent
-                                        )
-                                    )
-                                )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    // Name + Verified Badge + Campus
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = item.sellerName.ifBlank { stringResource(R.string.sample_seller_lokesh) },
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                letterSpacing = (-0.24).sp,
+                                color = themeColors.textPrimary
+                            )
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_verified),
+                                contentDescription = "Verified Badge",
+                                tint = VerifiedStudentGreen,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = stringResource(R.string.sample_campus_pu23),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 8.sp,
+                            letterSpacing = (-0.16).sp,
+                            color = TextMutedLight
                         )
                     }
+
+                    // Verified Student Text on Right (8sp, #02B014)
+                    Text(
+                        text = stringResource(R.string.verified_student),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 8.sp,
+                        letterSpacing = (-0.16).sp,
+                        color = VerifiedStudentGreen
+                    )
                 }
 
-                // 2. Info Content Card
-                item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 2.dp
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp)
-                        ) {
-                            // Title and Price Tag
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        lineHeight = 30.sp
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Surface(
-                                    color = if (item.price == 0.0) Color(0xFF14967F) else MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Text(
-                                        text = if (item.price == 0.0) "FREE" else "₹${item.price.toInt()}",
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = "Listed ${item.timeAgo} • ${item.location}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
-                            )
-
-                            // Meta Tags
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                DetailTag(Icons.Default.Stars, "Verified Seller")
-                                DetailTag(
-                                    Icons.Default.Category,
-                                    item.category.name.lowercase(Locale.ROOT)
-                                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
-                                )
-                            }
-
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 20.dp),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
-
-                            // Seller Profile
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = item.sellerName.take(1).uppercase(Locale.ROOT),
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontSize = 18.sp
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = item.sellerName,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Active Student • Hisar Center",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Default.Star,
-                                        contentDescription = null,
-                                        tint = Color(0xFFE9C46A),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = " 4.9",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Description Section
-                            Text(
-                                text = "Description",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = item.description.ifEmpty { "No detailed description provided." },
-                                style = MaterialTheme.typography.bodyMedium,
-                                lineHeight = 22.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            // Meetup Card
-                            Text(
-                                text = "Preferred Meetup",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.LocationOn,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text(
-                                            text = item.location,
-                                            fontWeight = FontWeight.SemiBold,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            text = "Official Exchange Zone",
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                    }
-                }
+                Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // Top Floating Navigation Bar (Pinned over scrollable content)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.Black.copy(alpha = 0.35f), CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                IconButton(
-                    onClick = { /* Save to Wishlist */ },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.Black.copy(alpha = 0.35f), CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+            // Fixed Bottom Action Buttons Container
+            if (!isSeller) {
+                StickyBottomActionBar(
+                    onChatClick = onChatClick,
+                    onOfferClick = onOfferClick
+                )
             }
         }
     }
@@ -395,84 +384,63 @@ private fun ItemDetailsContent(
 
 @Composable
 private fun StickyBottomActionBar(
-    price: Double,
-    onClaimClick: () -> Unit
+    onChatClick: () -> Unit,
+    onOfferClick: () -> Unit
 ) {
     Surface(
-        tonalElevation = 8.dp,
-        shadowElevation = 8.dp,
-        color = MaterialTheme.colorScheme.surface
+        color = CardDarkSurface,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = onClaimClick,
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Icon(
-                    Icons.Default.ChatBubbleOutline,
-                    contentDescription = "Chat",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
+            // Button 1: "Chat with seller" (Rectangle 33: 50dp height, #22252A, radius 25)
             Button(
-                onClick = onClaimClick,
+                onClick = onChatClick,
                 modifier = Modifier
                     .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .height(50.dp),
+                shape = RoundedCornerShape(25.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = BtnChatWithSeller,
+                    contentColor = Color.White
                 )
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.ElectricBolt, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (price == 0.0) "Claim Now" else "Chat to Buy",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.chat_with_seller),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = (-0.28).sp
+                )
+            }
+
+            // Button 2: "Make offer" (Rectangle 34: 50dp height, #59626F, radius 25)
+            Button(
+                onClick = onOfferClick,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp),
+                shape = RoundedCornerShape(25.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BtnMakeOffer,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.make_offer),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = (-0.28).sp
+                )
             }
         }
     }
 }
 
-@Composable
-fun DetailTag(icon: ImageVector, label: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(15.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
