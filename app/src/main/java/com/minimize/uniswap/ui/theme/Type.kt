@@ -3,74 +3,107 @@ package com.minimize.uniswap.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font // Added for local fonts (R.font...)
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font as GFont // Aliased to avoid clash
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.minimize.uniswap.R
-import com.minimize.uniswap.data.preferences.TypographyStyle
 
-// Google Fonts Provider Setup
-private val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
-
-// Use the aliased GFont for downloadable fonts
-private val Inter = FontFamily(GFont(googleFont = GoogleFont("Inter"), fontProvider = provider))
-private val Playfair = FontFamily(GFont(googleFont = GoogleFont("Playfair Display"), fontProvider = provider))
-private val Roboto = FontFamily(GFont(googleFont = GoogleFont("Roboto"), fontProvider = provider))
-
-fun getTypography(style: TypographyStyle): Typography {
-    val headlineFont = if (style == TypographyStyle.EDITORIAL) Playfair else Inter
-    val bodyFont = if (style == TypographyStyle.EDITORIAL) Inter else Roboto
-
-    return Typography(
-        displayLarge = TextStyle(
-            fontFamily = headlineFont,
-            fontWeight = FontWeight.Bold,
-            fontSize = 32.sp
-        ),
-        headlineMedium = TextStyle(
-            fontFamily = headlineFont,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 24.sp
-        ),
-        titleMedium = TextStyle(
-            fontFamily = headlineFont,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp
-        ),
-        bodyLarge = TextStyle(
-            fontFamily = bodyFont,
-            fontWeight = FontWeight.Normal,
-            fontSize = 16.sp
-        ),
-        labelSmall = TextStyle(
-            fontFamily = bodyFont,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 11.sp
-        )
-    )
-}
-
-// Define the Matter font family using the standard local Font import
+// Define the Matter font family with all available weights
 val MatterFontFamily = FontFamily(
+    Font(R.font.matter_light, FontWeight.Light),
+    Font(R.font.matter_regular, FontWeight.Normal),
     Font(R.font.matter_medium, FontWeight.Medium),
-    Font(R.font.matter_bold, FontWeight.Bold)
+    Font(R.font.matter_semibold, FontWeight.SemiBold),
+    Font(R.font.matter_bold, FontWeight.Bold),
+    Font(R.font.matter_heavy, FontWeight.Black)
 )
 
 val AppTypography = Typography(
-    // Mapping the typography spec from image_ffa512.png
+    displayLarge = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Black,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+        letterSpacing = (-0.5).sp
+    ),
     displayMedium = TextStyle(
         fontFamily = MatterFontFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
-        lineHeight = 33.6.sp, // 105% of 32
-        letterSpacing = (-0.64).sp, // -2% of 32
-        color = Color.White
+        lineHeight = 38.sp,
+        letterSpacing = (-0.5).sp
+    ),
+    displaySmall = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 34.sp
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 30.sp
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 26.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 22.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp
+    ),
+    labelSmall = TextStyle(
+        fontFamily = MatterFontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.sp,
+        lineHeight = 14.sp
     )
 )

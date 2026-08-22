@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Centered with fixed aspect ratio to prevent Android 12 splash branding stretching -->
+    <item
+        android:width="140dp"
+        android:height="8dp"
+        android:gravity="center"
+        android:drawable="@drawable/brand_logo_tagline" />
+</layer-list>

@@ -7,10 +7,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Extended color tokens for UniSwap sustainability brand.
+ * Extended color tokens for UniSwap design system that react to Light/Dark/Accent themes.
  */
 @Immutable
 data class ExtendedColors(
+    val isDark: Boolean,
+    val background: Color,
+    val cardSurface: Color,
+    val cardSurfaceVariant: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textSubtle: Color,
+    val btnBackBg: Color,
+    val glassNavStart: Color,
+    val glassNavEnd: Color,
+    val navIndicatorBg: Color,
+    val navIndicatorIconTint: Color,
     val wasteMetricGreen: Color,
     val campusAmber: Color,
     val success: Color,
@@ -34,10 +46,22 @@ data class UniSwapDimens(
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
-        wasteMetricGreen = Color.Unspecified,
-        campusAmber = Color.Unspecified,
-        success = Color.Unspecified,
-        surfaceHighlight = Color.Unspecified
+        isDark = true,
+        background = PaletteDark.Base,
+        cardSurface = CardDarkSurface,
+        cardSurfaceVariant = PaletteDark.Gray200,
+        textPrimary = Color.White,
+        textSecondary = TextMutedLight,
+        textSubtle = TextSubtle,
+        btnBackBg = BtnBackBg,
+        glassNavStart = GlassNavStart,
+        glassNavEnd = GlassNavEnd,
+        navIndicatorBg = NavIndicatorBg,
+        navIndicatorIconTint = PaletteLight.Gray950,
+        wasteMetricGreen = WasteMetricGreen,
+        campusAmber = CampusAmber,
+        success = SuccessGreen,
+        surfaceHighlight = Color(0xFF2C2C2C)
     )
 }
 

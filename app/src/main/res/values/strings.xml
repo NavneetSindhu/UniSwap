@@ -10,6 +10,128 @@
 
     <!-- Onboarding Pages -->
     <string name="onboarding_title_1">Buy, sell and exchange with students around you.</string>
-    <string name="onboarding_title_2">Verified students. Local deals. Safer meetups.</string>
+    <string name="onboarding_title_2">Verified students.\nLocal deals. Safer meetups.</string>
     <string name="onboarding_title_3">List it. Find a buyer.\nKeep it moving.</string>
+
+    <!-- Welcome / Auth Screen -->
+    <string name="welcome_title">WELCOME</string>
+    <string name="welcome_subtitle">YOUR JOURNEY STARTS HERE</string>
+    <string name="create_account_title">CREATE ACCOUNT</string>
+    <string name="create_account_subtitle">JOIN YOUR CAMPUS COMMUNITY</string>
+    <string name="name_placeholder">Full Name</string>
+    <string name="email_placeholder">hello@college.edu.in</string>
+    <string name="password_placeholder">Password</string>
+    <string name="sign_in_button">Sign in</string>
+    <string name="sign_up_button">Sign Up</string>
+    <string name="dont_have_account">Don&#8217;t have an account? Sign Up</string>
+    <string name="already_have_account">Already have an account? Sign in</string>
+    <string name="terms_prefix">By pressing on “Continue with…” you agree to our</string>
+    <string name="terms_of_service">terms of Service</string>
+    <string name="terms_and"> and </string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="continue_with_google">Continue with Google</string>
+
+    <!-- Item Details -->
+    <string name="description_header">Description of product</string>
+    <string name="verified_student">Verified Student</string>
+    <string name="chat_with_seller">Chat with seller</string>
+    <string name="make_offer">Make offer</string>
+
+    <!-- List Product -->
+    <string name="list_your_items_title">List your items…</string>
+    <string name="list_your_product_button">List your product</string>
+    <string name="field_title_label">Title</string>
+    <string name="field_title_placeholder">eg Nike Jordan Air 1</string>
+    <string name="field_category_label">Category</string>
+    <string name="field_category_placeholder">Select the category</string>
+    <string name="field_price_label">Price</string>
+    <string name="field_price_placeholder">₹000</string>
+    <string name="field_description_label">Description</string>
+    <string name="field_description_placeholder">Describe your product</string>
+    <string name="add_photos_label">Add Photos</string>
+
+    <!-- Home Screen -->
+    <string name="trending_on_campus">Trending on Campus</string>
+    <string name="recently_uploads">Recently Uploads</string>
+    <string name="see_all">See all</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_chat">Chat</string>
+    <string name="price_inr_format">₹%1$d</string>
+    <string name="price_free">FREE</string>
+
+    <!-- Sample / Fallback Data Strings -->
+    <string name="sample_trending_title">Nike Shoes UK 08</string>
+    <string name="sample_dept_robotics">Dept. of Robotics</string>
+    <string name="sample_4_days_ago">4 days ago</string>
+    <string name="sample_recent_title">Firefox Cycle for Sale&#8230;</string>
+    <string name="sample_seller_navneet">Navneet Sindhu</string>
+    <string name="sample_seller_lokesh">Lokesh Sindhu</string>
+    <string name="sample_campus_pu23">Panjab University &#8216;23</string>
+    <string name="sample_details_title">Nike Air Force &#8216;08 Brown &amp; cream</string>
+    <string name="sample_details_description">Nike shoes combine athletic performance and street style. They feature lightweight mesh tops for airflow, soft foam or air-cushioned soles for comfort, and rubber bottom grips for steady movement. [1, 2, 3]</string>
+
+    <!-- Category Filters -->
+    <string name="category_all">All</string>
+    <string name="category_notes">Notes</string>
+    <string name="category_electronics">Electronics</string>
+    <string name="category_cycles">Cycles</string>
+    <string name="category_clothing">Clothing</string>
+
+    <!-- Sample Notes Strings -->
+    <string name="sample_notes_title">Notes of Subject Automation Semester 7, Panjab Engineering College</string>
+    <string name="sample_notes_pdf_count">12 PDFs</string>
+
+    <!-- Messages Screen -->
+    <string name="messages_title">Messages</string>
+    <string name="search_placeholder">Search for items&#8230;</string>
+    <string name="sample_message_snippet">I need cycle to buy</string>
+    <string name="sample_time_ago">2 hrs ago</string>
+    <string name="sender_lokesh">Lokesh Sindhu</string>
+    <string name="sender_navneet">Navneet</string>
+    <string name="sender_sakshi">Sakshi Nain</string>
+    <string name="sender_mohit">Mohit</string>
+    <string name="sender_n_chaudhary">N Chaudhary</string>
+    <string name="sender_kamini">Kamini</string>
+    <string name="sender_ajay">Ajay Lather</string>
+    <string name="sender_yuvraj">Yuvraj</string>
+
+    <!-- Chat Screen -->
+    <string name="type_here_placeholder">Type here&#8230;</string>
+    <string name="sample_chat_msg_1">Hey, is this still available?</string>
+    <string name="sample_chat_msg_2">Yes, it is in great condition!</string>
+    <string name="sample_chat_msg_3">Can we meet at the campus center?</string>
+    <!-- Common Actions & Navigation -->
+    <string name="action_clear_all">Clear search</string>
+    <string name="action_back">Back</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">APPEARANCE</string>
+    <string name="settings_section_account">ACCOUNT</string>
+    <string name="settings_section_notifications">NOTIFICATIONS</string>
+    <string name="settings_section_about">ABOUT</string>
+    <string name="settings_theme_mode">Theme Mode</string>
+    <string name="settings_dynamic_color">Dynamic Color</string>
+    <string name="settings_edit_profile">Edit Profile</string>
+    <string name="settings_campus_center">Campus Center</string>
+    <string name="settings_push_notifications">Push Notifications</string>
+    <string name="settings_email_digests">Email Digests</string>
+    <string name="settings_terms_of_service">Terms of Service</string>
+    <string name="settings_help_center">Help Center</string>
+    <string name="settings_logout">Log Out</string>
+    <string name="settings_logout_confirm_title">Log Out?</string>
+    <string name="settings_logout_confirm_msg">Are you sure you want to log out of your UniSwap account?</string>
+    <string name="settings_save_changes">Save Changes</string>
+    <string name="settings_select_campus">Select Campus Center</string>
+    <string name="settings_display_name">Display Name</string>
+    <string name="settings_grad_year">Graduation Year</string>
+    <string name="settings_terms_title">UniSwap Terms of Service</string>
+    <string name="settings_terms_body">UniSwap is a verified peer-to-peer campus marketplace exclusively for university students. 1. Only verified college students may list or buy items. 2. In-person exchanges should always occur in safe, public campus areas (e.g. Student Center, Library, Cafeteria). 3. Prohibited items include hazardous materials, academic dishonesty materials, or unauthorized goods. 4. Respect fellow students and maintain academic integrity.</string>
+    <string name="settings_help_title">Help Center &amp; FAQs</string>
+    <string name="settings_help_body">How do I verify as a student?\nVerify using your official .edu / university college email.\n\nHow do pickups work?\nMeet at your selected Campus Center during daylight hours.\n\nNeed support?\nReach out at support@uniswap.college</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="photo_source_dialog_title">Add Photo</string>
+    <string name="photo_source_camera">Take Photo</string>
+    <string name="photo_source_gallery">Choose from Gallery</string>
 </resources>

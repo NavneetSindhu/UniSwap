@@ -14,8 +14,7 @@ import com.minimize.uniswap.data.preferences.TypographyStyle
 @Composable
 fun UniSwapTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = true,
-    accentColorHex: String = "#146345",
+    dynamicColor: Boolean = false,
     typographyStyle: TypographyStyle = TypographyStyle.MODERN,
     content: @Composable () -> Unit
 ) {
@@ -26,24 +25,35 @@ fun UniSwapTheme(
     }
 
     val context = LocalContext.current
-    val accentColor = Color(accentColorHex.toColorInt())
 
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> UniSwapColorPalette.darkScheme(accentColor)
-        else -> UniSwapColorPalette.lightScheme(accentColor)
+        darkTheme -> UniSwapColorPalette.darkScheme()
+        else -> UniSwapColorPalette.lightScheme()
     }
 
     val extendedColors = ExtendedColors(
+        isDark = darkTheme,
+        background = if (darkTheme) PaletteDark.Base else PaletteLight.Base,
+        cardSurface = if (darkTheme) CardDarkSurface else PaletteLight.Gray100,
+        cardSurfaceVariant = if (darkTheme) PaletteDark.Gray200 else PaletteLight.Gray200,
+        textPrimary = if (darkTheme) Color.White else PaletteLight.Gray950,
+        textSecondary = if (darkTheme) TextMutedLight else PaletteLight.Gray600,
+        textSubtle = if (darkTheme) TextSubtle else PaletteLight.Gray500,
+        btnBackBg = if (darkTheme) BtnBackBg else PaletteLight.Gray200,
+        glassNavStart = if (darkTheme) GlassNavStart else Color(0xFFE5E7EB),
+        glassNavEnd = if (darkTheme) GlassNavEnd else Color(0xFFD1D5DB),
+        navIndicatorBg = if (darkTheme) NavIndicatorBg else PaletteLight.Gray950,
+        navIndicatorIconTint = if (darkTheme) PaletteLight.Gray950 else Color.White,
         wasteMetricGreen = WasteMetricGreen,
         campusAmber = CampusAmber,
         success = SuccessGreen,
         surfaceHighlight = if (darkTheme) Color(0xFF2C2C2C) else Color(0xFFF5F5F5)
     )
 
-    val typography = getTypography(typographyStyle)
+    val typography = AppTypography
     val dimens = UniSwapDimens()
 
     CompositionLocalProvider(
