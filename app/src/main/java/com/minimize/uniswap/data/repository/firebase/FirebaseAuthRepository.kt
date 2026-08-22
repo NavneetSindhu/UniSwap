@@ -22,30 +22,42 @@ class FirebaseAuthRepository @Inject constructor(
 
     private val TAG = "FirebaseAuthRepo"
 
-    override suspend fun authenticate(email: String, password: String): Result<String> {
+    override fun isUserLoggedIn(): Boolean {
+        return firebaseAuth.currentUser != null
+    }
+
+    override suspend fun login(email: String, password: String): Result<String> {
         return try {
             Log.d(TAG, "Attempting login for: $email")
-            firebaseAuth.signInWithEmailAndPassword(email, password).await()
+            firebaseAuth.signInWithEmailAndPassword(email.trim(), password).await()
             syncUserToFirestore()
             Result.success("Login successful")
         } catch (e: Exception) {
-            Log.w(TAG, "Login failed: ${e.message}. Checking if signup is possible.")
-            // Catch "User not found" or general invalid user exceptions
-            if (e is FirebaseAuthInvalidUserException || e.message?.contains("no user", ignoreCase = true) == true) {
-                try {
-                    Log.d(TAG, "User not found. Attempting signup for: $email")
-                    firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-                    syncUserToFirestore()
-                    Result.success("Account created successfully")
-                } catch (signupError: Exception) {
-                    Log.e(TAG, "Signup failed: ${signupError.message}")
-                    Result.failure(signupError)
-                }
-            } else {
-                Log.e(TAG, "Authentication failed with unexpected error: ${e.message}")
-                Result.failure(e)
-            }
+            Log.e(TAG, "Login failed: ${e.message}")
+            Result.failure(mapAuthException(e))
         }
+    }
+
+    override suspend fun signUp(email: String, password: String, displayName: String): Result<String> {
+        return try {
+            Log.d(TAG, "Attempting signup for: $email")
+            val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
+            if (displayName.isNotBlank()) {
+                val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
+                    this.displayName = displayName
+                }
+                authResult.user?.updateProfile(profileUpdates)?.await()
+            }
+            syncUserToFirestore(customDisplayName = displayName.ifBlank { null })
+            Result.success("Account created successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Signup failed: ${e.message}")
+            Result.failure(mapAuthException(e))
+        }
+    }
+
+    override suspend fun authenticate(email: String, password: String): Result<String> {
+        return login(email, password)
     }
 
     override suspend fun signInWithGoogle(idToken: String): Result<String> {
@@ -65,9 +77,6 @@ class FirebaseAuthRepository @Inject constructor(
         firebaseAuth.signOut()
     }
 
-    override fun isUserLoggedIn(): Boolean {
-        return firebaseAuth.currentUser != null
-    }
 
     override fun getCurrentUserId(): String? {
         return firebaseAuth.currentUser?.uid
@@ -101,7 +110,7 @@ class FirebaseAuthRepository @Inject constructor(
             firebaseAuth.currentUser?.sendEmailVerification()?.await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(mapAuthException(e))
         }
     }
 
@@ -111,35 +120,58 @@ class FirebaseAuthRepository @Inject constructor(
             syncUserToFirestore() 
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(mapAuthException(e))
         }
     }
 
-    private suspend fun syncUserToFirestore() {
+    private suspend fun syncUserToFirestore(customDisplayName: String? = null) {
         val firebaseUser = firebaseAuth.currentUser ?: return
         val userRef = firestore.collection("users").document(firebaseUser.uid)
         
         Log.d(TAG, "Syncing user to Firestore: ${firebaseUser.uid}")
         
-        val snapshot = userRef.get().await()
-        val user = if (snapshot.exists()) {
-            snapshot.toObject(User::class.java)?.copy(
-                // FOR DEBUGGING: Force emailVerified = true
-                isEmailVerified = true // firebaseUser.isEmailVerified
-            )
-        } else {
-            User(
-                uid = firebaseUser.uid,
-                email = firebaseUser.email ?: "",
-                displayName = firebaseUser.displayName ?: "Campus User",
-                // FOR DEBUGGING: Force emailVerified = true
-                isEmailVerified = true // firebaseUser.isEmailVerified
-            )
+        try {
+            val snapshot = userRef.get().await()
+            val user = if (snapshot.exists()) {
+                val existing = snapshot.toObject(User::class.java)
+                existing?.copy(
+                    displayName = customDisplayName ?: existing.displayName.ifBlank { firebaseUser.displayName ?: "Campus User" },
+                    isEmailVerified = firebaseUser.isEmailVerified
+                )
+            } else {
+                User(
+                    uid = firebaseUser.uid,
+                    email = firebaseUser.email ?: "",
+                    displayName = customDisplayName ?: firebaseUser.displayName ?: "Campus User",
+                    isEmailVerified = firebaseUser.isEmailVerified
+                )
+            }
+            
+            user?.let { 
+                userRef.set(it).await()
+                Log.d(TAG, "User synced successfully.")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to sync user to Firestore: ${e.message}")
         }
-        
-        user?.let { 
-            userRef.set(it).await()
-            Log.d(TAG, "User synced successfully.")
+    }
+
+    private fun mapAuthException(e: Exception): Exception {
+        val message = when {
+            e is com.google.firebase.auth.FirebaseAuthWeakPasswordException ->
+                "Password should be at least 6 characters."
+            e is com.google.firebase.auth.FirebaseAuthUserCollisionException ->
+                "An account with this email already exists. Please sign in."
+            e is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ->
+                "Invalid email or password. Please verify and try again."
+            e is com.google.firebase.auth.FirebaseAuthInvalidUserException ->
+                "No account found with this email address."
+            e is com.google.firebase.FirebaseNetworkException ->
+                "Network error. Please check your internet connection."
+            e.message?.contains("badly formatted", ignoreCase = true) == true ->
+                "Please enter a valid email address."
+            else -> e.localizedMessage ?: "Authentication failed. Please try again."
         }
+        return Exception(message, e)
     }
 }
