@@ -1,7 +1,5 @@
 package com.minimize.uniswap.ui.screens.chat
 
-
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,346 +9,346 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.theme.*
 
-import com.minimize.uniswap.data.model.MessageStatus
-import java.text.SimpleDateFormat
-import java.util.*
+data class ChatBubbleMessage(
+    val id: String,
+    val text: String,
+    val isFromMe: Boolean
+)
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 1-on-1 Chat Interface matching exact Figma CSS tokens.
+ * Features 50dp bottom-rounded header, 29x29 avatar, verified student badge,
+ * 20dp corner radius message bubbles, and 50dp capsule input bar with "+" button.
+ */
 @Composable
 fun PickupChatScreen(
-    itemId: String, // Changed: Now receives the ID from MainScreen
+    itemId: String,
+    initialMessage: String? = null,
     onBackClick: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
-    // Collect state from ViewModel
-    // Note: Ensure your ChatViewModel has a 'loadItem(itemId)' call in its init or via LaunchedEffect
     val item by viewModel.item.collectAsState()
-    val messages by viewModel.messages.collectAsState()
-    var inputText by remember { mutableStateOf("") }
+    val liveMessages by viewModel.messages.collectAsState()
+    var inputText by remember(initialMessage) { mutableStateOf(initialMessage ?: "") }
 
-    // Trigger data fetch when the screen opens
     LaunchedEffect(itemId) {
         viewModel.loadItem(itemId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Show seller name if item is loaded, otherwise show "Loading..."
-                        Text(item?.sellerName ?: "Loading...", style = MaterialTheme.typography.titleMedium)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF8AB17D), modifier = Modifier.size(12.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Verified Student", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* Open QR Scanner */ }) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "QR", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            ChatInputBar(
-                value = inputText,
-                onValueChange = { inputText = it },
-                onSend = {
-                    if (inputText.isNotBlank()) {
-                        viewModel.sendMessage(inputText)
-                        inputText = ""
-                    }
-                }
+    val studentName = item?.sellerName?.ifBlank { stringResource(R.string.sample_seller_lokesh) }
+        ?: stringResource(R.string.sample_seller_lokesh)
+
+    val chatMessages = remember(liveMessages) {
+        liveMessages.map {
+            ChatBubbleMessage(
+                id = it.id,
+                text = it.text,
+                isFromMe = it.senderId == viewModel.currentUserId
             )
         }
-    ) { innerPadding ->
-        val currentItem = item // Local reference for easier null-checking
+    }
 
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            if (currentItem == null) {
-                // Loading State
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                // 1. Real-time Item Header
-                Surface(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+    val themeColors = UniSwapTheme.colors
+
+    Scaffold(
+        containerColor = themeColors.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            // Header: Rectangle 19 (height 143dp, radius 50dp on bottom corners)
+            Surface(
+                color = themeColors.cardSurface,
+                shape = RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
                 ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(
-                            model = currentItem.imageUrl,
-                            contentDescription = null,
-                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(currentItem.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                            Text(
-                                text = if (currentItem.price == 0.0) "Free" else "₹${currentItem.price}",
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Back Button
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(themeColors.btnBackBg)
+                                .clickable(onClick = onBackClick),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_back),
+                                contentDescription = stringResource(R.string.action_back),
+                                tint = themeColors.textPrimary,
+                                modifier = Modifier
+                                    .width(18.dp)
+                                    .height(10.dp)
                             )
                         }
-                        Surface(color = Color(0xFFF1F8E9), shape = RoundedCornerShape(8.dp)) {
-                            Text("Pending", color = Color(0xFF43A047), modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Avatar (Ellipse 18: 29x29)
+                        Box(
+                            modifier = Modifier
+                                .size(29.dp)
+                                .clip(CircleShape)
+                                .background(themeColors.btnBackBg)
+                        ) {
+                            AsyncImage(
+                                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150",
+                                contentDescription = studentName,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // Student Name (Matter Medium 14sp) + Verified Badge
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = studentName,
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                lineHeight = 15.sp,
+                                letterSpacing = (-0.28).sp,
+                                color = themeColors.textPrimary
+                            )
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            // Verified Badge Icon
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_verified),
+                                contentDescription = stringResource(R.string.verified_student),
+                                tint = VerifiedStudentGreen,
+                                modifier = Modifier.size(14.dp)
+                            )
                         }
                     }
                 }
-
-                // 2. Chat Messages List
-                LazyColumn(
-                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(messages) { message ->
-                        ChatMessage(
-                            text = message.text,
-                            isFromMe = message.senderId == viewModel.currentUserId,
-                            time = formatTime(message.timestamp),
-                            status = message.status
-                        )
-                    }
-
-                    item {
-                        LocationPinCard(locationName = currentItem.location)
-                    }
-                }
-
-                // 3. Safety Tip
-                Surface(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    color = Color(0xFFFFF9C4).copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            "Use the QR Handshake to finalize when you meet!",
-                            fontSize = 12.sp,
-                            color = Color.DarkGray
-                        )
-                    }
-                }
             }
-        }
-    }
-}
-
-@Composable
-fun ChatMessage(text: String, isFromMe: Boolean, time: String, status: MessageStatus = MessageStatus.SENT) {
-    val alignment = if (isFromMe) Alignment.End else Alignment.Start
-    val bgColor = if (isFromMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    val textColor = if (isFromMe) Color.White else MaterialTheme.colorScheme.onSurface
-
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
-        Surface(
-            color = bgColor,
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isFromMe) 16.dp else 4.dp,
-                bottomEnd = if (isFromMe) 4.dp else 16.dp
-            )
-        ) {
-            Text(text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), color = textColor, fontSize = 15.sp)
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp)
-        ) {
-            Text(
-                time,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
-            )
-            if (isFromMe) {
-                Spacer(modifier = Modifier.width(4.dp))
-                val icon = when (status) {
-                    MessageStatus.SENDING -> Icons.Default.AccessTime
-                    MessageStatus.SENT -> Icons.Default.Done
-                    MessageStatus.FAILED -> Icons.Default.Error
-                }
-                val iconTint = if (status == MessageStatus.FAILED) Color.Red else Color.Gray
-                Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = iconTint)
-            }
-        }
-    }
-}
-
-private fun formatTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
-}
-
-@Composable
-fun ChatInputBar(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onSend: () -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 8.dp,
-        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.AddCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            }
-
-            // Modern TextField logic
+        },
+        bottomBar = {
+            // Bottom Capsule Input Bar
             Surface(
-                modifier = Modifier.weight(1f).height(42.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                shape = RoundedCornerShape(21.dp)
-            ) {
-                Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(horizontal = 16.dp)) {
-                    if (value.isEmpty()) {
-                        Text("Type a message...", color = Color.Gray, fontSize = 14.sp)
-                    }
-                    BasicTextField(
-                        value = value,
-                        onValueChange = onValueChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            IconButton(
-                onClick = onSend,
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(
-                        color = if (value.isNotBlank()) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.3f),
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(Icons.Default.Send, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
-
-@Composable
-fun LocationPinCard(locationName: String) {
-    Surface(
-        modifier = Modifier
-            .width(280.dp)
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-    ) {
-        Column {
-            // 1. Map Mockup Header
-            Box(
+                color = themeColors.background,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(130.dp)
-                    .background(Color(0xFFE0F2F1)) // Light "Map" Teal
+                    .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
             ) {
-                // Centered Pin Icon
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier.align(Alignment.Center).size(40.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color.Red,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(themeColors.cardSurface)
+                            .padding(horizontal = 18.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Typing Indicator (|) + Text Input
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (inputText.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.type_here_placeholder),
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 12.sp,
+                                        letterSpacing = (-0.2).sp,
+                                        color = themeColors.textSubtle
+                                    )
+                                }
+
+                                BasicTextField(
+                                    value = inputText,
+                                    onValueChange = { inputText = it },
+                                    singleLine = true,
+                                    textStyle = TextStyle(
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Normal,
+                                        color = themeColors.textPrimary,
+                                        fontSize = 13.sp,
+                                        letterSpacing = (-0.2).sp
+                                    ),
+                                    cursorBrush = SolidColor(themeColors.textPrimary),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            // Send Action Button
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
+                                    .clickable(enabled = inputText.isNotBlank()) {
+                                        viewModel.sendMessage(inputText)
+                                        inputText = ""
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Send Message",
+                                    tint = if (inputText.isNotBlank()) themeColors.background else themeColors.textSubtle,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .padding(start = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
-
-            // 2. Location Info
-            Column(modifier = Modifier.padding(16.dp)) {
+        }
+    ) { innerPadding ->
+        if (chatMessages.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = locationName,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = stringResource(R.string.sample_message_snippet).ifBlank { "Say hello and start the conversation!" },
+                    fontFamily = MatterFontFamily,
+                    fontSize = 13.sp,
+                    color = themeColors.textSubtle
                 )
-                Text(
-                    text = "South Entrance, Campus Center", // Sub-details
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 3. Action Link
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { /* Logic to open Google Maps */ }
-                ) {
-                    Text(
-                        text = "Get Directions",
-                        color = Color(0xFF14967F),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF14967F)
-                    )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
+            ) {
+                items(chatMessages, key = { it.id }) { message ->
+                    ChatBubbleRow(message = message)
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Message Row matching Figma specs:
+ * Left incoming with 23x23 avatar + 20dp radius bubble
+ * Right outgoing with 20dp radius bubble
+ */
+@Composable
+private fun ChatBubbleRow(
+    message: ChatBubbleMessage
+) {
+    val themeColors = UniSwapTheme.colors
+
+    if (message.isFromMe) {
+        // Outgoing message (Right-aligned)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 80.dp, max = 260.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (themeColors.isDark) Color(0xFF22252A) else Color(0xFF171717))
+                    .padding(horizontal = 18.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp,
+                    letterSpacing = (-0.2).sp,
+                    color = Color.White
+                )
+            }
+        }
+    } else {
+        // Incoming message (Left-aligned with 23x23 avatar)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top
+        ) {
+            // Small participant avatar
+            Box(
+                modifier = Modifier
+                    .size(23.dp)
+                    .clip(CircleShape)
+                    .background(themeColors.btnBackBg)
+            ) {
+                AsyncImage(
+                    model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100",
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 80.dp, max = 260.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(themeColors.cardSurface)
+                    .padding(horizontal = 18.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp,
+                    letterSpacing = (-0.2).sp,
+                    color = themeColors.textPrimary
+                )
             }
         }
     }

@@ -75,41 +75,40 @@ class FirestoreChatRepository @Inject constructor(
 
     override suspend fun sendMessage(itemId: String, buyerId: String, sellerId: String, message: Message): Boolean {
         val chatId = getChatId(itemId, buyerId, sellerId)
-        val entity = message.toEntity(chatId).copy(status = MessageStatus.SENDING)
+        val messageId = message.id.ifBlank { java.util.UUID.randomUUID().toString() }
+        val messageToSend = message.copy(id = messageId)
+        val entity = messageToSend.toEntity(chatId).copy(status = MessageStatus.SENDING)
         
         // 1. Optimistic update to Room
         messageDao.insertMessage(entity)
 
         return try {
-            // 2. Prepare Firestore data with server timestamp
+            // 2. Prepare Firestore data with server timestamp and matching ID
             val messageData = hashMapOf(
-                "senderId" to message.senderId,
-                "text" to message.text,
-                "timestamp" to message.timestamp,
+                "id" to messageId,
+                "senderId" to messageToSend.senderId,
+                "text" to messageToSend.text,
+                "timestamp" to messageToSend.timestamp,
                 "firestoreTimestamp" to FieldValue.serverTimestamp(),
-                "isLocationPin" to message.isLocationPin,
-                "locationName" to message.locationName
+                "isLocationPin" to messageToSend.isLocationPin,
+                "locationName" to messageToSend.locationName
             )
 
-            // 3. Send to Firestore
+            // 3. Send to Firestore using the exact same messageId as document key
             firestore.collection("chats")
                 .document(chatId)
                 .collection("messages")
-                .add(messageData)
+                .document(messageId)
+                .set(messageData)
                 .await()
 
             // 4. Update Room status to SENT
-            messageDao.updateMessageStatus(message.id, MessageStatus.SENT)
-            
-            // Optionally update the entity ID if Firestore generated a different one, 
-            // but we use our client-side UUID as the primary key in Room usually.
-            // If we want to align IDs, we'd need to handle that. 
-            // For now, let's assume message.id is our stable reference.
+            messageDao.updateMessageStatus(messageId, MessageStatus.SENT)
             
             true
         } catch (e: Exception) {
             // 5. Update Room status to FAILED
-            messageDao.updateMessageStatus(message.id, MessageStatus.FAILED)
+            messageDao.updateMessageStatus(messageId, MessageStatus.FAILED)
             false
         }
     }
