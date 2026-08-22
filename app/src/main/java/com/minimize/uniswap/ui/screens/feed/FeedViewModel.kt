@@ -2,8 +2,10 @@ package com.minimize.uniswap.ui.screens.feed
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.minimize.uniswap.data.model.CampusCategory
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
+import com.minimize.uniswap.data.repository.CategoryConfigRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -12,14 +14,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FeedViewModel @Inject constructor(
-    private val repository: ItemRepository
+    private val repository: ItemRepository,
+    private val categoryConfigRepository: CategoryConfigRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
-    val selectedCategory = _selectedCategory.asStateFlow()
+    private val _selectedCategoryId = MutableStateFlow("all")
+    val selectedCategoryId = _selectedCategoryId.asStateFlow()
+
+    val categories: StateFlow<List<CampusCategory>> = categoryConfigRepository.categories
 
     private val _rawItems = MutableStateFlow<List<CampusItem>>(emptyList())
 
@@ -29,11 +34,38 @@ class FeedViewModel @Inject constructor(
     val filteredItems: StateFlow<List<CampusItem>> = combine(
         _rawItems,
         _searchQuery,
-        _selectedCategory
-    ) { items, query, category ->
+        _selectedCategoryId
+    ) { items, query, categoryId ->
         items.filter { item ->
-            val matchesSearch = item.title.contains(query, ignoreCase = true)
-            val matchesCategory = category == null || item.category == category
+            val matchesSearch = query.isBlank() ||
+                    item.title.contains(query, ignoreCase = true) ||
+                    item.description.contains(query, ignoreCase = true)
+
+            val matchesCategory = if (categoryId == "all") {
+                true
+            } else {
+                val catName = item.category.name
+                val title = item.title
+                when (categoryId.lowercase()) {
+                    "books", "notes" -> catName.contains("ENGINEERING", ignoreCase = true) ||
+                            title.contains("note", ignoreCase = true) ||
+                            title.contains("book", ignoreCase = true) ||
+                            title.contains("pdf", ignoreCase = true)
+                    "cycles" -> title.contains("cycle", ignoreCase = true) ||
+                            title.contains("bike", ignoreCase = true)
+                    "electronics" -> item.category == ItemCategory.ELECTRONICS ||
+                            title.contains("electronic", ignoreCase = true) ||
+                            title.contains("tech", ignoreCase = true) ||
+                            title.contains("laptop", ignoreCase = true)
+                    "clothing" -> title.contains("cloth", ignoreCase = true) ||
+                            title.contains("shoe", ignoreCase = true) ||
+                            title.contains("wear", ignoreCase = true)
+                    "dorm" -> item.category == ItemCategory.DORM_ESSENTIALS ||
+                            title.contains("dorm", ignoreCase = true) ||
+                            title.contains("kettle", ignoreCase = true)
+                    else -> true
+                }
+            }
             matchesSearch && matchesCategory
         }
     }.stateIn(
@@ -58,7 +90,6 @@ class FeedViewModel @Inject constructor(
     }
 
     fun fetchItems() {
-        // Manual refresh still uses the flow observation, but we can trigger a one-shot fetch if desired
         viewModelScope.launch {
             _isRefreshing.value = true
             val result = repository.getItems()
@@ -71,7 +102,7 @@ class FeedViewModel @Inject constructor(
         _searchQuery.value = query
     }
 
-    fun selectCategory(category: ItemCategory?) {
-        _selectedCategory.value = if (_selectedCategory.value == category) null else category
+    fun selectCategory(categoryId: String) {
+        _selectedCategoryId.value = categoryId
     }
 }
