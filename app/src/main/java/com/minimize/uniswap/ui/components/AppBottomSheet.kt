@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -21,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,22 +31,16 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * Reusable two-stage Bottom Sheet:
- * - Default Height: 60% of screen (0.6f)
- * - Expanded Height: Full screen (1.0f)
- * - Swipe down from expanded: Collapses back to 0.6f
+ * Reusable Bottom Sheet with fixed height bounds irrespective of child list length.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    heightFraction: Float = 0.65f,
     sheetState: SheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false, // Enables the 2-step (PartiallyExpanded -> Expanded) behavior
-        confirmValueChange = { targetValue ->
-            // Allows normal swipe transitions between Hidden, PartiallyExpanded, and Expanded
-            true
-        }
+        skipPartiallyExpanded = true
     ),
     shape: Shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     containerColor: Color = MaterialTheme.colorScheme.surface,
@@ -65,20 +57,14 @@ fun AppBottomSheet(
         shape = shape,
         containerColor = containerColor,
         contentColor = contentColor,
-        dragHandle = null, // Custom top bar with drag handle + close icon integrated
+        dragHandle = null,
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         modifier = modifier
     ) {
-        val isExpanded = sheetState.targetValue == SheetValue.Expanded ||
-                sheetState.currentValue == SheetValue.Expanded
-
-        // Wrapper to enforce exact height bounds:
-        // 1.0f when expanded to full screen, 0.6f when in the default partially expanded state
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(if (isExpanded) 1.0f else 0.6f)
-                .then(if (isExpanded) Modifier.statusBarsPadding() else Modifier)
+                .fillMaxHeight(heightFraction)
         ) {
             Column(
                 modifier = Modifier
@@ -115,8 +101,8 @@ fun AppBottomSheet(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close Sheet",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(22.dp)
+                                tint = contentColor.copy(alpha = 0.7f),
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }

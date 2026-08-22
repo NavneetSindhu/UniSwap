@@ -1,11 +1,11 @@
 package com.minimize.uniswap.ui
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -28,11 +29,14 @@ import com.minimize.uniswap.ui.screens.auth.LoginScreen
 import com.minimize.uniswap.ui.screens.chat.PickupChatScreen
 import com.minimize.uniswap.ui.screens.details.ItemDetailsScreen
 import com.minimize.uniswap.ui.screens.feed.CampusFeedScreen
-import com.minimize.uniswap.ui.screens.onboarding.OnboardingScreen
+import com.minimize.uniswap.ui.screens.home.HomeScreen
+import com.minimize.uniswap.ui.screens.splash.OnboardingScreen
 import com.minimize.uniswap.ui.screens.profile.ProfileScreen
-import com.minimize.uniswap.ui.screens.sell.SellScreen
+import com.minimize.uniswap.ui.screens.list.ListProductScreen
+import com.minimize.uniswap.ui.screens.messages.MessagesScreen
 import com.minimize.uniswap.ui.screens.settings.SettingsScreen
 import com.minimize.uniswap.ui.screens.splash.SplashScreen
+import com.minimize.uniswap.ui.theme.UniSwapTheme
 
 private const val TAG = "LOGCAT_NAV"
 
@@ -44,20 +48,23 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Bottom navigation visible only on core top-level tabs
     val showBottomNav = currentRoute in listOf(
+        Screen.Home.route,
         Screen.Feed.route,
+        Screen.Messages.route,
+        Screen.Settings.route,
         Screen.Profile.route,
         Screen.Sell.route
     )
 
     Scaffold(
+        containerColor = UniSwapTheme.colors.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomNav) {
                 Box(modifier = Modifier.navigationBarsPadding()) {
                     CustomBottomNav(
-                        currentRoute = currentRoute ?: Screen.Feed.route,
+                        currentRoute = currentRoute ?: Screen.Home.route,
                         onNavigate = { route ->
                             navController.navigate(route) {
                                 popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -70,35 +77,88 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
+        val startDestination = remember {
+            if (viewModel.isUserLoggedIn()) Screen.Home.route else Screen.Onboarding.route
+        }
+
+        val bottomTabs = remember {
+            listOf(
+                Screen.Home.route,
+                Screen.Feed.route,
+                Screen.Sell.route,
+                Screen.Messages.route,
+                Screen.Profile.route
+            )
+        }
+
         NavHost(
             navController = navController,
-            startDestination = Screen.Onboarding.route,
+            startDestination = startDestination,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = if (showBottomNav) innerPadding.calculateBottomPadding() else innerPadding.calculateBottomPadding()),
-            enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally(initialOffsetX = { 1000 }) },
-            exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally(targetOffsetX = { -1000 }) }
+            enterTransition = {
+                val initialRoute = initialState.destination.route
+                val targetRoute = targetState.destination.route
+                val initialIndex = bottomTabs.indexOf(initialRoute)
+                val targetIndex = bottomTabs.indexOf(targetRoute)
+
+                val direction = if (initialIndex != -1 && targetIndex != -1) {
+                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
+                    else AnimatedContentTransitionScope.SlideDirection.Right
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                }
+
+                slideIntoContainer(
+                    towards = direction,
+                    animationSpec = tween(320, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(300))
+            },
+            exitTransition = {
+                val initialRoute = initialState.destination.route
+                val targetRoute = targetState.destination.route
+                val initialIndex = bottomTabs.indexOf(initialRoute)
+                val targetIndex = bottomTabs.indexOf(targetRoute)
+
+                val direction = if (initialIndex != -1 && targetIndex != -1) {
+                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
+                    else AnimatedContentTransitionScope.SlideDirection.Right
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                }
+
+                slideOutOfContainer(
+                    towards = direction,
+                    targetOffset = { if (initialIndex != -1 && targetIndex != -1) it else it / 3 },
+                    animationSpec = tween(320, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(280))
+            },
+            popEnterTransition = {
+                slideIntoContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    initialOffset = { it / 3 },
+                    animationSpec = tween(320, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(300))
+            },
+            popExitTransition = {
+                slideOutOfContainer(
+                    towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                    animationSpec = tween(320, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(280))
+            }
         ) {
 
-            // --- SPLASH & ONBOARDING ---
-            composable(Screen.Splash.route) {
-                SplashScreen(
-                    onSplashFinished = {
-                        val isLoggedIn = viewModel.isUserLoggedIn()
-                        val targetRoute = if (isLoggedIn) Screen.Feed.route else Screen.Onboarding.route
-                        navController.navigate(targetRoute) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
-                    }
-                )
-            }
-
+            // --- ONBOARDING ---
             composable(Screen.Onboarding.route) {
                 OnboardingScreen(
                     onComplete = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToSignUp = {
+                        navController.navigate(Screen.SignUp.route)
                     }
                 )
             }
@@ -107,23 +167,71 @@ fun MainScreen(
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        Log.d(TAG, "onLoginSuccess triggered! Navigating to: ${Screen.Feed.route}")
-                        navController.navigate(Screen.Feed.route) {
+                        Log.d(TAG, "onLoginSuccess triggered! Navigating to: ${Screen.Home.route}")
+                        navController.navigate(Screen.Home.route) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToSignUp = {
+                        navController.navigate(Screen.SignUp.route)
+                    }
+                )
+            }
+
+            composable(Screen.SignUp.route) {
+                com.minimize.uniswap.ui.screens.auth.SignUpScreen(
+                    onSignUpSuccess = {
+                        Log.d(TAG, "onSignUpSuccess triggered! Navigating to: ${Screen.Home.route}")
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onNavigateToSignIn = {
+                        navController.popBackStack()
                     }
                 )
             }
 
             // --- APP CORE TABS ---
             composable(Screen.Feed.route) {
-                CampusFeedScreen(onItemClick = { item ->
-                    navController.navigate(Screen.createDetailsRoute(item.id))
-                })
+                CampusFeedScreen(
+                    onItemClick = { item ->
+                        navController.navigate(Screen.createDetailsRoute(item.id))
+                    },
+                    onProfileClick = {
+                        navController.navigate(Screen.Profile.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
+
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    onItemClick = { item ->
+                        navController.navigate(Screen.createDetailsRoute(item.id))
+                    },
+                    onProfileClick = {
+                        navController.navigate(Screen.Profile.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onSeeAllClick = {
+                        navController.navigate(Screen.Feed.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
 
             composable(Screen.Sell.route) {
-                SellScreen(
+                ListProductScreen(
                     onPostSuccess = {
                         navController.navigate(Screen.Feed.route) {
                             popUpTo(Screen.Sell.route) { inclusive = true }
@@ -145,10 +253,9 @@ fun MainScreen(
                 SettingsScreen(
                     onBackClick = { navController.popBackStack() },
                     onLogoutClick = {
-//                        viewModel.logout()
-//                        navController.navigate(Screen.Login.route) {
-//                            popUpTo(0) { inclusive = true }
-//                        }
+                        navController.navigate(Screen.Onboarding.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -161,20 +268,51 @@ fun MainScreen(
                 ItemDetailsScreen(
                     itemId = itemId,
                     onBackClick = { navController.popBackStack() },
-                    onClaimClick = { navController.navigate(Screen.createChatRoute(itemId)) }
+                    onChatClick = { targetItemId ->
+                        navController.navigate(Screen.createChatRoute(targetItemId))
+                    },
+                    onOfferClick = { targetItemId, defaultMsg ->
+                        navController.navigate(Screen.createChatRoute(targetItemId, defaultMsg))
+                    }
                 )
             }
 
             composable(
                 route = Screen.Chat.route,
-                arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("itemId") { type = NavType.StringType },
+                    navArgument("initialMessage") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = ""
+                    }
+                )
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+                val rawInitialMessage = backStackEntry.arguments?.getString("initialMessage")?.takeIf { it.isNotBlank() }
+                val initialMessage = rawInitialMessage?.let { android.net.Uri.decode(it) }?.takeIf { it.isNotBlank() }
                 PickupChatScreen(
                     itemId = itemId,
+                    initialMessage = initialMessage,
                     onBackClick = { navController.popBackStack() }
                 )
             }
+
+            composable(route = Screen.Messages.route) {
+                MessagesScreen(
+                    onConversationClick = { conversationId ->
+                        navController.navigate(Screen.createChatRoute(conversationId))
+                    },
+                    onProfileClick = {
+                        navController.navigate(Screen.Profile.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
+            }
         }
+
     }
 }

@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.config)
 
     // Room
     implementation(libs.androidx.room.runtime)

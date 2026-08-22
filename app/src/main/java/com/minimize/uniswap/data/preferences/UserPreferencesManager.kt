@@ -21,7 +21,6 @@ class UserPreferencesManager @Inject constructor(
     private object PreferencesKeys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
-        val ACCENT_COLOR_HEX = stringPreferencesKey("accent_color_hex")
         val TYPOGRAPHY_STYLE = stringPreferencesKey("typography_style")
         val CAMPUS_CENTER = stringPreferencesKey("campus_center")
         val IS_VERIFIED = booleanPreferencesKey("is_verified")
@@ -47,8 +46,7 @@ class UserPreferencesManager @Inject constructor(
 
             UserPreferences(
                 themeMode = themeMode,
-                dynamicColor = preferences[PreferencesKeys.DYNAMIC_COLOR] ?: true,
-                accentColorHex = preferences[PreferencesKeys.ACCENT_COLOR_HEX] ?: "#146345",
+                dynamicColor = preferences[PreferencesKeys.DYNAMIC_COLOR] ?: false,
                 typographyStyle = typographyStyle,
                 campusCenter = preferences[PreferencesKeys.CAMPUS_CENTER] ?: "Main Campus",
                 isVerified = preferences[PreferencesKeys.IS_VERIFIED] ?: false,
@@ -63,10 +61,6 @@ class UserPreferencesManager @Inject constructor(
 
     suspend fun updateDynamicColor(enabled: Boolean) {
         context.dataStore.edit { it[PreferencesKeys.DYNAMIC_COLOR] = enabled }
-    }
-
-    suspend fun updateAccentColor(hex: String) {
-        context.dataStore.edit { it[PreferencesKeys.ACCENT_COLOR_HEX] = hex }
     }
 
     suspend fun updateTypographyStyle(style: TypographyStyle) {

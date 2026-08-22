@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
                 UniSwapTheme(
                     themeMode = prefs.themeMode,
                     dynamicColor = prefs.dynamicColor,
-                    accentColorHex = prefs.accentColorHex,
                     typographyStyle = prefs.typographyStyle
                 ) {
                     Surface(
