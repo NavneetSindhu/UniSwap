@@ -58,17 +58,75 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
-}
 
-/**
- * UI State for the Profile Screen
- */
-data class ProfileUiState(
-    val lbsSaved: Double = 0.0,
-    val itemsRecycled: Int = 0,
-    val sellingItems: List<CampusItem> = emptyList(),
-    val givenAwayItems: List<CampusItem> = emptyList(),
-    val savedItems: List<CampusItem> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+    /**
+     * Toggles item status between AVAILABLE and SOLD
+     */
+    fun toggleItemSoldStatus(item: CampusItem) {
+        viewModelScope.launch {
+            val newStatus =
+                if (item.status == ItemStatus.AVAILABLE) ItemStatus.SOLD else ItemStatus.AVAILABLE
+            val updated = item.copy(status = newStatus)
+            _uiState.update { current ->
+                val newSelling = if (newStatus == ItemStatus.SOLD) {
+                    current.sellingItems.filter { it.id != item.id }
+                } else {
+                    current.sellingItems + updated
+                }
+                val newGivenAway = if (newStatus == ItemStatus.SOLD && item.price == 0.0) {
+                    current.givenAwayItems + updated
+                } else {
+                    current.givenAwayItems.filter { it.id != item.id }
+                }
+                current.copy(
+                    sellingItems = newSelling,
+                    givenAwayItems = newGivenAway,
+                    itemsRecycled = if (newStatus == ItemStatus.SOLD) current.itemsRecycled + 1 else (current.itemsRecycled - 1).coerceAtLeast(
+                        0
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Removes an item from the user's listings
+     */
+    fun deleteItem(itemId: String) {
+        viewModelScope.launch {
+            _uiState.update { current ->
+                current.copy(
+                    sellingItems = current.sellingItems.filter { it.id != itemId },
+                    givenAwayItems = current.givenAwayItems.filter { it.id != itemId },
+                    savedItems = current.savedItems.filter { it.id != itemId }
+                )
+            }
+        }
+    }
+
+    /**
+     * Removes an item from saved items
+     */
+    fun removeSavedItem(itemId: String) {
+        viewModelScope.launch {
+            _uiState.update { current ->
+                current.copy(
+                    savedItems = current.savedItems.filter { it.id != itemId }
+                )
+            }
+        }
+    }
+
+    /**
+     * UI State for the Profile Screen
+     */
+    data class ProfileUiState(
+        val lbsSaved: Double = 0.0,
+        val itemsRecycled: Int = 0,
+        val sellingItems: List<CampusItem> = emptyList(),
+        val givenAwayItems: List<CampusItem> = emptyList(),
+        val savedItems: List<CampusItem> = emptyList(),
+        val isLoading: Boolean = false,
+        val error: String? = null
+    )
+}

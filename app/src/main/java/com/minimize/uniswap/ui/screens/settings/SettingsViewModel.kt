@@ -27,6 +27,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = UserPreferences()
         )
 
+    val user: StateFlow<com.minimize.uniswap.data.model.User?> = authRepository.getUserFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     fun onThemeModeChanged(mode: ThemeMode) {
         viewModelScope.launch {
             preferencesManager.updateThemeMode(mode)
@@ -36,12 +43,6 @@ class SettingsViewModel @Inject constructor(
     fun onDynamicColorChanged(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.updateDynamicColor(enabled)
-        }
-    }
-
-    fun onAccentColorChanged(hex: String) {
-        viewModelScope.launch {
-            preferencesManager.updateAccentColor(hex)
         }
     }
 
