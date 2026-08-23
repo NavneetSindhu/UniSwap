@@ -127,7 +127,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.BottomEnd
                         ) {
                             AsyncImage(
-                                model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400",
+                                model = state.userPhotoUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400",
                                 contentDescription = "Profile Photo",
                                 modifier = Modifier
                                     .size(100.dp)
@@ -163,24 +163,27 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = "Alex Johnson",
+                                text = state.userName,
                                 fontFamily = MatterFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 22.sp,
                                 color = colors.textPrimary
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_verified),
-                                contentDescription = "Verified Student",
-                                modifier = Modifier.size(20.dp)
-                            )
+                            if (state.isVerified) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_verified),
+                                    contentDescription = "Verified Student",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))
 
+                        val userHandle = if (state.userEmail.isNotBlank()) "@${state.userEmail.substringBefore("@")}" else "@student"
                         Text(
-                            text = "@alexj_eco • Computer Science '26 • Main Campus",
+                            text = "$userHandle • Student Member • Campus Center",
                             fontFamily = MatterFontFamily,
                             fontWeight = FontWeight.Medium,
                             fontSize = 13.sp,

@@ -134,4 +134,13 @@
     <string name="photo_source_dialog_title">Add Photo</string>
     <string name="photo_source_camera">Take Photo</string>
     <string name="photo_source_gallery">Choose from Gallery</string>
+
+    <!-- Listing Management -->
+    <string name="action_mark_sold">Mark as Sold</string>
+    <string name="action_mark_available">Mark as Available</string>
+    <string name="action_delete_listing">Delete Listing</string>
+    <string name="delete_listing_confirm_title">Delete this listing?</string>
+    <string name="delete_listing_confirm_msg">This listing will be permanently removed from UniSwap.</string>
+    <string name="action_delete">Delete</string>
+    <string name="status_sold_badge">SOLD</string>
 </resources>

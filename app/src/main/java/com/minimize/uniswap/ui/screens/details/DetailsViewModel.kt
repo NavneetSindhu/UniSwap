@@ -113,4 +113,29 @@ class DetailsViewModel @Inject constructor(
                 }
         }
     }
+
+    fun markAsSold(onComplete: () -> Unit = {}) {
+        val currentItem = _uiState.value.item ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val newStatus = if (currentItem.status == com.minimize.uniswap.data.model.ItemStatus.SOLD) {
+                com.minimize.uniswap.data.model.ItemStatus.AVAILABLE
+            } else {
+                com.minimize.uniswap.data.model.ItemStatus.SOLD
+            }
+            repository.updateItemStatus(currentItem.id, newStatus)
+            _uiState.update { it.copy(isLoading = false) }
+            onComplete()
+        }
+    }
+
+    fun deleteListing(onComplete: () -> Unit = {}) {
+        val currentItem = _uiState.value.item ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            repository.deleteItem(currentItem.id)
+            _uiState.update { it.copy(isLoading = false) }
+            onComplete()
+        }
+    }
 }

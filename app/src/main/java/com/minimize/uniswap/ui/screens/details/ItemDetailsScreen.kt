@@ -35,6 +35,9 @@ import com.minimize.uniswap.ui.components.DotIndicator
 import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
 import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
 import androidx.compose.foundation.clickable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
@@ -97,7 +100,9 @@ fun ItemDetailsScreen(
                     onOfferClick = {
                         val defaultOfferMessage = "Hi! I would like to buy ${state.item!!.title} for ₹${state.item!!.price.toInt()}."
                         onOfferClick(state.item!!.id, defaultOfferMessage)
-                    }
+                    },
+                    onToggleSold = { viewModel.markAsSold() },
+                    onDeleteClick = { viewModel.deleteListing { onBackClick() } }
                 )
             }
 
@@ -124,7 +129,7 @@ fun ItemDetailsScreen(
                         onClick = onBackClick,
                         modifier = Modifier.padding(top = 16.dp)
                     ) {
-                        Text("Go Back")
+                        Text(stringResource(R.string.action_back))
                     }
                 }
             }
@@ -138,7 +143,9 @@ private fun ItemDetailsContent(
     currentUserId: String,
     onBackClick: () -> Unit,
     onChatClick: () -> Unit,
-    onOfferClick: () -> Unit
+    onOfferClick: () -> Unit,
+    onToggleSold: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val isSeller = item.sellerId == currentUserId
 
@@ -242,16 +249,34 @@ private fun ItemDetailsContent(
                     verticalAlignment = Alignment.Top
                 ) {
                     // Product Title
-                    Text(
-                        text = item.title.ifBlank { stringResource(R.string.sample_details_title) },
-                        fontFamily = MatterFontFamily,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 26.sp,
-                        lineHeight = 32.sp,
-                        letterSpacing = (-0.5).sp,
-                        color = themeColors.textPrimary,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = item.title.ifBlank { stringResource(R.string.sample_details_title) },
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 26.sp,
+                            lineHeight = 32.sp,
+                            letterSpacing = (-0.5).sp,
+                            color = themeColors.textPrimary
+                        )
+                        if (item.status == com.minimize.uniswap.data.model.ItemStatus.SOLD) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color(0xFFEF4444))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.status_sold_badge),
+                                    fontFamily = MatterFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -371,11 +396,126 @@ private fun ItemDetailsContent(
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
+            var showDeleteDialog by remember { mutableStateOf(false) }
+
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.delete_listing_confirm_title),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = themeColors.textPrimary
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(R.string.delete_listing_confirm_msg),
+                            fontFamily = MatterFontFamily,
+                            color = themeColors.textSecondary
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDeleteDialog = false
+                                onDeleteClick()
+                            }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_delete),
+                                color = Color(0xFFEF4444),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) {
+                            Text(
+                                text = stringResource(R.string.action_cancel),
+                                color = themeColors.textPrimary
+                            )
+                        }
+                    },
+                    containerColor = themeColors.cardSurface
+                )
+            }
+
             // Fixed Bottom Action Buttons Container
-            if (!isSeller) {
+            if (isSeller) {
+                SellerBottomActionBar(
+                    isSold = item.status == com.minimize.uniswap.data.model.ItemStatus.SOLD,
+                    onToggleSold = onToggleSold,
+                    onDeleteClick = { showDeleteDialog = true }
+                )
+            } else {
                 StickyBottomActionBar(
                     onChatClick = onChatClick,
                     onOfferClick = onOfferClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SellerBottomActionBar(
+    isSold: Boolean,
+    onToggleSold: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    val themeColors = UniSwapTheme.colors
+
+    Surface(
+        color = themeColors.cardSurface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = onToggleSold,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp),
+                shape = RoundedCornerShape(25.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSold) Color(0xFF10B981) else themeColors.btnBackBg,
+                    contentColor = if (isSold) Color.White else themeColors.textPrimary
+                )
+            ) {
+                Text(
+                    text = stringResource(if (isSold) R.string.action_mark_available else R.string.action_mark_sold),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = (-0.28).sp
+                )
+            }
+
+            Button(
+                onClick = onDeleteClick,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp),
+                shape = RoundedCornerShape(25.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFEF4444).copy(alpha = 0.15f),
+                    contentColor = Color(0xFFEF4444)
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.action_delete_listing),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = (-0.28).sp
                 )
             }
         }
@@ -387,8 +527,10 @@ private fun StickyBottomActionBar(
     onChatClick: () -> Unit,
     onOfferClick: () -> Unit
 ) {
+    val themeColors = UniSwapTheme.colors
+
     Surface(
-        color = CardDarkSurface,
+        color = themeColors.cardSurface,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -443,4 +585,5 @@ private fun StickyBottomActionBar(
         }
     }
 }
+
 

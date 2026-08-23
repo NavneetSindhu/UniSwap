@@ -23,84 +23,70 @@ class ProfileViewModel @Inject constructor(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        fetchProfileData()
+        observeUserProfile()
+        observeMyItems()
     }
 
-    /**
-     * Fetches all items from Spring Boot and filters them for the current user's profile.
-     */
-    fun fetchProfileData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+    private fun observeUserProfile() {
+        authRepository.getUserFlow()
+            .onEach { user ->
+                _uiState.update { current ->
+                    current.copy(
+                        userName = user?.displayName?.ifBlank { "Student User" } ?: "Student User",
+                        userEmail = user?.email ?: "",
+                        userPhotoUrl = user?.profilePicUrl?.ifBlank { null },
+                        isVerified = user?.isEmailVerified ?: false
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
-            try {
-                val allItems = repository.getItems()
+    private fun observeMyItems() {
+        if (myUserId.isBlank()) {
+            _uiState.update { it.copy(isLoading = false) }
+            return
+        }
 
-                // Filter items where Navneet is the seller
-                val myItems = allItems.filter { it.sellerId == myUserId }
-
-                _uiState.update {
-                    it.copy(
+        repository.getItemsBySellerFlow(myUserId)
+            .onEach { myItems ->
+                _uiState.update { current ->
+                    current.copy(
                         isLoading = false,
-                        lbsSaved = myItems.size * 2.5, // Logic: Avg 2.5 lbs of waste saved per item
-                        itemsRecycled = myItems.count { item -> item.status == ItemStatus.SOLD },
-                        sellingItems = myItems.filter { item -> item.status == ItemStatus.AVAILABLE },
-                        givenAwayItems = myItems.filter { item -> item.status == ItemStatus.SOLD && item.price == 0.0 },
-                        // Saved items logic (can be expanded later with a 'Favorites' table in your DB)
-                        savedItems = allItems.take(2),
+                        lbsSaved = myItems.size * 2.5,
+                        itemsRecycled = myItems.count { it.status == ItemStatus.SOLD },
+                        sellingItems = myItems.filter { it.status == ItemStatus.AVAILABLE },
+                        givenAwayItems = myItems.filter { it.status == ItemStatus.SOLD && it.price == 0.0 },
                         error = null
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(isLoading = false, error = "Could not load profile stats.")
-                }
             }
-        }
+            .catch { e ->
+                _uiState.update { it.copy(isLoading = false, error = "Could not load items.") }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun fetchProfileData() {
+        // Handled reactively by observeMyItems & observeUserProfile
     }
 
     /**
-     * Toggles item status between AVAILABLE and SOLD
+     * Toggles item status between AVAILABLE and SOLD in Firestore
      */
     fun toggleItemSoldStatus(item: CampusItem) {
         viewModelScope.launch {
-            val newStatus =
-                if (item.status == ItemStatus.AVAILABLE) ItemStatus.SOLD else ItemStatus.AVAILABLE
-            val updated = item.copy(status = newStatus)
-            _uiState.update { current ->
-                val newSelling = if (newStatus == ItemStatus.SOLD) {
-                    current.sellingItems.filter { it.id != item.id }
-                } else {
-                    current.sellingItems + updated
-                }
-                val newGivenAway = if (newStatus == ItemStatus.SOLD && item.price == 0.0) {
-                    current.givenAwayItems + updated
-                } else {
-                    current.givenAwayItems.filter { it.id != item.id }
-                }
-                current.copy(
-                    sellingItems = newSelling,
-                    givenAwayItems = newGivenAway,
-                    itemsRecycled = if (newStatus == ItemStatus.SOLD) current.itemsRecycled + 1 else (current.itemsRecycled - 1).coerceAtLeast(
-                        0
-                    )
-                )
-            }
+            val newStatus = if (item.status == ItemStatus.AVAILABLE) ItemStatus.SOLD else ItemStatus.AVAILABLE
+            repository.updateItemStatus(item.id, newStatus)
         }
     }
 
     /**
-     * Removes an item from the user's listings
+     * Permanently deletes an item listing from Firestore
      */
     fun deleteItem(itemId: String) {
         viewModelScope.launch {
-            _uiState.update { current ->
-                current.copy(
-                    sellingItems = current.sellingItems.filter { it.id != itemId },
-                    givenAwayItems = current.givenAwayItems.filter { it.id != itemId },
-                    savedItems = current.savedItems.filter { it.id != itemId }
-                )
-            }
+            repository.deleteItem(itemId)
         }
     }
 
@@ -121,6 +107,10 @@ class ProfileViewModel @Inject constructor(
      * UI State for the Profile Screen
      */
     data class ProfileUiState(
+        val userName: String = "Student User",
+        val userEmail: String = "",
+        val userPhotoUrl: String? = null,
+        val isVerified: Boolean = false,
         val lbsSaved: Double = 0.0,
         val itemsRecycled: Int = 0,
         val sellingItems: List<CampusItem> = emptyList(),
