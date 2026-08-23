@@ -336,24 +336,27 @@ fun ListProductScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 1. Photo Showcase Row (164x164 Carousel / Placeholder + 164x164 "Add Photos" button)
+            // 1. Photo Showcase Row (Responsive 1:1 Aspect Ratio Cards with consistent spacing)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Card (Rectangle 44: 164x164, radius 25)
+                // Left Card (1:1 responsive, radius 25)
                 UploadedPhotosCard(
                     images = selectedImages,
                     onImageClick = { previewImageUri = it },
                     onRemoveImage = { viewModel.onRemoveImage(it) },
-                    modifier = Modifier.size(164.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .aspectRatio(1f)
                 )
 
-                // Right Card: "Add Photos" (Rectangle 45: 164x164, radius 25, #D9D9D9)
+                // Right Card: "Add Photos" (1:1 responsive, radius 25, #D9D9D9)
                 Box(
                     modifier = Modifier
-                        .size(164.dp)
+                        .weight(1f)
+                        .aspectRatio(1f)
                         .clip(RoundedCornerShape(25.dp))
                         .background(BtnChatBg)
                         .clickable { showPhotoSourceDialog = true },

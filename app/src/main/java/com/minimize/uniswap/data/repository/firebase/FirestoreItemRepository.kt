@@ -1,8 +1,10 @@
 package com.minimize.uniswap.data.repository.firebase
 
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.data.model.ItemStatus
 import com.minimize.uniswap.data.repository.ItemRepository
 import kotlinx.coroutines.channels.awaitClose
@@ -21,11 +23,12 @@ class FirestoreItemRepository @Inject constructor(
 
     override suspend fun getItems(): List<CampusItem> {
         return try {
-            itemsCollection
+            val snapshot = itemsCollection
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .await()
-                .toObjects(CampusItem::class.java)
+            snapshot.documents.mapNotNull { it.toCampusItem() }
+                .filter { it.status == ItemStatus.AVAILABLE }
         } catch (e: Exception) {
             emptyList()
         }
@@ -33,7 +36,6 @@ class FirestoreItemRepository @Inject constructor(
 
     override fun getItemsFlow(): Flow<List<CampusItem>> = callbackFlow {
         val subscription = itemsCollection
-            .whereEqualTo("status", ItemStatus.AVAILABLE.name)
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -41,7 +43,25 @@ class FirestoreItemRepository @Inject constructor(
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
-                    val items = snapshot.toObjects(CampusItem::class.java)
+                    val items = snapshot.documents.mapNotNull { it.toCampusItem() }
+                        .filter { it.status == ItemStatus.AVAILABLE }
+                    trySend(items)
+                }
+            }
+        awaitClose { subscription.remove() }
+    }
+
+    override fun getItemsBySellerFlow(sellerId: String): Flow<List<CampusItem>> = callbackFlow {
+        val subscription = itemsCollection
+            .whereEqualTo("sellerId", sellerId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val items = snapshot.documents.mapNotNull { it.toCampusItem() }
+                        .sortedByDescending { it.timestamp }
                     trySend(items)
                 }
             }
@@ -51,9 +71,12 @@ class FirestoreItemRepository @Inject constructor(
     override suspend fun postItem(item: CampusItem): Boolean {
         return try {
             val docRef = itemsCollection.document(item.id)
-            docRef.set(item).await()
-            // Update with server timestamp for accurate global ordering
-            docRef.update("timestamp", com.google.firebase.Timestamp.now()).await()
+            val itemWithTimestamp = if (item.timestamp == 0L) {
+                item.copy(timestamp = System.currentTimeMillis())
+            } else {
+                item
+            }
+            docRef.set(itemWithTimestamp).await()
             true
         } catch (e: Exception) {
             false
@@ -68,7 +91,7 @@ class FirestoreItemRepository @Inject constructor(
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
-                    val item = snapshot.toObject(CampusItem::class.java)
+                    val item = snapshot.toCampusItem()
                     trySend(item)
                 }
             }
@@ -76,6 +99,73 @@ class FirestoreItemRepository @Inject constructor(
     }
 
     override suspend fun fetchItemById(itemId: String) {
-        // No-op in native Firestore refactor as getItemByIdFlow handles it
+        // Handled reactively by getItemByIdFlow
+    }
+
+    override suspend fun updateItemStatus(itemId: String, status: ItemStatus): Boolean {
+        return try {
+            itemsCollection.document(itemId)
+                .update("status", status.name)
+                .await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun deleteItem(itemId: String): Boolean {
+        return try {
+            itemsCollection.document(itemId)
+                .delete()
+                .await()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun DocumentSnapshot.toCampusItem(): CampusItem? {
+        if (!exists()) return null
+        return try {
+            val rawTimestamp = get("timestamp")
+            val timestampMillis = when (rawTimestamp) {
+                is com.google.firebase.Timestamp -> rawTimestamp.toDate().time
+                is Number -> rawTimestamp.toLong()
+                else -> System.currentTimeMillis()
+            }
+
+            val statusStr = getString("status") ?: ItemStatus.AVAILABLE.name
+            val status = try {
+                ItemStatus.valueOf(statusStr)
+            } catch (e: Exception) {
+                ItemStatus.AVAILABLE
+            }
+
+            val categoryStr = getString("category") ?: ItemCategory.OTHER.name
+            val category = try {
+                ItemCategory.valueOf(categoryStr)
+            } catch (e: Exception) {
+                ItemCategory.OTHER
+            }
+
+            CampusItem(
+                id = getString("id") ?: id,
+                title = getString("title") ?: "",
+                description = getString("description") ?: "",
+                price = getDouble("price") ?: (get("price") as? Number)?.toDouble() ?: 0.0,
+                isFree = getBoolean("isFree") ?: false,
+                category = category,
+                location = getString("location") ?: "Campus",
+                sellerId = getString("sellerId") ?: "",
+                sellerName = getString("sellerName") ?: "Campus User",
+                timeAgo = getString("timeAgo") ?: "Just now",
+                imageUrl = getString("imageUrl") ?: "",
+                isVerified = getBoolean("isVerified") ?: false,
+                status = status,
+                timestamp = timestampMillis
+            )
+        } catch (e: Exception) {
+            null
+        }
     }
 }

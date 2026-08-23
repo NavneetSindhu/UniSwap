@@ -42,6 +42,7 @@ fun HomeScreen(
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = UniSwapTheme.colors.background,
@@ -50,7 +51,7 @@ fun HomeScreen(
             HomeTopHeader(
                 searchQuery = searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
-                profilePicUrl = null,
+                profilePicUrl = userProfile?.profilePicUrl?.ifBlank { null },
                 onProfileClick = onProfileClick
             )
         }

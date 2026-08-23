@@ -148,6 +148,9 @@ class ListViewModel @Inject constructor(
                 }
             }
 
+            val currentUser = authRepository.getCurrentUser()
+            val sellerDisplayName = currentUser?.displayName?.ifBlank { "Campus User" } ?: "Campus User"
+
             val newItem = CampusItem(
                 id = UUID.randomUUID().toString(),
                 title = _title.value,
@@ -156,11 +159,12 @@ class ListViewModel @Inject constructor(
                 category = _selectedCategory.value ?: ItemCategory.OTHER,
                 location = "Campus",
                 sellerId = userId,
-                sellerName = "Campus User",
+                sellerName = sellerDisplayName,
                 timeAgo = "Just now",
                 imageUrl = finalImageUrl,
-                isVerified = false,
-                status = ItemStatus.AVAILABLE
+                isVerified = currentUser?.isEmailVerified ?: false,
+                status = ItemStatus.AVAILABLE,
+                timestamp = System.currentTimeMillis()
             )
 
             val success = repository.postItem(newItem)

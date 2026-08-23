@@ -31,5 +31,6 @@ data class CampusItem(
     val timeAgo: String = "",
     val imageUrl: String = "",
     val isVerified: Boolean = false,
-    val status: ItemStatus = ItemStatus.AVAILABLE
+    val status: ItemStatus = ItemStatus.AVAILABLE,
+    val timestamp: Long = System.currentTimeMillis()
 )

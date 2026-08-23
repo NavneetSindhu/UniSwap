@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusCategory
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
+import com.minimize.uniswap.data.model.User
+import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.CategoryConfigRepository
 import com.minimize.uniswap.data.repository.ItemRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,8 +17,12 @@ import javax.inject.Inject
 @HiltViewModel
 class FeedViewModel @Inject constructor(
     private val repository: ItemRepository,
-    private val categoryConfigRepository: CategoryConfigRepository
+    private val categoryConfigRepository: CategoryConfigRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
+
+    val userProfile: StateFlow<User?> = authRepository.getUserFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
