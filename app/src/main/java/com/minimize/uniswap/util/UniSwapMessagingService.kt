@@ -7,30 +7,45 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.minimize.uniswap.MainActivity
-import com.minimize.uniswap.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.minimize.uniswap.MainActivity
+import com.minimize.uniswap.R
 
 class UniSwapMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        remoteMessage.notification?.let {
-            sendNotification(it.title ?: "New Message", it.body ?: "")
-        }
+        val title = remoteMessage.notification?.title 
+            ?: remoteMessage.data["title"] 
+            ?: "New Message on UniSwap"
+            
+        val body = remoteMessage.notification?.body 
+            ?: remoteMessage.data["body"] 
+            ?: remoteMessage.data["message"] 
+            ?: "You have a new update."
+
+        val itemId = remoteMessage.data["itemId"]
+        sendNotification(title, body, itemId)
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // You would typically send this token to your Firestore 'users' collection
-        // so you can target this specific device for notifications.
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance().collection("users").document(uid)
+            .update("fcmToken", token)
     }
 
-    private fun sendNotification(title: String, messageBody: String) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    private fun sendNotification(title: String, messageBody: String, itemId: String? = null) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            if (!itemId.isNullOrBlank()) {
+                putExtra("itemId", itemId)
+            }
+        }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
@@ -43,6 +58,7 @@ class UniSwapMessagingService : FirebaseMessagingService() {
             .setContentText(messageBody)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -50,11 +66,11 @@ class UniSwapMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 channelId,
                 "UniSwap Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

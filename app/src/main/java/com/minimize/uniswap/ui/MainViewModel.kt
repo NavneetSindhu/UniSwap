@@ -1,21 +1,27 @@
 package com.minimize.uniswap.ui
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.preferences.UserPreferences
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.repository.AuthRepository
+import com.minimize.uniswap.data.repository.ChatRepository
+import com.minimize.uniswap.util.LocalNotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val preferencesManager: UserPreferencesManager
+    private val chatRepository: ChatRepository,
+    private val preferencesManager: UserPreferencesManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     /**
@@ -28,6 +34,65 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.Eagerly,
             initialValue = null // null indicates "not loaded yet"
         )
+
+    private val _hasUnreadMessages = MutableStateFlow(false)
+    val hasUnreadMessages: StateFlow<Boolean> = _hasUnreadMessages.asStateFlow()
+
+    private val notifiedMessageTimestamps = mutableSetOf<Long>()
+    private val sessionStartTime = System.currentTimeMillis()
+
+    init {
+        observeIncomingMessages()
+    }
+
+    private fun observeIncomingMessages() {
+        viewModelScope.launch {
+            authRepository.getUserFlow()
+                .filterNotNull()
+                .flatMapLatest { user ->
+                    chatRepository.getChatThreadsFlow(user.uid)
+                }
+                .collect { threads ->
+                    val myUid = authRepository.getCurrentUserId() ?: ""
+
+                    // Unread badge logic: true if any thread's last message is from another user
+                    val hasUnread = threads.any { thread ->
+                        thread.lastSenderId.isNotBlank() && thread.lastSenderId != myUid
+                    }
+                    _hasUnreadMessages.value = hasUnread
+
+                    // Trigger local notifications for new incoming messages / chats
+                    threads.forEach { thread ->
+                        if (thread.lastSenderId.isNotBlank() &&
+                            thread.lastSenderId != myUid &&
+                            thread.lastMessageTimestamp > sessionStartTime &&
+                            !notifiedMessageTimestamps.contains(thread.lastMessageTimestamp)
+                        ) {
+                            notifiedMessageTimestamps.add(thread.lastMessageTimestamp)
+                            val senderName = if (myUid == thread.sellerId) thread.buyerName else thread.sellerName
+                            val title = if (senderName.isNotBlank() && senderName != "User") {
+                                "$senderName (${thread.itemTitle})"
+                            } else {
+                                "New message on ${thread.itemTitle}"
+                            }
+
+                            LocalNotificationHelper.showChatNotification(
+                                context = context,
+                                notificationId = (thread.lastMessageTimestamp % Int.MAX_VALUE).toInt(),
+                                title = title,
+                                message = thread.lastMessage,
+                                itemId = thread.itemId,
+                                buyerId = thread.buyerId
+                            )
+                        }
+                    }
+                }
+        }
+    }
+
+    fun markMessagesAsRead() {
+        _hasUnreadMessages.value = false
+    }
 
     fun isUserLoggedIn(): Boolean {
         return authRepository.isUserLoggedIn()

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -48,11 +49,12 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val hasUnreadMessages by viewModel.hasUnreadMessages.collectAsState()
+
     val showBottomNav = currentRoute in listOf(
         Screen.Home.route,
         Screen.Feed.route,
         Screen.Messages.route,
-        Screen.Settings.route,
         Screen.Profile.route,
         Screen.Sell.route
     )
@@ -65,7 +67,11 @@ fun MainScreen(
                 Box(modifier = Modifier.navigationBarsPadding()) {
                     CustomBottomNav(
                         currentRoute = currentRoute ?: Screen.Home.route,
+                        hasUnreadMessages = hasUnreadMessages,
                         onNavigate = { route ->
+                            if (route == Screen.Messages.route) {
+                                viewModel.markMessagesAsRead()
+                            }
                             navController.navigate(route) {
                                 popUpTo(navController.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true
@@ -285,23 +291,31 @@ fun MainScreen(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = ""
+                    },
+                    navArgument("buyerId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = ""
                     }
                 )
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
                 val rawInitialMessage = backStackEntry.arguments?.getString("initialMessage")?.takeIf { it.isNotBlank() }
                 val initialMessage = rawInitialMessage?.let { android.net.Uri.decode(it) }?.takeIf { it.isNotBlank() }
+                val rawBuyerId = backStackEntry.arguments?.getString("buyerId")?.takeIf { it.isNotBlank() }
+                val buyerId = rawBuyerId?.let { android.net.Uri.decode(it) }?.takeIf { it.isNotBlank() }
                 PickupChatScreen(
                     itemId = itemId,
                     initialMessage = initialMessage,
+                    buyerId = buyerId,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
             composable(route = Screen.Messages.route) {
                 MessagesScreen(
-                    onConversationClick = { conversationId ->
-                        navController.navigate(Screen.createChatRoute(conversationId))
+                    onConversationClick = { targetItemId, targetBuyerId ->
+                        navController.navigate(Screen.createChatRoute(targetItemId, buyerId = targetBuyerId))
                     },
                     onProfileClick = {
                         navController.navigate(Screen.Profile.route) {

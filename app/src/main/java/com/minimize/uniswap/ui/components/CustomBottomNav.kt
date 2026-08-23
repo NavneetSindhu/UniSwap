@@ -42,6 +42,7 @@ import com.minimize.uniswap.ui.theme.UniSwapTheme
 fun CustomBottomNav(
     currentRoute: String,
     onNavigate: (String) -> Unit,
+    hasUnreadMessages: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     // 1. Core tabs with Center Create Item tab
@@ -144,12 +145,24 @@ fun CustomBottomNav(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = icons[index],
-                        contentDescription = route,
-                        tint = iconTint,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        Icon(
+                            imageVector = icons[index],
+                            contentDescription = route,
+                            tint = iconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+
+                        // Vibrant Red indicator dot for unread messages
+                        if (route == Screen.Messages.route && hasUnreadMessages) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFEF4444))
+                            )
+                        }
+                    }
                 }
             }
         }
