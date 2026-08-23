@@ -12,6 +12,7 @@ interface AuthRepository {
     suspend fun logout()
     fun isUserLoggedIn(): Boolean
     fun getCurrentUserId(): String?
+    fun getCurrentUser(): User?
     fun getUserFlow(): Flow<User?>
     suspend fun sendVerificationEmail(): Result<Unit>
     suspend fun reloadUser(): Result<Unit>

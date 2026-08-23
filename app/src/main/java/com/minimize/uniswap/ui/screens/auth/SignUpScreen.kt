@@ -235,7 +235,7 @@ fun SignUpScreen(
             ),
             enabled = !viewModel.isLoading
         ) {
-            if (viewModel.isLoading) {
+            if (viewModel.isEmailLoading) {
                 CircularProgressIndicator(
                     color = themeColors.background,
                     modifier = Modifier.size(22.dp),
@@ -267,24 +267,32 @@ fun SignUpScreen(
                 },
             contentAlignment = Alignment.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_google),
-                    contentDescription = "Google",
-                    modifier = Modifier.size(22.dp)
+            if (viewModel.isGoogleLoading) {
+                CircularProgressIndicator(
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 2.5.dp
                 )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = stringResource(R.string.continue_with_google),
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    letterSpacing = (-0.28).sp,
-                    color = themeColors.textPrimary
-                )
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_google),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = stringResource(R.string.continue_with_google),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        letterSpacing = (-0.28).sp,
+                        color = themeColors.textPrimary
+                    )
+                }
             }
         }
 

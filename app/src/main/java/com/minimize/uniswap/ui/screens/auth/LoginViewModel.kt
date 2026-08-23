@@ -25,7 +25,9 @@ class LoginViewModel @Inject constructor(
     var batch by mutableStateOf("2026")
     var isSignUpMode by mutableStateOf(false)
 
-    var isLoading by mutableStateOf(false)
+    var isEmailLoading by mutableStateOf(false)
+    var isGoogleLoading by mutableStateOf(false)
+    val isLoading get() = isEmailLoading || isGoogleLoading
     var errorMessage by mutableStateOf<String?>(null)
     var isSuccess by mutableStateOf(false)
 
@@ -54,7 +56,7 @@ class LoginViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            isLoading = true
+            isEmailLoading = true
             errorMessage = null
 
             val result = repository.login(trimmedEmail, trimmedPassword)
@@ -63,7 +65,7 @@ class LoginViewModel @Inject constructor(
             }.onFailure {
                 errorMessage = it.message ?: "Sign In failed"
             }
-            isLoading = false
+            isEmailLoading = false
         }
     }
 
@@ -93,7 +95,7 @@ class LoginViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            isLoading = true
+            isEmailLoading = true
             errorMessage = null
 
             val result = repository.signUp(trimmedEmail, trimmedPassword, trimmedName)
@@ -102,7 +104,7 @@ class LoginViewModel @Inject constructor(
             }.onFailure {
                 errorMessage = it.message ?: "Sign Up failed"
             }
-            isLoading = false
+            isEmailLoading = false
         }
     }
 
@@ -115,7 +117,7 @@ class LoginViewModel @Inject constructor(
 
     fun onGoogleLoginClick(context: Context) {
         viewModelScope.launch {
-            isLoading = true
+            isGoogleLoading = true
             errorMessage = null
 
             val tokenResult = googleAuthHelper.getGoogleIdToken(context, BuildConfig.WEB_CLIENT_ID)
@@ -129,7 +131,7 @@ class LoginViewModel @Inject constructor(
             }.onFailure {
                 errorMessage = it.message ?: "Google Sign-In failed"
             }
-            isLoading = false
+            isGoogleLoading = false
         }
     }
 }

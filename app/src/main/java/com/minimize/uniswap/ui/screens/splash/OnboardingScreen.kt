@@ -59,10 +59,12 @@ fun OnboardingScreen(
     val pagerState = rememberPagerState(pageCount = { totalPages })
     val isAuthSlide = pagerState.currentPage == totalPages - 1
 
+    val themeColors = UniSwapTheme.colors
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PaletteDark.Base)
+            .background(themeColors.background)
     ) {
         // 1. Static Showcase Background Grid (Only visible during onboarding value-prop slides 1, 2, 3)
         AnimatedVisibility(
@@ -114,7 +116,7 @@ fun OnboardingScreen(
                     fontFamily = MatterFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = themeColors.textSecondary,
                     modifier = Modifier
                         .clickable {
                             scope.launch {
@@ -154,7 +156,7 @@ fun OnboardingScreen(
                                 fontSize = 36.sp,
                                 lineHeight = 42.sp,
                                 letterSpacing = (-0.5).sp,
-                                color = Color.White,
+                                color = themeColors.textPrimary,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -167,8 +169,8 @@ fun OnboardingScreen(
                 DotIndicator(
                     pageCount = 3,
                     currentPage = pagerState.currentPage.coerceAtMost(2),
-                    activeColor = Color.White,
-                    inactiveColor = Color.White.copy(alpha = 0.25f)
+                    activeColor = themeColors.textPrimary,
+                    inactiveColor = themeColors.textSubtle
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -185,8 +187,8 @@ fun OnboardingScreen(
                         .height(60.dp),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = PaletteLight.Gray950
+                        containerColor = themeColors.textPrimary,
+                        contentColor = themeColors.background
                     )
                 ) {
                     Text(
@@ -194,7 +196,7 @@ fun OnboardingScreen(
                         fontFamily = MatterFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = PaletteLight.Gray950
+                        color = themeColors.background
                     )
                 }
             }

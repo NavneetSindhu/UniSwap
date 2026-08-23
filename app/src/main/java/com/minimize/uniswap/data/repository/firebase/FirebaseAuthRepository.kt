@@ -43,9 +43,9 @@ class FirebaseAuthRepository @Inject constructor(
             Log.d(TAG, "Attempting signup for: $email")
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
             if (displayName.isNotBlank()) {
-                val profileUpdates = com.google.firebase.auth.userProfileChangeRequest {
-                    this.displayName = displayName
-                }
+                val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                    .setDisplayName(displayName)
+                    .build()
                 authResult.user?.updateProfile(profileUpdates)?.await()
             }
             syncUserToFirestore(customDisplayName = displayName.ifBlank { null })
@@ -77,9 +77,19 @@ class FirebaseAuthRepository @Inject constructor(
         firebaseAuth.signOut()
     }
 
-
     override fun getCurrentUserId(): String? {
         return firebaseAuth.currentUser?.uid
+    }
+
+    override fun getCurrentUser(): User? {
+        val fbUser = firebaseAuth.currentUser ?: return null
+        return User(
+            uid = fbUser.uid,
+            email = fbUser.email ?: "",
+            displayName = fbUser.displayName ?: "",
+            isEmailVerified = fbUser.isEmailVerified,
+            profilePicUrl = fbUser.photoUrl?.toString() ?: ""
+        )
     }
 
     override fun getUserFlow(): Flow<User?> = callbackFlow {

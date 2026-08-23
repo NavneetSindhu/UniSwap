@@ -64,6 +64,7 @@ fun WelcomeAuthCard(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
+    val themeColors = UniSwapTheme.colors
 
     Column(
         modifier = modifier
@@ -79,7 +80,7 @@ fun WelcomeAuthCard(
             fontSize = if (isSignUpMode) 32.sp else 40.sp,
             lineHeight = 38.sp,
             letterSpacing = (-0.8).sp,
-            color = Color.White,
+            color = themeColors.textPrimary,
             textAlign = TextAlign.Center
         )
 
@@ -92,7 +93,7 @@ fun WelcomeAuthCard(
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp,
             letterSpacing = 2.sp,
-            color = Color.White,
+            color = themeColors.textSecondary,
             textAlign = TextAlign.Center
         )
 
