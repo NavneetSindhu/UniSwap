@@ -16,6 +16,9 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.google.firebase.firestore.SetOptions
+import com.minimize.uniswap.data.model.ChatThread
+
 @Singleton
 class FirestoreChatRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -45,6 +48,30 @@ class FirestoreChatRepository @Inject constructor(
             }
     }
 
+    override fun getChatThreadsFlow(userId: String): Flow<List<ChatThread>> = callbackFlow {
+        if (userId.isBlank()) {
+            trySend(emptyList())
+            awaitClose { }
+            return@callbackFlow
+        }
+
+        val subscription = firestore.collection("chats")
+            .whereArrayContains("participants", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                if (snapshot != null) {
+                    val threads = snapshot.documents.mapNotNull { doc ->
+                        doc.toChatThread()
+                    }.sortedByDescending { it.lastMessageTimestamp }
+                    trySend(threads)
+                }
+            }
+        awaitClose { subscription.remove() }
+    }
+
     private fun startSyncListener(chatId: String) {
         val chatRef = firestore.collection("chats").document(chatId).collection("messages")
         
@@ -60,7 +87,7 @@ class FirestoreChatRepository @Inject constructor(
                         }
                         if (snapshot != null) {
                             val messages = snapshot.documents.mapNotNull { doc ->
-                                doc.toObject(Message::class.java)?.copy(id = doc.id)
+                                doc.toChatMessage()
                             }
                             trySend(messages)
                         }
@@ -73,7 +100,16 @@ class FirestoreChatRepository @Inject constructor(
         }
     }
 
-    override suspend fun sendMessage(itemId: String, buyerId: String, sellerId: String, message: Message): Boolean {
+    override suspend fun sendMessage(
+        itemId: String,
+        buyerId: String,
+        sellerId: String,
+        message: Message,
+        itemTitle: String,
+        itemImageUrl: String,
+        buyerName: String,
+        sellerName: String
+    ): Boolean {
         val chatId = getChatId(itemId, buyerId, sellerId)
         val messageId = message.id.ifBlank { java.util.UUID.randomUUID().toString() }
         val messageToSend = message.copy(id = messageId)
@@ -83,7 +119,28 @@ class FirestoreChatRepository @Inject constructor(
         messageDao.insertMessage(entity)
 
         return try {
-            // 2. Prepare Firestore data with server timestamp and matching ID
+            // 2. Update/Create parent chat thread metadata document
+            val chatMetadata = hashMapOf<String, Any>(
+                "id" to chatId,
+                "itemId" to itemId,
+                "buyerId" to buyerId,
+                "sellerId" to sellerId,
+                "participants" to listOf(buyerId, sellerId),
+                "lastMessage" to messageToSend.text,
+                "lastMessageTimestamp" to messageToSend.timestamp,
+                "lastSenderId" to messageToSend.senderId
+            )
+            if (itemTitle.isNotBlank()) chatMetadata["itemTitle"] = itemTitle
+            if (itemImageUrl.isNotBlank()) chatMetadata["itemImageUrl"] = itemImageUrl
+            if (buyerName.isNotBlank()) chatMetadata["buyerName"] = buyerName
+            if (sellerName.isNotBlank()) chatMetadata["sellerName"] = sellerName
+
+            firestore.collection("chats")
+                .document(chatId)
+                .set(chatMetadata, SetOptions.merge())
+                .await()
+
+            // 3. Prepare Firestore message data with server timestamp and matching ID
             val messageData = hashMapOf(
                 "id" to messageId,
                 "senderId" to messageToSend.senderId,
@@ -94,7 +151,7 @@ class FirestoreChatRepository @Inject constructor(
                 "locationName" to messageToSend.locationName
             )
 
-            // 3. Send to Firestore using the exact same messageId as document key
+            // 4. Send to Firestore subcollection
             firestore.collection("chats")
                 .document(chatId)
                 .collection("messages")
@@ -102,12 +159,12 @@ class FirestoreChatRepository @Inject constructor(
                 .set(messageData)
                 .await()
 
-            // 4. Update Room status to SENT
+            // 5. Update Room status to SENT
             messageDao.updateMessageStatus(messageId, MessageStatus.SENT)
             
             true
         } catch (e: Exception) {
-            // 5. Update Room status to FAILED
+            // 6. Update Room status to FAILED
             messageDao.updateMessageStatus(messageId, MessageStatus.FAILED)
             false
         }
@@ -134,4 +191,59 @@ class FirestoreChatRepository @Inject constructor(
         isLocationPin = isLocationPin,
         locationName = locationName
     )
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toChatThread(): ChatThread? {
+        if (!exists()) return null
+        return try {
+            val rawTimestamp = get("lastMessageTimestamp")
+            val timestampMillis = when (rawTimestamp) {
+                is com.google.firebase.Timestamp -> rawTimestamp.toDate().time
+                is Number -> rawTimestamp.toLong()
+                else -> 0L
+            }
+
+            val participantsList = (get("participants") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+
+            ChatThread(
+                id = getString("id") ?: id,
+                itemId = getString("itemId") ?: "",
+                buyerId = getString("buyerId") ?: "",
+                sellerId = getString("sellerId") ?: "",
+                buyerName = getString("buyerName") ?: "Buyer",
+                sellerName = getString("sellerName") ?: "Seller",
+                participants = participantsList,
+                lastMessage = getString("lastMessage") ?: "",
+                lastMessageTimestamp = timestampMillis,
+                lastSenderId = getString("lastSenderId") ?: "",
+                itemTitle = getString("itemTitle") ?: "",
+                itemImageUrl = getString("itemImageUrl") ?: ""
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.toChatMessage(): Message? {
+        if (!exists()) return null
+        return try {
+            val rawTimestamp = get("timestamp")
+            val timestampMillis = when (rawTimestamp) {
+                is com.google.firebase.Timestamp -> rawTimestamp.toDate().time
+                is Number -> rawTimestamp.toLong()
+                else -> System.currentTimeMillis()
+            }
+
+            Message(
+                id = getString("id") ?: id,
+                senderId = getString("senderId") ?: "",
+                text = getString("text") ?: "",
+                timestamp = timestampMillis,
+                status = MessageStatus.SENT,
+                isLocationPin = getBoolean("isLocationPin") ?: false,
+                locationName = getString("locationName")
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

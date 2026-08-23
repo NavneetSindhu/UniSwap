@@ -22,6 +22,7 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
 
     val currentUserId: String = authRepository.getCurrentUserId() ?: ""
+    private var activeBuyerId: String = ""
 
     private val _item = MutableStateFlow<CampusItem?>(null)
     val item: StateFlow<CampusItem?> = _item.asStateFlow()
@@ -32,7 +33,7 @@ class ChatViewModel @Inject constructor(
     private var messageJob: Job? = null
     private var itemJob: Job? = null
 
-    fun loadItem(itemId: String) {
+    fun loadItem(itemId: String, explicitBuyerId: String? = null) {
         if (itemId.isBlank()) return
 
         itemJob?.cancel()
@@ -42,11 +43,15 @@ class ChatViewModel @Inject constructor(
                 .filterNotNull()
                 .collect { campusItem ->
                     _item.value = campusItem
-                    // In a 1-to-1 chat for a specific item, the participants are the buyer and the seller.
-                    // If current user is seller, they are chatting with the person who initiated (buyerId).
-                    // For simplicity in this v1, we assume currentUserId is the one initiating if they aren't the seller.
-                    val buyerId = currentUserId 
-                    observeMessages(campusItem.id, buyerId, campusItem.sellerId)
+                    val effectiveBuyerId = if (!explicitBuyerId.isNullOrBlank()) {
+                        explicitBuyerId
+                    } else if (currentUserId != campusItem.sellerId) {
+                        currentUserId
+                    } else {
+                        currentUserId
+                    }
+                    activeBuyerId = effectiveBuyerId
+                    observeMessages(campusItem.id, effectiveBuyerId, campusItem.sellerId)
                 }
         }
     }
@@ -62,7 +67,7 @@ class ChatViewModel @Inject constructor(
         val currentItem = _item.value ?: return
         if (text.isBlank() || currentUserId.isBlank()) return
 
-        val buyerId = currentUserId // Consistent with observeMessages
+        val buyerId = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId
 
         val newMessage = Message(
             senderId = currentUserId,
@@ -71,12 +76,19 @@ class ChatViewModel @Inject constructor(
             status = MessageStatus.SENDING // Optimistic state
         )
 
+        val currentUser = authRepository.getCurrentUser()
+        val currentUserName = currentUser?.displayName?.ifBlank { "User" } ?: "User"
+
         viewModelScope.launch {
             chatRepository.sendMessage(
                 itemId = currentItem.id,
                 buyerId = buyerId,
                 sellerId = currentItem.sellerId,
-                message = newMessage
+                message = newMessage,
+                itemTitle = currentItem.title,
+                itemImageUrl = currentItem.imageUrl,
+                buyerName = if (currentUserId == buyerId) currentUserName else "Buyer",
+                sellerName = if (currentUserId == currentItem.sellerId) currentUserName else currentItem.sellerName
             )
         }
     }

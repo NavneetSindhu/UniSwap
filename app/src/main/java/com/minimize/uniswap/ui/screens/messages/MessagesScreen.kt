@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.ui.theme.*
-
+import androidx.hilt.navigation.compose.hiltViewModel
 data class Conversation(
     val id: String,
     val senderName: String,
@@ -35,35 +35,30 @@ data class Conversation(
     val avatarUrl: String? = null
 )
 
+
+
 /**
  * Messages Screen displaying all active chats.
- * Features 42x42 profile avatar, 50dp capsule search with 30x30 white circle,
- * 14sp "Messages" section heading, and chat rows with 41x41 avatars.
+ * Features 42x42 profile avatar, 50dp capsule search with 30x30 circle,
+ * 14sp "Messages" section heading, and real-time chat rows with avatars.
  */
 @Composable
 fun MessagesScreen(
-    onConversationClick: (String) -> Unit = {},
+    onConversationClick: (itemId: String, buyerId: String) -> Unit = { _, _ -> },
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: MessagesViewModel = hiltViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    val conversations = listOf(
-        Conversation("1", stringResource(R.string.sender_lokesh), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("2", stringResource(R.string.sender_navneet), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("3", stringResource(R.string.sender_sakshi), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("4", stringResource(R.string.sender_mohit), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("5", stringResource(R.string.sender_n_chaudhary), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("6", stringResource(R.string.sender_kamini), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("7", stringResource(R.string.sender_ajay), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago)),
-        Conversation("8", stringResource(R.string.sender_yuvraj), stringResource(R.string.sample_message_snippet), stringResource(R.string.sample_time_ago))
-    )
+    val conversations by viewModel.threads.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     val filteredConversations = remember(conversations, searchQuery) {
         if (searchQuery.isBlank()) conversations
         else conversations.filter {
-            it.senderName.contains(searchQuery, ignoreCase = true) ||
-                    it.lastMessage.contains(searchQuery, ignoreCase = true)
+            it.displayName.contains(searchQuery, ignoreCase = true) ||
+                    it.lastMessage.contains(searchQuery, ignoreCase = true) ||
+                    it.itemTitle.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -180,19 +175,52 @@ fun MessagesScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
-            contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp)
-        ) {
-            items(filteredConversations, key = { it.id }) { conversation ->
-                MessageItem(
-                    conversation = conversation,
-                    onClick = { onConversationClick(conversation.id) }
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.size(32.dp),
+                    strokeWidth = 3.dp
                 )
+            }
+        } else if (filteredConversations.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (searchQuery.isBlank()) "No messages yet.\nChat with sellers on items to start trading!" else "No messages found.",
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    color = themeColors.textSubtle,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(22.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 120.dp)
+            ) {
+                items(filteredConversations, key = { it.id }) { conversation ->
+                    MessageItem(
+                        conversation = conversation,
+                        onClick = { onConversationClick(conversation.itemId, conversation.buyerId) }
+                    )
+                }
             }
         }
     }
@@ -204,7 +232,7 @@ fun MessagesScreen(
  */
 @Composable
 fun MessageItem(
-    conversation: Conversation,
+    conversation: ConversationItemUiModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -227,7 +255,7 @@ fun MessageItem(
             if (!conversation.avatarUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = conversation.avatarUrl,
-                    contentDescription = conversation.senderName,
+                    contentDescription = conversation.displayName,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -240,15 +268,27 @@ fun MessageItem(
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = conversation.senderName,
-                fontFamily = MatterFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                lineHeight = 15.sp,
-                letterSpacing = (-0.28).sp,
-                color = themeColors.textPrimary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = conversation.displayName,
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    lineHeight = 15.sp,
+                    letterSpacing = (-0.28).sp,
+                    color = themeColors.textPrimary
+                )
+                if (conversation.itemTitle.isNotBlank()) {
+                    Text(
+                        text = " • ${conversation.itemTitle}",
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 11.sp,
+                        color = themeColors.textSubtle,
+                        maxLines = 1
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 
@@ -259,7 +299,8 @@ fun MessageItem(
                 fontSize = 10.sp,
                 lineHeight = 11.sp,
                 letterSpacing = (-0.2).sp,
-                color = themeColors.textSubtle
+                color = themeColors.textSubtle,
+                maxLines = 1
             )
         }
 
@@ -267,7 +308,7 @@ fun MessageItem(
 
         // Time (Matter Regular 8sp)
         Text(
-            text = conversation.time,
+            text = conversation.timeAgo,
             fontFamily = MatterFontFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 8.sp,

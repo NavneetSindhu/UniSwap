@@ -29,6 +29,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.ui.theme.*
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 
 data class ChatBubbleMessage(
     val id: String,
@@ -45,19 +50,26 @@ data class ChatBubbleMessage(
 fun PickupChatScreen(
     itemId: String,
     initialMessage: String? = null,
+    buyerId: String? = null,
     onBackClick: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val item by viewModel.item.collectAsState()
     val liveMessages by viewModel.messages.collectAsState()
     var inputText by remember(initialMessage) { mutableStateOf(initialMessage ?: "") }
+    val listState = rememberLazyListState()
 
-    LaunchedEffect(itemId) {
-        viewModel.loadItem(itemId)
+    LaunchedEffect(itemId, buyerId) {
+        viewModel.loadItem(itemId, buyerId)
     }
 
-    val studentName = item?.sellerName?.ifBlank { stringResource(R.string.sample_seller_lokesh) }
-        ?: stringResource(R.string.sample_seller_lokesh)
+    val isSeller = viewModel.currentUserId.isNotBlank() && viewModel.currentUserId == item?.sellerId
+    val studentName = if (isSeller) {
+        "Buyer"
+    } else {
+        item?.sellerName?.ifBlank { stringResource(R.string.sample_seller_lokesh) }
+            ?: stringResource(R.string.sample_seller_lokesh)
+    }
 
     val chatMessages = remember(liveMessages) {
         liveMessages.map {
@@ -66,6 +78,12 @@ fun PickupChatScreen(
                 text = it.text,
                 isFromMe = it.senderId == viewModel.currentUserId
             )
+        }
+    }
+
+    LaunchedEffect(chatMessages.size) {
+        if (chatMessages.isNotEmpty()) {
+            listState.animateScrollToItem(chatMessages.size - 1)
         }
     }
 
@@ -102,7 +120,7 @@ fun PickupChatScreen(
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_back),
-                                contentDescription = stringResource(R.string.action_back),
+                                contentDescription = "Back",
                                 tint = themeColors.textPrimary,
                                 modifier = Modifier
                                     .width(18.dp)
@@ -112,7 +130,7 @@ fun PickupChatScreen(
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-                        // Avatar (Ellipse 18: 29x29)
+                        // Avatar (29x29, Ellipse 21)
                         Box(
                             modifier = Modifier
                                 .size(29.dp)
@@ -120,23 +138,23 @@ fun PickupChatScreen(
                                 .background(themeColors.btnBackBg)
                         ) {
                             AsyncImage(
-                                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150",
+                                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100",
                                 contentDescription = studentName,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                        // Student Name (Matter Medium 14sp) + Verified Badge
+                        // Student Name + Verified Student Icon
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = studentName,
                                 fontFamily = MatterFontFamily,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Normal,
                                 fontSize = 14.sp,
                                 lineHeight = 15.sp,
                                 letterSpacing = (-0.28).sp,
@@ -158,22 +176,23 @@ fun PickupChatScreen(
             }
         },
         bottomBar = {
-            // Bottom Capsule Input Bar
+            // Bottom Capsule Input Bar with clean navigation bars + IME padding
             Surface(
                 color = themeColors.background,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)))
+                    .navigationBarsPadding()
+                    .imePadding()
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                        .padding(horizontal = 24.dp, vertical = 10.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
+                            .height(48.dp)
                             .clip(RoundedCornerShape(50.dp))
                             .background(themeColors.cardSurface)
                             .padding(horizontal = 18.dp),
@@ -193,7 +212,7 @@ fun PickupChatScreen(
                                         text = stringResource(R.string.type_here_placeholder),
                                         fontFamily = MatterFontFamily,
                                         fontWeight = FontWeight.Normal,
-                                        fontSize = 12.sp,
+                                        fontSize = 13.sp,
                                         letterSpacing = (-0.2).sp,
                                         color = themeColors.textSubtle
                                     )
@@ -211,6 +230,18 @@ fun PickupChatScreen(
                                         letterSpacing = (-0.2).sp
                                     ),
                                     cursorBrush = SolidColor(themeColors.textPrimary),
+                                    keyboardOptions = KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Sentences,
+                                        imeAction = ImeAction.Send
+                                    ),
+                                    keyboardActions = KeyboardActions(
+                                        onSend = {
+                                            if (inputText.isNotBlank()) {
+                                                viewModel.sendMessage(inputText)
+                                                inputText = ""
+                                            }
+                                        }
+                                    ),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -218,7 +249,7 @@ fun PickupChatScreen(
                             // Send Action Button
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(34.dp)
                                     .clip(CircleShape)
                                     .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
                                     .clickable(enabled = inputText.isNotBlank()) {
@@ -259,6 +290,7 @@ fun PickupChatScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)

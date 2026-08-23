@@ -8,7 +8,7 @@ enum class Screen(val route: String) {
     Login("login"),
     Feed("feed"),
     Details("details/{itemId}"),
-    Chat("chat/{itemId}?initialMessage={initialMessage}"),
+    Chat("chat/{itemId}?initialMessage={initialMessage}&buyerId={buyerId}"),
     Sell("sell"),
     Profile("profile"),
     Home("home"),
@@ -18,13 +18,10 @@ enum class Screen(val route: String) {
 
     companion object {
         fun createDetailsRoute(itemId: String): String = "details/$itemId"
-        fun createChatRoute(itemId: String, initialMessage: String? = null): String {
-            return if (!initialMessage.isNullOrBlank()) {
-                val encoded = Uri.encode(initialMessage)
-                "chat/$itemId?initialMessage=$encoded"
-            } else {
-                "chat/$itemId?initialMessage="
-            }
+        fun createChatRoute(itemId: String, initialMessage: String? = null, buyerId: String? = null): String {
+            val encodedMsg = if (!initialMessage.isNullOrBlank()) Uri.encode(initialMessage) else ""
+            val encodedBuyer = if (!buyerId.isNullOrBlank()) Uri.encode(buyerId) else ""
+            return "chat/$itemId?initialMessage=$encodedMsg&buyerId=$encodedBuyer"
         }
     }
 }
