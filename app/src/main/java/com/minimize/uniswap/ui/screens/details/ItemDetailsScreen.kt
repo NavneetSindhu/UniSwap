@@ -39,6 +39,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.outlined.RemoveShoppingCart
+import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
 
@@ -106,31 +108,20 @@ fun ItemDetailsScreen(
                 )
             }
 
-            state.error != null -> {
-                Column(
+            else -> {
+                Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
+                        .fillMaxSize()
                         .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.ErrorOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(48.dp)
+                    EmptyStateView(
+                        title = stringResource(R.string.item_not_found_title),
+                        subtitle = state.error ?: stringResource(R.string.item_not_found_subtitle),
+                        fallbackIcon = Icons.Outlined.RemoveShoppingCart,
+                        ctaText = stringResource(R.string.item_not_found_cta),
+                        onCtaClick = onBackClick
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = state.error!!,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Button(
-                        onClick = onBackClick,
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
-                        Text(stringResource(R.string.action_back))
-                    }
                 }
             }
         }

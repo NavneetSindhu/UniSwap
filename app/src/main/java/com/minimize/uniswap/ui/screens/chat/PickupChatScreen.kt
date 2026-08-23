@@ -29,11 +29,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.ui.theme.*
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import com.minimize.uniswap.ui.components.EmptyStateView
 
 data class ChatBubbleMessage(
     val id: String,
@@ -176,13 +178,14 @@ fun PickupChatScreen(
             }
         },
         bottomBar = {
-            // Bottom Capsule Input Bar with clean navigation bars + IME padding
+            // Bottom Capsule Input Bar with unified navigation bars and IME insets
             Surface(
                 color = themeColors.background,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding()
+                    .windowInsetsPadding(
+                        WindowInsets.navigationBars.union(WindowInsets.ime)
+                    )
             ) {
                 Box(
                     modifier = Modifier
@@ -281,11 +284,11 @@ fun PickupChatScreen(
                     .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.sample_message_snippet).ifBlank { "Say hello and start the conversation!" },
-                    fontFamily = MatterFontFamily,
-                    fontSize = 13.sp,
-                    color = themeColors.textSubtle
+                EmptyStateView(
+                    title = stringResource(R.string.empty_chat_title),
+                    subtitle = stringResource(R.string.empty_chat_subtitle),
+                    fallbackIcon = Icons.Outlined.Forum,
+                    animationSize = 120.dp
                 )
             }
         } else {

@@ -26,6 +26,8 @@ import com.minimize.uniswap.ui.screens.home.components.HomeSectionHeader
 import com.minimize.uniswap.ui.screens.home.components.HomeTopHeader
 import com.minimize.uniswap.ui.screens.home.components.RecentUploadCard
 import com.minimize.uniswap.ui.screens.home.components.TrendingCarousel
+import androidx.compose.material.icons.outlined.Inventory2
+import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.ui.theme.ActionLinkBlue
 import com.minimize.uniswap.ui.theme.MatterFontFamily
 import com.minimize.uniswap.ui.theme.PaletteDark
@@ -63,67 +65,78 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp), // Clear floating bottom nav
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 1. Section 1: "Trending on Campus" Carousel (Endless Auto-scroll + Left/Right Peek Cards)
-                item {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        HomeSectionHeader(
-                            title = stringResource(R.string.trending_on_campus),
-                            actionContent = {
-                                Icon(
-                                    imageVector = Icons.Default.NorthEast,
-                                    contentDescription = stringResource(R.string.trending_on_campus),
-                                    tint = UniSwapTheme.colors.textPrimary,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable(onClick = onSeeAllClick)
-                                )
-                            }
-                        )
+            if (items.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_feed_title),
+                        subtitle = stringResource(R.string.empty_feed_subtitle),
+                        fallbackIcon = Icons.Outlined.Inventory2
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(28.dp),
+                    contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)
+                ) {
+                    // 1. Section 1: "Trending on Campus" Carousel (Endless Auto-scroll + Left/Right Peek Cards)
+                    item {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            HomeSectionHeader(
+                                title = stringResource(R.string.trending_on_campus),
+                                actionContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.NorthEast,
+                                        contentDescription = stringResource(R.string.trending_on_campus),
+                                        tint = UniSwapTheme.colors.textPrimary,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable(onClick = onSeeAllClick)
+                                    )
+                                }
+                            )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        if (items.isNotEmpty()) {
                             TrendingCarousel(
                                 items = items,
                                 onItemClick = onItemClick
                             )
                         }
                     }
-                }
 
-                // 2. Section 2: "Recently Uploads" Section
-                item {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        HomeSectionHeader(
-                            title = stringResource(R.string.recently_uploads),
-                            actionContent = {
-                                Text(
-                                    text = stringResource(R.string.see_all),
-                                    fontFamily = MatterFontFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp,
-                                    color = ActionLinkBlue,
-                                    modifier = Modifier.clickable(onClick = onSeeAllClick)
-                                )
-                            }
-                        )
+                    // 2. Section 2: "Recently Uploads" Section
+                    item {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            HomeSectionHeader(
+                                title = stringResource(R.string.recently_uploads),
+                                actionContent = {
+                                    Text(
+                                        text = stringResource(R.string.see_all),
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                        color = ActionLinkBlue,
+                                        modifier = Modifier.clickable(onClick = onSeeAllClick)
+                                    )
+                                }
+                            )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            items(items, key = { "recent_${it.id}" }) { item ->
-                                RecentUploadCard(
-                                    item = item,
-                                    onClick = { onItemClick(item) }
-                                )
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                items(items, key = { "recent_${it.id}" }) { item ->
+                                    RecentUploadCard(
+                                        item = item,
+                                        onClick = { onItemClick(item) }
+                                    )
+                                }
                             }
                         }
                     }

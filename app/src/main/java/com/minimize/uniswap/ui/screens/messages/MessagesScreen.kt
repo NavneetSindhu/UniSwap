@@ -8,7 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import com.minimize.uniswap.ui.components.EmptyStateView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -193,18 +196,24 @@ fun MessagesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (searchQuery.isBlank()) "No messages yet.\nChat with sellers on items to start trading!" else "No messages found.",
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    color = themeColors.textSubtle,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    lineHeight = 20.sp
-                )
+                if (searchQuery.isBlank()) {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_inbox_title),
+                        subtitle = stringResource(R.string.empty_inbox_subtitle),
+                        fallbackIcon = Icons.Outlined.ChatBubbleOutline
+                    )
+                } else {
+                    EmptyStateView(
+                        title = stringResource(R.string.empty_inbox_search_title),
+                        subtitle = stringResource(R.string.empty_inbox_search_subtitle),
+                        fallbackIcon = Icons.Outlined.SearchOff,
+                        ctaText = stringResource(R.string.empty_search_cta),
+                        onCtaClick = { searchQuery = "" }
+                    )
+                }
             }
         } else {
             LazyColumn(

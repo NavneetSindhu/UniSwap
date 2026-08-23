@@ -1,5 +1,6 @@
 package com.minimize.uniswap.ui.screens.profile
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import com.minimize.uniswap.ui.components.EmptyStateView
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,6 +45,7 @@ import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemStatus
 import com.minimize.uniswap.ui.theme.*
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -382,20 +386,28 @@ fun ProfileScreen(
                         }
 
                         if (displayItems.isEmpty() && !state.isLoading) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 36.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = state.error ?: "No items found in this section.",
-                                    fontFamily = MatterFontFamily,
-                                    color = colors.textSecondary,
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 14.sp
-                                )
+                            val emptyTitle = when (tabIndex) {
+                                0 -> stringResource(R.string.empty_my_listings_title)
+                                1 -> stringResource(R.string.empty_sold_title)
+                                else -> stringResource(R.string.empty_feed_title)
                             }
+                            val emptySubtitle = when (tabIndex) {
+                                0 -> stringResource(R.string.empty_my_listings_subtitle)
+                                1 -> stringResource(R.string.empty_sold_subtitle)
+                                else -> stringResource(R.string.empty_feed_subtitle)
+                            }
+                            val fallbackIcon = when (tabIndex) {
+                                0 -> Icons.Outlined.Storefront
+                                1 -> Icons.Outlined.CheckCircleOutline
+                                else -> Icons.Outlined.FavoriteBorder
+                            }
+
+                            EmptyStateView(
+                                title = emptyTitle,
+                                subtitle = emptySubtitle,
+                                fallbackIcon = fallbackIcon,
+                                modifier = Modifier.padding(vertical = 24.dp)
+                            )
                         } else {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(14.dp),

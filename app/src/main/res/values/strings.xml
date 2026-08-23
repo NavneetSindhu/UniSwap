@@ -143,4 +143,29 @@
     <string name="delete_listing_confirm_msg">This listing will be permanently removed from UniSwap.</string>
     <string name="action_delete">Delete</string>
     <string name="status_sold_badge">SOLD</string>
+
+    <!-- Empty States -->
+    <string name="empty_feed_title">No items on campus yet</string>
+    <string name="empty_feed_subtitle">Be the first to list a textbook, dorm essential, or gadget!</string>
+    <string name="empty_feed_cta">List an Item</string>
+    <string name="empty_category_title">No items in this category</string>
+    <string name="empty_category_subtitle">Try checking other campus categories or post what you have.</string>
+    <string name="empty_search_title">No results found</string>
+    <string name="empty_search_subtitle">Try searching for broader keywords or check for spelling mistakes.</string>
+    <string name="empty_search_cta">Clear Search</string>
+    <string name="empty_inbox_title">Your inbox is empty</string>
+    <string name="empty_inbox_subtitle">Messages, inquiries, and offers for campus items will appear here.</string>
+    <string name="empty_inbox_cta">Explore Feed</string>
+    <string name="empty_inbox_search_title">No conversations found</string>
+    <string name="empty_inbox_search_subtitle">No chat matches your search query.</string>
+    <string name="empty_my_listings_title">You haven\'t listed anything yet</string>
+    <string name="empty_my_listings_subtitle">Turn your unused college gear and books into cash.</string>
+    <string name="empty_my_listings_cta">Create Listing</string>
+    <string name="empty_sold_title">No sold items yet</string>
+    <string name="empty_sold_subtitle">Items you mark as sold will appear here.</string>
+    <string name="empty_chat_title">Say hello!</string>
+    <string name="empty_chat_subtitle">Start the conversation to coordinate pickup or negotiate offers.</string>
+    <string name="item_not_found_title">Listing Not Found</string>
+    <string name="item_not_found_subtitle">This item may have been removed or is no longer available.</string>
+    <string name="item_not_found_cta">Back to Feed</string>
 </resources>

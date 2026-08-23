@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import com.minimize.uniswap.ui.components.EmptyStateView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -175,29 +178,54 @@ fun CampusFeedScreen(
                 },
                 label = "feed_grid_transition"
             ) { targetItems ->
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(targetItems, key = { it.id }) { item ->
-                        val isDigitalNote = item.category.name.contains("ENGINEERING", ignoreCase = true) ||
-                                item.title.contains("note", ignoreCase = true) ||
-                                item.title.contains("book", ignoreCase = true) ||
-                                item.title.contains("pdf", ignoreCase = true)
-
-                        if (isDigitalNote) {
-                            DigitalNotesCard(
-                                item = item,
-                                onClick = { onItemClick(item) }
+                if (targetItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (searchQuery.isNotBlank()) {
+                            EmptyStateView(
+                                title = stringResource(R.string.empty_search_title),
+                                subtitle = stringResource(R.string.empty_search_subtitle),
+                                fallbackIcon = Icons.Outlined.SearchOff,
+                                ctaText = stringResource(R.string.empty_search_cta),
+                                onCtaClick = { viewModel.updateSearchQuery("") }
                             )
                         } else {
-                            RecentUploadCard(
-                                item = item,
-                                onClick = { onItemClick(item) }
+                            EmptyStateView(
+                                title = stringResource(R.string.empty_category_title),
+                                subtitle = stringResource(R.string.empty_category_subtitle),
+                                fallbackIcon = Icons.Outlined.Inventory2
                             )
+                        }
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(targetItems, key = { it.id }) { item ->
+                            val isDigitalNote = item.category.name.contains("ENGINEERING", ignoreCase = true) ||
+                                    item.title.contains("note", ignoreCase = true) ||
+                                    item.title.contains("book", ignoreCase = true) ||
+                                    item.title.contains("pdf", ignoreCase = true)
+
+                            if (isDigitalNote) {
+                                DigitalNotesCard(
+                                    item = item,
+                                    onClick = { onItemClick(item) }
+                                )
+                            } else {
+                                RecentUploadCard(
+                                    item = item,
+                                    onClick = { onItemClick(item) }
+                                )
+                            }
                         }
                     }
                 }
