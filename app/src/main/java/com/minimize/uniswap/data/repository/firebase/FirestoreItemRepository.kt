@@ -148,6 +148,8 @@ class FirestoreItemRepository @Inject constructor(
                 ItemCategory.OTHER
             }
 
+            val rawImageUrls = (get("imageUrls") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+
             CampusItem(
                 id = getString("id") ?: id,
                 title = getString("title") ?: "",
@@ -160,6 +162,7 @@ class FirestoreItemRepository @Inject constructor(
                 sellerName = getString("sellerName") ?: "Campus User",
                 timeAgo = getString("timeAgo") ?: "Just now",
                 imageUrl = getString("imageUrl") ?: "",
+                imageUrls = rawImageUrls,
                 isVerified = getBoolean("isVerified") ?: false,
                 status = status,
                 timestamp = timestampMillis

@@ -1,6 +1,7 @@
 package com.minimize.uniswap.ui.screens.details
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,12 +35,15 @@ import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.ui.components.DotIndicator
 import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
 import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
-import androidx.compose.foundation.clickable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.outlined.RemoveShoppingCart
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
@@ -139,28 +143,42 @@ private fun ItemDetailsContent(
     onDeleteClick: () -> Unit
 ) {
     val isSeller = item.sellerId == currentUserId
-
     val themeColors = UniSwapTheme.colors
+
+    val allImages = remember(item) { item.getAllImages() }
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { allImages.size })
+    var isPreviewOpen by remember { mutableStateOf(false) }
+    var previewSelectedPage by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(themeColors.background)
     ) {
-        // 1. Top Component: Full-Bleed Product Showcase Header
+        // 1. Top Component: Full-Bleed Product Showcase Header Carousel
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(410.dp)
                 .background(themeColors.cardSurface)
         ) {
-            // Product Showcase Image (Full bleed crop fill)
-            AsyncImage(
-                model = item.imageUrl.ifBlank { item.category.getPlaceholderUrl() },
-                contentDescription = item.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            // Product Showcase HorizontalPager (Full bleed crop fill)
+            androidx.compose.foundation.pager.HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                AsyncImage(
+                    model = allImages[page],
+                    contentDescription = "${item.title} ($page)",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            previewSelectedPage = page
+                            isPreviewOpen = true
+                        },
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             // Top subtle gradient scrim for back button contrast
             Box(
@@ -198,23 +216,35 @@ private fun ItemDetailsContent(
                 )
             }
 
-            // Dot Indicator (Centered under shoe, 6dp dots with 12dp gap)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(4) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(if (index == 0) PagerDotActive else PagerDotInactive)
-                    )
+            // Dot Indicator (Centered under image, dynamic dots with 8dp gap)
+            if (allImages.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(allImages.size) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) 8.dp else 6.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) PagerDotActive else PagerDotInactive)
+                        )
+                    }
                 }
             }
+        }
+
+        // Fullscreen Image Preview Dialog
+        if (isPreviewOpen) {
+            FullScreenImagePreviewDialog(
+                images = allImages,
+                initialPage = previewSelectedPage,
+                onDismiss = { isPreviewOpen = false }
+            )
         }
 
         // 2. Bottom Component: Overlapping Card with 50dp Top Rounded Corners
@@ -572,6 +602,128 @@ private fun StickyBottomActionBar(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = (-0.28).sp
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Fullscreen immersive image gallery preview with swipeable HorizontalPager,
+ * top close (X) button, and dynamic page indicator.
+ */
+@Composable
+fun FullScreenImagePreviewDialog(
+    images: List<String>,
+    initialPage: Int = 0,
+    onDismiss: () -> Unit
+) {
+    val previewPagerState = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = initialPage.coerceIn(0, (images.size - 1).coerceAtLeast(0)),
+        pageCount = { images.size }
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            // Horizontal Pager for swiping through all images in fullscreen
+            androidx.compose.foundation.pager.HorizontalPager(
+                state = previewPagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = images[page],
+                        contentDescription = "Image preview $page",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+
+            // Top Overlay Bar: Page Counter & Close Button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Counter Badge (e.g., "1 of 4")
+                if (images.size > 1) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.Black.copy(alpha = 0.65f),
+                        contentColor = Color.White
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.image_preview_counter,
+                                previewPagerState.currentPage + 1,
+                                images.size
+                            ),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                // Close Button
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.image_preview_close),
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            // Bottom Dot Indicator if multiple images
+            if (images.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                        .padding(bottom = 28.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(images.size) { index ->
+                        val isSelected = previewPagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) 8.dp else 6.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) Color.White else Color.White.copy(alpha = 0.35f))
+                        )
+                    }
+                }
             }
         }
     }

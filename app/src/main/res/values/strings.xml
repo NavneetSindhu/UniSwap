@@ -168,4 +168,8 @@
     <string name="item_not_found_title">Listing Not Found</string>
     <string name="item_not_found_subtitle">This item may have been removed or is no longer available.</string>
     <string name="item_not_found_cta">Back to Feed</string>
+
+    <!-- Image Preview -->
+    <string name="image_preview_close">Close Preview</string>
+    <string name="image_preview_counter">%1$d of %2$d</string>
 </resources>

@@ -30,7 +30,15 @@ data class CampusItem(
     val sellerName: String = "",
     val timeAgo: String = "",
     val imageUrl: String = "",
+    val imageUrls: List<String> = emptyList(),
     val isVerified: Boolean = false,
     val status: ItemStatus = ItemStatus.AVAILABLE,
     val timestamp: Long = System.currentTimeMillis()
-)
+) {
+    fun getAllImages(): List<String> {
+        val list = imageUrls.filter { it.isNotBlank() }
+        if (list.isNotEmpty()) return list
+        if (imageUrl.isNotBlank()) return listOf(imageUrl)
+        return listOf(category.getPlaceholderUrl())
+    }
+}

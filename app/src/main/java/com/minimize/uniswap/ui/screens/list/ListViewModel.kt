@@ -128,25 +128,28 @@ class ListViewModel @Inject constructor(
             val userId = authRepository.getCurrentUserId() ?: return@launch
             _isPosting.value = true
 
-            // Upload image to Cloudinary if user picked local photos
-            var finalImageUrl = (_selectedCategory.value ?: ItemCategory.OTHER).getPlaceholderUrl()
+            // Upload images to Cloudinary if user picked local photos
             val imagesToUpload = _selectedImages.value
+            val uploadedUrls = mutableListOf<String>()
 
             if (imagesToUpload.isNotEmpty()) {
-                val firstUri = imagesToUpload[0]
-                val uploadResult = cloudinaryHelper.uploadImage(
-                    context = context,
-                    imageUri = firstUri,
-                    folder = "uniswap/users/$userId/items",
-                    tags = "user_$userId,uniswap_item"
-                )
-                uploadResult.onSuccess { uploadedUrl ->
-                    finalImageUrl = uploadedUrl
-                }.onFailure {
-                    // Fallback to placeholder if upload fails or is not configured yet
-                    finalImageUrl = firstUri.toString()
+                for (uri in imagesToUpload) {
+                    val uploadResult = cloudinaryHelper.uploadImage(
+                        context = context,
+                        imageUri = uri,
+                        folder = "uniswap/users/$userId/items",
+                        tags = "user_$userId,uniswap_item"
+                    )
+                    uploadResult.onSuccess { uploadedUrl ->
+                        uploadedUrls.add(uploadedUrl)
+                    }.onFailure {
+                        uploadedUrls.add(uri.toString())
+                    }
                 }
             }
+
+            val finalImageUrl = uploadedUrls.firstOrNull() ?: (_selectedCategory.value ?: ItemCategory.OTHER).getPlaceholderUrl()
+            val finalImageUrls = if (uploadedUrls.isNotEmpty()) uploadedUrls else listOf(finalImageUrl)
 
             val currentUser = authRepository.getCurrentUser()
             val sellerDisplayName = currentUser?.displayName?.ifBlank { "Campus User" } ?: "Campus User"
@@ -162,6 +165,7 @@ class ListViewModel @Inject constructor(
                 sellerName = sellerDisplayName,
                 timeAgo = "Just now",
                 imageUrl = finalImageUrl,
+                imageUrls = finalImageUrls,
                 isVerified = currentUser?.isEmailVerified ?: false,
                 status = ItemStatus.AVAILABLE,
                 timestamp = System.currentTimeMillis()
