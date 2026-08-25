@@ -48,6 +48,7 @@ class CloudinaryHelper @Inject constructor() {
         imageUri: Uri,
         folder: String? = null,
         tags: String? = null,
+        moderation: String? = null,
         cloudName: String = CLOUD_NAME,
         uploadPreset: String = UPLOAD_PRESET
     ): Result<String> = withContext(Dispatchers.IO) {
@@ -83,6 +84,10 @@ class CloudinaryHelper @Inject constructor() {
                 builder.addFormDataPart("tags", tags)
             }
 
+            if (!moderation.isNullOrBlank()) {
+                builder.addFormDataPart("moderation", moderation)
+            }
+
             val multipartBody = builder.build()
 
             val request = Request.Builder()
@@ -95,6 +100,22 @@ class CloudinaryHelper @Inject constructor() {
 
             if (response.isSuccessful) {
                 val json = JSONObject(responseBody)
+
+                // Check Cloud AI moderation results if enabled
+                val moderationArray = json.optJSONArray("moderation")
+                if (moderationArray != null && moderationArray.length() > 0) {
+                    for (i in 0 until moderationArray.length()) {
+                        val modObj = moderationArray.optJSONObject(i)
+                        val status = modObj?.optString("status")?.lowercase()
+                        if (status == "rejected") {
+                            val kind = modObj.optString("kind", "AI Moderation")
+                            return@withContext Result.failure(
+                                Exception("Image flagged by $kind as inappropriate and cannot be posted.")
+                            )
+                        }
+                    }
+                }
+
                 val secureUrl = json.optString("secure_url")
                 if (secureUrl.isNotBlank()) {
                     Result.success(secureUrl)

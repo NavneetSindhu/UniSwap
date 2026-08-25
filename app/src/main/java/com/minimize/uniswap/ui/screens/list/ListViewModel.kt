@@ -192,12 +192,25 @@ class ListViewModel @Inject constructor(
                     }
                 }
                 val results = uploadDeferreds.awaitAll()
+                val moderationErrors = mutableListOf<String>()
+
                 for (i in results.indices) {
                     results[i].onSuccess { url ->
                         uploadedUrls.add(url)
-                    }.onFailure {
-                        uploadedUrls.add(imagesToUpload[i].toString())
+                    }.onFailure { error ->
+                        val msg = error.message ?: "Upload failed"
+                        if (msg.contains("flagged", ignoreCase = true) || msg.contains("inappropriate", ignoreCase = true)) {
+                            moderationErrors.add(msg)
+                        } else {
+                            uploadedUrls.add(imagesToUpload[i].toString())
+                        }
                     }
+                }
+
+                if (moderationErrors.isNotEmpty()) {
+                    _isPosting.value = false
+                    _uiState.update { it.copy(errorMessage = moderationErrors.first()) }
+                    return@launch
                 }
             }
 
