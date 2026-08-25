@@ -172,4 +172,35 @@
     <!-- Image Preview -->
     <string name="image_preview_close">Close Preview</string>
     <string name="image_preview_counter">%1$d of %2$d</string>
+
+    <!-- Trust & Safety / Report & Block -->
+    <string name="action_report_listing">Report Listing</string>
+    <string name="action_report_user">Report User</string>
+    <string name="action_block_seller">Block Seller</string>
+    <string name="action_block_user">Block User</string>
+    <string name="action_share_listing">Share Listing</string>
+    <string name="action_share_subject">Check out %1$s on UniSwap</string>
+    <string name="action_share_text">Hey! Found this item on UniSwap: %1$s for ₹%2$s. Download UniSwap to view details!</string>
+    
+    <!-- Report Dialog -->
+    <string name="report_title">Report Content</string>
+    <string name="report_subtitle">Help keep our campus community safe. Why are you reporting this?</string>
+    <string name="report_reason_inappropriate">Inappropriate or Explicit Content</string>
+    <string name="report_reason_scam">Scam, Fake Listing, or Fraud</string>
+    <string name="report_reason_prohibited">Prohibited, Dangerous, or Illegal Item</string>
+    <string name="report_reason_harassment">Harassment, Bullying, or Offensive</string>
+    <string name="report_reason_other">Other Concerns</string>
+    <string name="report_details_label">Additional context (optional)</string>
+    <string name="report_details_placeholder">Provide any extra details to help our moderation team…</string>
+    <string name="report_submit_button">Submit Report</string>
+    <string name="report_success_toast">Report submitted. Thank you for keeping our campus safe.</string>
+    <string name="report_failed_toast">Failed to submit report. Please try again.</string>
+    
+    <!-- Block Dialog -->
+    <string name="block_dialog_title">Block %1$s?</string>
+    <string name="block_dialog_message">You will no longer see listings or receive messages from this user. They will not be notified that you blocked them.</string>
+    <string name="action_block">Block</string>
+    <string name="block_success_toast">User has been blocked.</string>
+    <string name="block_failed_toast">Failed to block user. Please try again.</string>
+    <string name="user_blocked_notice">You have blocked this user.</string>
 </resources>
