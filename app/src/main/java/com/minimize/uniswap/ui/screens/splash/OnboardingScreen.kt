@@ -2,6 +2,8 @@ package com.minimize.uniswap.ui.screens.splash
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -32,9 +34,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.minimize.uniswap.R
 import com.minimize.uniswap.ui.components.DotIndicator
+import com.minimize.uniswap.ui.screens.auth.LoginScreen
 import com.minimize.uniswap.ui.screens.auth.LoginViewModel
 import com.minimize.uniswap.ui.screens.splash.components.OnboardingBackgroundGrid
-import com.minimize.uniswap.ui.screens.splash.components.WelcomeAuthCard
 import com.minimize.uniswap.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -75,138 +77,123 @@ fun OnboardingScreen(
             OnboardingBackgroundGrid()
         }
 
-        if (isAuthSlide) {
-            // Full-screen Clean Auth Experience (iPhone 16 & 17 Pro - 11)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                WelcomeAuthCard(
-                    email = viewModel.email,
-                    onEmailChange = { viewModel.email = it },
-                    password = viewModel.password,
-                    onPasswordChange = { viewModel.password = it },
-                    name = viewModel.name,
-                    onNameChange = { viewModel.name = it },
-                    isSignUpMode = viewModel.isSignUpMode,
-                    onToggleMode = { onNavigateToSignUp() },
-                    onSubmit = { viewModel.onSubmitClick() },
-                    onGoogleSignInClick = { viewModel.onGoogleLoginClick(context) },
-                    isLoading = viewModel.isLoading,
-                    errorMessage = viewModel.errorMessage
+        AnimatedContent(
+            targetState = isAuthSlide,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(350, easing = FastOutSlowInEasing)) togetherWith
+                fadeOut(animationSpec = tween(250, easing = FastOutSlowInEasing))
+            },
+            label = "OnboardingToAuthTransition"
+        ) { showAuth ->
+            if (showAuth) {
+                // Full-screen Clean Auth Experience using polished LoginScreen
+                LoginScreen(
+                    onLoginSuccess = onComplete,
+                    onNavigateToSignUp = onNavigateToSignUp,
+                    viewModel = viewModel
                 )
-            }
-        } else {
-            // Top Header: Skip Button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.action_skip),
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    color = themeColors.textSecondary,
-                    modifier = Modifier
-                        .clickable {
-                            scope.launch {
-                                pagerState.animateScrollToPage(totalPages - 1)
+            } else {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Top Header: Skip Button
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.action_skip),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = themeColors.textSecondary,
+                            modifier = Modifier
+                                .clickable {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(totalPages - 1)
+                                    }
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+
+                    // Bottom Content Container for Onboarding Slides (1..3)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 24.dp),
+                        verticalArrangement = Arrangement.Bottom,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Fixed-Height Pager Content Area
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        ) { page ->
+                            if (page < pageTitles.size) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.TopStart
+                                ) {
+                                    Text(
+                                        text = stringResource(pageTitles[page]),
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 36.sp,
+                                        lineHeight = 42.sp,
+                                        letterSpacing = (-0.5).sp,
+                                        color = themeColors.textPrimary,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
-                        .padding(8.dp)
-                )
-            }
 
-            // Bottom Content Container for Onboarding Slides (1..3)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.Bottom,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Fixed-Height Pager Content Area
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                ) { page ->
-                    if (page < pageTitles.size) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.TopStart
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Dot Indicator (Slides 1..3)
+                        DotIndicator(
+                            pageCount = 3,
+                            currentPage = pagerState.currentPage.coerceAtMost(2),
+                            activeColor = themeColors.textPrimary,
+                            inactiveColor = themeColors.textSubtle
+                        )
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Continue Button
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = themeColors.textPrimary,
+                                contentColor = themeColors.background
+                            )
                         ) {
                             Text(
-                                text = stringResource(pageTitles[page]),
+                                text = stringResource(if (pagerState.currentPage == 2) R.string.action_get_started else R.string.action_continue),
                                 fontFamily = MatterFontFamily,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 36.sp,
-                                lineHeight = 42.sp,
-                                letterSpacing = (-0.5).sp,
-                                color = themeColors.textPrimary,
-                                modifier = Modifier.fillMaxWidth()
+                                fontSize = 16.sp,
+                                color = themeColors.background
                             )
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // Dot Indicator (Slides 1..3)
-                DotIndicator(
-                    pageCount = 3,
-                    currentPage = pagerState.currentPage.coerceAtMost(2),
-                    activeColor = themeColors.textPrimary,
-                    inactiveColor = themeColors.textSubtle
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // Continue Button
-                Button(
-                    onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = themeColors.textPrimary,
-                        contentColor = themeColors.background
-                    )
-                ) {
-                    Text(
-                        text = stringResource(if (pagerState.currentPage == 2) R.string.action_get_started else R.string.action_continue),
-                        fontFamily = MatterFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = themeColors.background
-                    )
-                }
             }
-        }
-    }
-
-    // Trigger onComplete when authentication succeeds
-    LaunchedEffect(viewModel.isSuccess) {
-        if (viewModel.isSuccess) {
-            onComplete()
         }
     }
 }

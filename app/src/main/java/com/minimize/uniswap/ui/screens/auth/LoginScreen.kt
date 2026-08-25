@@ -1,5 +1,8 @@
 package com.minimize.uniswap.ui.screens.auth
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,28 +14,39 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.components.AppBottomSheet
 import com.minimize.uniswap.ui.theme.*
 
 /**
@@ -40,6 +54,7 @@ import com.minimize.uniswap.ui.theme.*
  * Matches exact Figma specifications: 40sp WELCOME header, 10sp subtitle, 53dp capsule inputs,
  * primary sign-in action button, and Google sign-in.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
@@ -51,15 +66,24 @@ fun LoginScreen(
     val focusManager = LocalFocusManager.current
     val themeColors = UniSwapTheme.colors
 
-    Column(
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var showTermsSheet by remember { mutableStateOf(false) }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(themeColors.background)
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+        contentAlignment = Alignment.Center
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
         Spacer(modifier = Modifier.height(24.dp))
 
         // 1. Heading: "WELCOME"
@@ -132,15 +156,15 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 4. Password Field
+        // 4. Password Field with Visibility Toggle
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(53.dp)
                 .clip(RoundedCornerShape(50.dp))
                 .background(themeColors.btnBackBg)
-                .padding(horizontal = 22.dp),
-            contentAlignment = Alignment.Center
+                .padding(start = 22.dp, end = 12.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
             if (viewModel.password.isEmpty()) {
                 Text(
@@ -151,7 +175,9 @@ fun LoginScreen(
                     letterSpacing = (-0.28).sp,
                     color = themeColors.textSubtle,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 36.dp)
                 )
             }
 
@@ -168,14 +194,30 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 ),
                 cursorBrush = SolidColor(themeColors.textPrimary),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     focusManager.clearFocus()
                     viewModel.onSignInClick()
                 }),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 36.dp)
             )
+
+            IconButton(
+                onClick = { isPasswordVisible = !isPasswordVisible },
+                modifier = Modifier
+                    .size(36.dp)
+                    .align(Alignment.CenterEnd)
+            ) {
+                Icon(
+                    imageVector = if (isPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                    contentDescription = stringResource(R.string.password_placeholder),
+                    tint = themeColors.textSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
 
         // Error message feedback
@@ -194,6 +236,26 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        val primaryButtonBg by animateColorAsState(
+            targetValue = if (viewModel.isSuccess && !viewModel.isGoogleLoading) {
+                themeColors.success
+            } else {
+                themeColors.textPrimary
+            },
+            animationSpec = tween(300, easing = FastOutSlowInEasing),
+            label = "PrimaryButtonBg"
+        )
+
+        val googleButtonBg by animateColorAsState(
+            targetValue = if (viewModel.isSuccess && viewModel.isGoogleLoading) {
+                themeColors.success
+            } else {
+                themeColors.btnBackBg
+            },
+            animationSpec = tween(300, easing = FastOutSlowInEasing),
+            label = "GoogleButtonBg"
+        )
+
         // 5. Primary Sign In Button
         Button(
             onClick = {
@@ -205,12 +267,33 @@ fun LoginScreen(
                 .height(53.dp),
             shape = RoundedCornerShape(50.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = themeColors.textPrimary,
-                contentColor = themeColors.background
+                containerColor = primaryButtonBg,
+                contentColor = if (viewModel.isSuccess && !viewModel.isGoogleLoading) Color.White else themeColors.background
             ),
-            enabled = !viewModel.isLoading
+            enabled = !viewModel.isLoading && !viewModel.isSuccess
         ) {
-            if (viewModel.isEmailLoading) {
+            if (viewModel.isSuccess && !viewModel.isGoogleLoading) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.sign_in_success),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        letterSpacing = (-0.28).sp,
+                        color = Color.White
+                    )
+                }
+            } else if (viewModel.isEmailLoading) {
                 CircularProgressIndicator(
                     color = themeColors.background,
                     modifier = Modifier.size(22.dp),
@@ -236,13 +319,34 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(53.dp)
                 .clip(RoundedCornerShape(50.dp))
-                .background(themeColors.btnBackBg)
-                .clickable(enabled = !viewModel.isLoading) {
+                .background(googleButtonBg)
+                .clickable(enabled = !viewModel.isLoading && !viewModel.isSuccess) {
                     viewModel.onGoogleLoginClick(context)
                 },
             contentAlignment = Alignment.Center
         ) {
-            if (viewModel.isGoogleLoading) {
+            if (viewModel.isSuccess && viewModel.isGoogleLoading) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.sign_in_success),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        letterSpacing = (-0.28).sp,
+                        color = Color.White
+                    )
+                }
+            } else if (viewModel.isGoogleLoading) {
                 CircularProgressIndicator(
                     color = themeColors.textPrimary,
                     modifier = Modifier.size(22.dp),
@@ -288,11 +392,83 @@ fun LoginScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // 8. Terms of Service & Privacy Policy Notice
+        val termsNotice = buildAnnotatedString {
+            append(stringResource(R.string.terms_prefix).trim())
+            append(" ")
+            withStyle(SpanStyle(color = themeColors.textPrimary, fontWeight = FontWeight.Bold)) {
+                append(stringResource(R.string.terms_of_service).trim())
+            }
+            append(" ")
+            append(stringResource(R.string.terms_and).trim())
+            append(" ")
+            withStyle(SpanStyle(color = themeColors.textPrimary, fontWeight = FontWeight.Bold)) {
+                append(stringResource(R.string.privacy_policy).trim())
+            }
+        }
+
+        Text(
+            text = termsNotice,
+            fontFamily = MatterFontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.sp,
+            lineHeight = 16.sp,
+            color = themeColors.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .clickable { showTermsSheet = true }
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
+        }
     }
+
+    // Terms & Privacy Modal Bottom Sheet
+    if (showTermsSheet) {
+        AppBottomSheet(
+            onDismissRequest = { showTermsSheet = false },
+            heightFraction = 0.55f,
+            containerColor = themeColors.cardSurface,
+            contentColor = themeColors.textPrimary
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_terms_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Text(
+                    text = stringResource(R.string.settings_terms_body),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp,
+                    color = themeColors.textSecondary
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(viewModel.isSuccess) {
         if (viewModel.isSuccess) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            delay(550)
             onLoginSuccess()
         }
     }
