@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -31,14 +32,14 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * Reusable Bottom Sheet with fixed height bounds irrespective of child list length.
+ * Reusable Bottom Sheet supporting both fixed height bounds and wrap-content layouts.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    heightFraction: Float = 0.65f,
+    heightFraction: Float? = 0.65f,
     sheetState: SheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     ),
@@ -62,14 +63,27 @@ fun AppBottomSheet(
         modifier = modifier
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(heightFraction)
+            modifier = if (heightFraction != null) {
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(heightFraction)
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            }
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .navigationBarsPadding()
+                modifier = if (heightFraction != null) {
+                    Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                } else {
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .navigationBarsPadding()
+                }
             ) {
                 // Header Bar with Drag Handle & Theme-Aware Close Button
                 Box(
