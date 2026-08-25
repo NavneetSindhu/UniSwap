@@ -17,3 +17,17 @@
 - Handle system bars (status bar / notch, navigation bars, IME keyboard) centrally at the root `Scaffold` or top-level navigation container.
 - Individual child screens and cards should not duplicate redundant padding or compete with root insets.
 - Ensure bottom navigation bars and floating action elements float or anchor consistently above system navigation insets.
+
+## 5. Git Branching, Micro-Commits & Push Workflow
+- **Local Feature & Fix Branching**:
+  - Always develop features, fixes, and experiments on dedicated, short-lived local branches (`feat/...`, `fix/...`, `refactor/...`).
+  - Keep short-lived branches local; avoid pushing temporary branches to the remote repository.
+- **Atomic Semantic Micro-Commits**:
+  - Divide work into small, cohesive, single-responsibility micro-commits (one commit strictly caters to closely related changes).
+  - Use conventional semantic commit formats (`feat(...)`, `fix(...)`, `refactor(...)`, `chore(...)`) with clear, descriptive explanations.
+- **Local Verification, Merge & Push Pipeline**:
+  - Test and verify changes in the AVD emulator before merging.
+  - Merge the feature branch locally into `main` (`git checkout main && git merge <branch>`).
+  - Push the single source of truth `main` branch to remote (`git push origin main`).
+  - Delete merged local branches (`git branch -d <branch>`) to maintain a clean workspace.
+
