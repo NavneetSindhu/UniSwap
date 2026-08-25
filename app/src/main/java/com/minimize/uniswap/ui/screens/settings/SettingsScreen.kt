@@ -1,10 +1,18 @@
 package com.minimize.uniswap.ui.screens.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -34,6 +43,7 @@ import com.minimize.uniswap.data.model.Report
 import com.minimize.uniswap.data.model.ReportStatus
 import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.R
+import com.minimize.uniswap.BuildConfig
 import com.minimize.uniswap.data.preferences.ThemeMode
 import com.minimize.uniswap.ui.theme.*
 
@@ -424,6 +434,7 @@ fun SettingsScreen(
                         EmptyStateView(
                             title = stringResource(R.string.blocked_users_empty_title),
                             subtitle = stringResource(R.string.blocked_users_empty_subtitle),
+                            lottieRes = R.raw.anim_user_search,
                             fallbackIcon = Icons.Outlined.Block
                         )
                     }
@@ -622,11 +633,11 @@ fun SettingsScreen(
         }
     }
 
-    // 5. Terms of Service Bottom Sheet
+    // 5. Terms of Service / About Bottom Sheet
     if (showTermsDialog) {
         AppBottomSheet(
             onDismissRequest = { showTermsDialog = false },
-            heightFraction = 0.65f,
+            heightFraction = 0.95f,
             containerColor = themeColors.cardSurface,
             contentColor = themeColors.textPrimary
         ) {
@@ -635,57 +646,160 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.settings_terms_title),
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = themeColors.textPrimary,
-                    modifier = Modifier.padding(bottom = 14.dp)
-                )
+                // Header (Vertically structured to avoid overlap)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.about_uniswap_title),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = themeColors.textPrimary
+                        )
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(themeColors.btnBackBg)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.about_version_pill, BuildConfig.VERSION_NAME),
+                                fontFamily = MatterFontFamily,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = themeColors.textSecondary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = stringResource(R.string.settings_terms_body),
+                        text = stringResource(R.string.about_tagline),
                         fontFamily = MatterFontFamily,
                         fontSize = 13.sp,
-                        lineHeight = 20.sp,
                         color = themeColors.textSecondary
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = { showTermsDialog = false },
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = themeColors.textPrimary,
-                        contentColor = themeColors.background
-                    )
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    // Mission Card
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(themeColors.btnBackBg)
+                            .padding(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.Eco,
+                                contentDescription = null,
+                                tint = themeColors.wasteMetricGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.about_section_mission_title),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = themeColors.textPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.about_section_mission_body),
+                            fontFamily = MatterFontFamily,
+                            fontSize = 13.sp,
+                            lineHeight = 19.sp,
+                            color = themeColors.textSecondary
+                        )
+                    }
+
                     Text(
-                        text = stringResource(R.string.action_close),
+                        text = stringResource(R.string.about_section_guidelines_title),
                         fontFamily = MatterFontFamily,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = themeColors.textPrimary,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+
+                    // Rule 1
+                    AboutRuleItem(
+                        icon = Icons.Outlined.VerifiedUser,
+                        title = stringResource(R.string.about_rule_1_title),
+                        body = stringResource(R.string.about_rule_1_body),
+                        accentColor = ActionLinkBlue
+                    )
+
+                    // Rule 2
+                    AboutRuleItem(
+                        icon = Icons.Outlined.LocalLibrary,
+                        title = stringResource(R.string.about_rule_2_title),
+                        body = stringResource(R.string.about_rule_2_body),
+                        accentColor = CampusAmber
+                    )
+
+                    // Rule 3
+                    AboutRuleItem(
+                        icon = Icons.Outlined.WarningAmber,
+                        title = stringResource(R.string.about_rule_3_title),
+                        body = stringResource(R.string.about_rule_3_body),
+                        accentColor = MaterialTheme.colorScheme.error
+                    )
+
+                    // Rule 4
+                    AboutRuleItem(
+                        icon = Icons.Outlined.MonetizationOn,
+                        title = stringResource(R.string.about_rule_4_title),
+                        body = stringResource(R.string.about_rule_4_body),
+                        accentColor = themeColors.wasteMetricGreen
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+                        fontFamily = MatterFontFamily,
+                        fontSize = 11.sp,
+                        color = themeColors.textSubtle,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
                     )
                 }
             }
         }
     }
 
-    // 6. Help Center Bottom Sheet
+    // 6. Help Center Full-Screen Bottom Sheet (Collapsible Q&A with Filters)
     if (showHelpDialog) {
+        var selectedFaqFilter by remember { mutableStateOf(FaqFilter.ALL) }
+        var expandedFaqId by remember { mutableStateOf<String?>("q1") }
+
+        val displayedFaqs = remember(selectedFaqFilter) {
+            if (selectedFaqFilter == FaqFilter.ALL) FAQ_ITEMS
+            else FAQ_ITEMS.filter { it.filter == selectedFaqFilter }
+        }
+
         AppBottomSheet(
             onDismissRequest = { showHelpDialog = false },
-            heightFraction = 0.65f,
+            heightFraction = 0.95f,
             containerColor = themeColors.cardSurface,
             contentColor = themeColors.textPrimary
         ) {
@@ -694,47 +808,69 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
+                // Top Header
                 Text(
                     text = stringResource(R.string.settings_help_title),
                     fontFamily = MatterFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = themeColors.textPrimary,
-                    modifier = Modifier.padding(bottom = 14.dp)
+                    fontSize = 20.sp,
+                    color = themeColors.textPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(R.string.settings_help_subtitle),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 12.sp,
+                    color = themeColors.textSecondary
                 )
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Filter Pills Row
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = stringResource(R.string.settings_help_body),
-                        fontFamily = MatterFontFamily,
-                        fontSize = 13.sp,
-                        lineHeight = 20.sp,
-                        color = themeColors.textSecondary
-                    )
+                    items(FaqFilter.values(), key = { it.name }) { filter ->
+                        val isSelected = filter == selectedFaqFilter
+                        val pillBg = if (isSelected) themeColors.textPrimary else themeColors.btnBackBg
+                        val pillTextColor = if (isSelected) themeColors.background else themeColors.textSecondary
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(pillBg)
+                                .clickable { selectedFaqFilter = filter }
+                                .padding(horizontal = 14.dp, vertical = 7.dp)
+                        ) {
+                            Text(
+                                text = stringResource(filter.labelResId),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                fontSize = 12.sp,
+                                color = pillTextColor
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                Button(
-                    onClick = { showHelpDialog = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = themeColors.textPrimary,
-                        contentColor = themeColors.background
-                    )
+                // Collapsible Q&A List
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 32.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.action_close),
-                        fontFamily = MatterFontFamily,
-                        fontWeight = FontWeight.Medium
-                    )
+                    items(displayedFaqs, key = { it.id }) { faq ->
+                        FaqAccordionCard(
+                            faq = faq,
+                            isExpanded = expandedFaqId == faq.id,
+                            onToggle = {
+                                expandedFaqId = if (expandedFaqId == faq.id) null else faq.id
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -954,3 +1090,150 @@ private fun SettingsDivider() {
         color = PaletteDark.Gray700.copy(alpha = 0.35f)
     )
 }
+
+@Composable
+private fun AboutRuleItem(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    accentColor: Color
+) {
+    val themeColors = UniSwapTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(themeColors.btnBackBg)
+            .padding(14.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(accentColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = accentColor,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = themeColors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = body,
+                fontFamily = MatterFontFamily,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                color = themeColors.textSecondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun FaqAccordionCard(
+    faq: FaqItem,
+    isExpanded: Boolean,
+    onToggle: () -> Unit
+) {
+    val themeColors = UniSwapTheme.colors
+    val rotationState by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        label = "faq_chevron_rotation"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(themeColors.btnBackBg)
+            .clickable(onClick = onToggle)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(faq.questionResId),
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                color = themeColors.textPrimary,
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Icon(
+                imageVector = Icons.Outlined.ExpandMore,
+                contentDescription = null,
+                tint = themeColors.textSecondary,
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(rotationState)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column {
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(
+                    thickness = 0.6.dp,
+                    color = themeColors.cardSurface
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = stringResource(faq.answerResId),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
+                    color = themeColors.textSecondary
+                )
+            }
+        }
+    }
+}
+
+private enum class FaqFilter(val labelResId: Int) {
+    ALL(R.string.faq_cat_all),
+    SAFETY(R.string.faq_cat_safety),
+    TRADING(R.string.faq_cat_trading),
+    MEETUPS(R.string.faq_cat_meetups),
+    ACCOUNT(R.string.faq_cat_account)
+}
+
+private data class FaqItem(
+    val id: String,
+    val filter: FaqFilter,
+    val questionResId: Int,
+    val answerResId: Int
+)
+
+private val FAQ_ITEMS = listOf(
+    FaqItem("q1", FaqFilter.SAFETY, R.string.faq_q1, R.string.faq_a1),
+    FaqItem("q2", FaqFilter.MEETUPS, R.string.faq_q2, R.string.faq_a2),
+    FaqItem("q3", FaqFilter.TRADING, R.string.faq_q3, R.string.faq_a3),
+    FaqItem("q4", FaqFilter.TRADING, R.string.faq_q4, R.string.faq_a4),
+    FaqItem("q5", FaqFilter.SAFETY, R.string.faq_q5, R.string.faq_a5),
+    FaqItem("q6", FaqFilter.ACCOUNT, R.string.faq_q6, R.string.faq_a6),
+    FaqItem("q7", FaqFilter.TRADING, R.string.faq_q7, R.string.faq_a7),
+    FaqItem("q8", FaqFilter.ACCOUNT, R.string.faq_q8, R.string.faq_a8)
+)
