@@ -39,6 +39,6 @@
 - **Mandatory Annotation for Experimental APIs**: Whenever writing or modifying composables that consume experimental Jetpack Compose or Material 3 APIs (such as `ModalBottomSheet`, `rememberModalBottomSheetState`, `BottomSheetDefaults`, `PullToRefreshBox`, `combinedClickable`), always proactively annotate the function with the required `@OptIn(...)` annotation (e.g., `@OptIn(ExperimentalMaterial3Api::class)`, `@OptIn(ExperimentalFoundationApi::class)`).
 - **Mandatory Opt-In Imports**: Always ensure that the corresponding import statement (e.g., `import androidx.compose.material3.ExperimentalMaterial3Api`) is added at the top of the file alongside the annotation.
 
-
-
-
+## 8. Smooth Motion & Animated State Transitions
+- **No Abrupt UI Swaps**: Filter toggles, chips, segmented tabs, and dynamic content states (empty vs populated lists) MUST animate smoothly using `animateColorAsState`, `AnimatedVisibility`, `AnimatedContent`, and `Modifier.animateItem()` / `Modifier.animateItemPlacement()`.
+- **Micro-Interactions**: Pill filters, toggle indicators, and selection badges must utilize subtle expand/shrink and crossfade transitions (e.g. `tween(220, easing = FastOutSlowInEasing)`) for fluid, tactile feedback.
