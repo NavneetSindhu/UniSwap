@@ -37,6 +37,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.minimize.uniswap.ui.components.EmptyStateView
 
+import android.widget.Toast
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.platform.LocalContext
+import com.minimize.uniswap.ui.components.BlockUserDialog
+import com.minimize.uniswap.ui.components.ItemActionBottomSheet
+import com.minimize.uniswap.ui.components.ReportBottomSheet
+
 data class ChatBubbleMessage(
     val id: String,
     val text: String,
@@ -58,14 +65,34 @@ fun PickupChatScreen(
 ) {
     val item by viewModel.item.collectAsState()
     val liveMessages by viewModel.messages.collectAsState()
+    val isSubmittingReport by viewModel.isSubmittingReport.collectAsState()
+    val isBlockingUser by viewModel.isBlockingUser.collectAsState()
+    val userMessage by viewModel.userMessage.collectAsState()
+    val blockedUserIds by viewModel.blockedUserIds.collectAsState()
+
+    val context = LocalContext.current
     var inputText by remember(initialMessage) { mutableStateOf(initialMessage ?: "") }
     val listState = rememberLazyListState()
+
+    var isActionSheetOpen by remember { mutableStateOf(false) }
+    var isReportSheetOpen by remember { mutableStateOf(false) }
+    var isBlockDialogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(itemId, buyerId) {
         viewModel.loadItem(itemId, buyerId)
     }
 
+    LaunchedEffect(userMessage) {
+        userMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearUserMessage()
+        }
+    }
+
     val isSeller = viewModel.currentUserId.isNotBlank() && viewModel.currentUserId == item?.sellerId
+    val otherUserId = if (isSeller) (buyerId ?: "") else (item?.sellerId ?: "")
+    val isOtherUserBlocked = otherUserId in blockedUserIds
+
     val studentName = if (isSeller) {
         "Buyer"
     } else {
@@ -90,6 +117,57 @@ fun PickupChatScreen(
     }
 
     val themeColors = UniSwapTheme.colors
+
+    // Safety sheets
+    if (isActionSheetOpen && item != null) {
+        ItemActionBottomSheet(
+            onDismissRequest = { isActionSheetOpen = false },
+            itemTitle = item!!.title,
+            sellerName = studentName,
+            isSellerSelf = false,
+            onShareClick = {
+                val shareText = "Chat regarding: ${item!!.title}"
+                val sendIntent = android.content.Intent().apply {
+                    action = android.content.Intent.ACTION_SEND
+                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                    type = "text/plain"
+                }
+                context.startActivity(android.content.Intent.createChooser(sendIntent, "Share"))
+            },
+            onReportClick = { isReportSheetOpen = true },
+            onBlockClick = { isBlockDialogOpen = true }
+        )
+    }
+
+    if (isReportSheetOpen && item != null) {
+        ReportBottomSheet(
+            onDismissRequest = { isReportSheetOpen = false },
+            isSubmitting = isSubmittingReport,
+            onSubmitReport = { reason, details ->
+                viewModel.submitReport(reason, details) { success ->
+                    if (success) {
+                        isReportSheetOpen = false
+                    }
+                }
+            }
+        )
+    }
+
+    if (isBlockDialogOpen && item != null) {
+        BlockUserDialog(
+            userName = studentName,
+            isBlocking = isBlockingUser,
+            onConfirmBlock = {
+                viewModel.blockOtherUser { success ->
+                    isBlockDialogOpen = false
+                    if (success) {
+                        onBackClick()
+                    }
+                }
+            },
+            onDismiss = { isBlockDialogOpen = false }
+        )
+    }
 
     Scaffold(
         containerColor = themeColors.background,
@@ -151,6 +229,7 @@ fun PickupChatScreen(
 
                         // Student Name + Verified Student Icon
                         Row(
+                            modifier = Modifier.weight(1f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -173,6 +252,23 @@ fun PickupChatScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                         }
+
+                        // Top Right 3-Dot Safety Action Button
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(themeColors.btnBackBg)
+                                .clickable { isActionSheetOpen = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.action_report_user),
+                                tint = themeColors.textPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -192,83 +288,101 @@ fun PickupChatScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 10.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(50.dp))
-                            .background(themeColors.cardSurface)
-                            .padding(horizontal = 18.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically
+                    if (isOtherUserBlocked) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(themeColors.cardSurface)
+                                .padding(horizontal = 18.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            // Typing Indicator (|) + Text Input
-                            Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart
+                            Text(
+                                text = stringResource(R.string.user_blocked_notice),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(themeColors.cardSurface)
+                                .padding(horizontal = 18.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (inputText.isEmpty()) {
-                                    Text(
-                                        text = stringResource(R.string.type_here_placeholder),
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Normal,
-                                        fontSize = 13.sp,
-                                        letterSpacing = (-0.2).sp,
-                                        color = themeColors.textSubtle
+                                // Typing Indicator (|) + Text Input
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    if (inputText.isEmpty()) {
+                                        Text(
+                                            text = stringResource(R.string.type_here_placeholder),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Normal,
+                                            fontSize = 13.sp,
+                                            letterSpacing = (-0.2).sp,
+                                            color = themeColors.textSubtle
+                                        )
+                                    }
+
+                                    BasicTextField(
+                                        value = inputText,
+                                        onValueChange = { inputText = it },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Normal,
+                                            color = themeColors.textPrimary,
+                                            fontSize = 13.sp,
+                                            letterSpacing = (-0.2).sp
+                                        ),
+                                        cursorBrush = SolidColor(themeColors.textPrimary),
+                                        keyboardOptions = KeyboardOptions(
+                                            capitalization = KeyboardCapitalization.Sentences,
+                                            imeAction = ImeAction.Send
+                                        ),
+                                        keyboardActions = KeyboardActions(
+                                            onSend = {
+                                                if (inputText.isNotBlank()) {
+                                                    viewModel.sendMessage(inputText)
+                                                    inputText = ""
+                                                }
+                                            }
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
 
-                                BasicTextField(
-                                    value = inputText,
-                                    onValueChange = { inputText = it },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Normal,
-                                        color = themeColors.textPrimary,
-                                        fontSize = 13.sp,
-                                        letterSpacing = (-0.2).sp
-                                    ),
-                                    cursorBrush = SolidColor(themeColors.textPrimary),
-                                    keyboardOptions = KeyboardOptions(
-                                        capitalization = KeyboardCapitalization.Sentences,
-                                        imeAction = ImeAction.Send
-                                    ),
-                                    keyboardActions = KeyboardActions(
-                                        onSend = {
-                                            if (inputText.isNotBlank()) {
-                                                viewModel.sendMessage(inputText)
-                                                inputText = ""
-                                            }
-                                        }
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-
-                            // Send Action Button
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
-                                    .clickable(enabled = inputText.isNotBlank()) {
-                                        viewModel.sendMessage(inputText)
-                                        inputText = ""
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = "Send Message",
-                                    tint = if (inputText.isNotBlank()) themeColors.background else themeColors.textSubtle,
+                                // Send Action Button
+                                Box(
                                     modifier = Modifier
-                                        .size(16.dp)
-                                        .padding(start = 2.dp)
-                                )
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
+                                        .clickable(enabled = inputText.isNotBlank()) {
+                                            viewModel.sendMessage(inputText)
+                                            inputText = ""
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send",
+                                        tint = if (inputText.isNotBlank()) themeColors.background else themeColors.textSubtle,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
                         }
                     }

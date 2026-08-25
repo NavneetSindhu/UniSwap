@@ -9,6 +9,9 @@ import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.CategoryConfigRepository
 import com.minimize.uniswap.data.repository.ItemRepository
+import com.minimize.uniswap.data.model.Report
+import com.minimize.uniswap.data.model.ReportReason
+import com.minimize.uniswap.data.repository.ReportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,11 +21,17 @@ import javax.inject.Inject
 class FeedViewModel @Inject constructor(
     private val repository: ItemRepository,
     private val categoryConfigRepository: CategoryConfigRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val reportRepository: ReportRepository
 ) : ViewModel() {
+
+    val currentUserId: String = authRepository.getCurrentUserId() ?: ""
 
     val userProfile: StateFlow<User?> = authRepository.getUserFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val blockedUserIds: StateFlow<Set<String>> = reportRepository.getBlockedUserIdsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -40,9 +49,13 @@ class FeedViewModel @Inject constructor(
     val filteredItems: StateFlow<List<CampusItem>> = combine(
         _rawItems,
         _searchQuery,
-        _selectedCategoryId
-    ) { items, query, categoryId ->
+        _selectedCategoryId,
+        blockedUserIds
+    ) { items, query, categoryId, blockedIds ->
         items.filter { item ->
+            // Safety filter: never show items from blocked sellers
+            if (item.sellerId in blockedIds) return@filter false
+
             val matchesSearch = query.isBlank() ||
                     item.title.contains(query, ignoreCase = true) ||
                     item.description.contains(query, ignoreCase = true)
@@ -110,5 +123,45 @@ class FeedViewModel @Inject constructor(
 
     fun selectCategory(categoryId: String) {
         _selectedCategoryId.value = categoryId
+    }
+
+    private val _isSubmittingReport = MutableStateFlow(false)
+    val isSubmittingReport: StateFlow<Boolean> = _isSubmittingReport.asStateFlow()
+
+    private val _isBlockingSeller = MutableStateFlow(false)
+    val isBlockingSeller: StateFlow<Boolean> = _isBlockingSeller.asStateFlow()
+
+    private val _userMessage = MutableStateFlow<String?>(null)
+    val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
+
+    fun submitReport(item: CampusItem, reason: ReportReason, details: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _isSubmittingReport.value = true
+            val report = Report(
+                reportedUserId = item.sellerId,
+                itemId = item.id,
+                itemTitle = item.title,
+                reason = reason,
+                additionalDetails = details
+            )
+            val result = reportRepository.submitReport(report)
+            _isSubmittingReport.value = false
+            _userMessage.value = if (result.isSuccess) "Report submitted successfully" else "Failed to submit report"
+            onComplete(result.isSuccess)
+        }
+    }
+
+    fun blockSeller(sellerId: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _isBlockingSeller.value = true
+            val result = reportRepository.blockUser(sellerId)
+            _isBlockingSeller.value = false
+            _userMessage.value = if (result.isSuccess) "User blocked" else "Failed to block user"
+            onComplete(result.isSuccess)
+        }
+    }
+
+    fun clearUserMessage() {
+        _userMessage.value = null
     }
 }

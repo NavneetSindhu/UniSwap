@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.Message
 import com.minimize.uniswap.data.model.MessageStatus
+import com.minimize.uniswap.data.model.Report
+import com.minimize.uniswap.data.model.ReportReason
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
+import com.minimize.uniswap.data.repository.ReportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -19,7 +22,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val itemRepository: ItemRepository,
     private val chatRepository: ChatRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val reportRepository: ReportRepository
 ) : ViewModel() {
 
     val currentUserId: String = authRepository.getCurrentUserId() ?: ""
@@ -30,6 +34,18 @@ class ChatViewModel @Inject constructor(
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
+
+    private val _isSubmittingReport = MutableStateFlow(false)
+    val isSubmittingReport: StateFlow<Boolean> = _isSubmittingReport.asStateFlow()
+
+    private val _isBlockingUser = MutableStateFlow(false)
+    val isBlockingUser: StateFlow<Boolean> = _isBlockingUser.asStateFlow()
+
+    private val _userMessage = MutableStateFlow<String?>(null)
+    val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
+
+    val blockedUserIds: StateFlow<Set<String>> = reportRepository.getBlockedUserIdsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private var messageJob: Job? = null
     private var itemJob: Job? = null
@@ -97,5 +113,42 @@ class ChatViewModel @Inject constructor(
                 Timber.e(e, "Failed to send chat message in conversation: %s", currentItem.id)
             }
         }
+    }
+
+    fun submitReport(reason: ReportReason, additionalDetails: String, onComplete: (Boolean) -> Unit) {
+        val currentItem = _item.value ?: return
+        val targetUserId = if (currentUserId == currentItem.sellerId) activeBuyerId else currentItem.sellerId
+
+        viewModelScope.launch {
+            _isSubmittingReport.value = true
+            val report = Report(
+                reportedUserId = targetUserId,
+                itemId = currentItem.id,
+                itemTitle = currentItem.title,
+                reason = reason,
+                additionalDetails = additionalDetails
+            )
+            val result = reportRepository.submitReport(report)
+            _isSubmittingReport.value = false
+            _userMessage.value = if (result.isSuccess) "Report submitted successfully" else "Failed to submit report"
+            onComplete(result.isSuccess)
+        }
+    }
+
+    fun blockOtherUser(onComplete: (Boolean) -> Unit) {
+        val currentItem = _item.value ?: return
+        val targetUserId = if (currentUserId == currentItem.sellerId) activeBuyerId else currentItem.sellerId
+
+        viewModelScope.launch {
+            _isBlockingUser.value = true
+            val result = reportRepository.blockUser(targetUserId)
+            _isBlockingUser.value = false
+            _userMessage.value = if (result.isSuccess) "User blocked" else "Failed to block user"
+            onComplete(result.isSuccess)
+        }
+    }
+
+    fun clearUserMessage() {
+        _userMessage.value = null
     }
 }

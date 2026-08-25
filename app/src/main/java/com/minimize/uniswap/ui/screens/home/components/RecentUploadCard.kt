@@ -1,8 +1,10 @@
 package com.minimize.uniswap.ui.screens.home.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,10 +32,12 @@ import com.minimize.uniswap.ui.theme.*
  * Profile icon: 16x16, Name: 8sp medium, Dept: 6sp regular (#959595), Price: Light matter (INR).
  * Chat button: fill #D9D9D9, corner radius 15dp, text 11sp regular.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RecentUploadCard(
     item: CampusItem,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     onChatClick: () -> Unit = onClick,
     modifier: Modifier = Modifier
 ) {
@@ -50,7 +54,16 @@ fun RecentUploadCard(
                 color = if (!themeColors.isDark) Color(0xFFE5E7EB) else Color.Transparent,
                 shape = RoundedCornerShape(16.dp)
             )
-            .clickable(onClick = onClick)
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier.clickable(onClick = onClick)
+                }
+            )
             .padding(10.dp)
     ) {
         Column(

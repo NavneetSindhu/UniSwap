@@ -38,6 +38,13 @@ import com.minimize.uniswap.ui.screens.feed.components.FeedFilterPills
 import com.minimize.uniswap.ui.screens.home.components.RecentUploadCard
 import com.minimize.uniswap.ui.theme.*
 
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.minimize.uniswap.ui.components.BlockUserDialog
+import com.minimize.uniswap.ui.components.ItemActionBottomSheet
+import com.minimize.uniswap.ui.components.ReportBottomSheet
+
 /**
  * All Feed Screen ("See All" / Explore Tab).
  * Features standard 50dp capsule search bar matching HomeScreen without brand logo,
@@ -55,8 +62,85 @@ fun CampusFeedScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
+    val isSubmittingReport by viewModel.isSubmittingReport.collectAsStateWithLifecycle()
+    val isBlockingSeller by viewModel.isBlockingSeller.collectAsStateWithLifecycle()
+    val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
+    var isReportSheetOpen by remember { mutableStateOf(false) }
+    var isBlockDialogOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userMessage) {
+        userMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearUserMessage()
+        }
+    }
 
     val themeColors = UniSwapTheme.colors
+
+    // Safety / Action Bottom Sheet triggered on long-press
+    if (selectedItemForAction != null && !isReportSheetOpen && !isBlockDialogOpen) {
+        val targetItem = selectedItemForAction!!
+        ItemActionBottomSheet(
+            onDismissRequest = { selectedItemForAction = null },
+            itemTitle = targetItem.title,
+            sellerName = targetItem.sellerName,
+            isSellerSelf = targetItem.sellerId == viewModel.currentUserId,
+            onShareClick = {
+                val shareText = context.getString(
+                    R.string.action_share_text,
+                    targetItem.title,
+                    targetItem.price.toInt().toString()
+                )
+                val sendIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                    type = "text/plain"
+                }
+                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
+                selectedItemForAction = null
+            },
+            onReportClick = { isReportSheetOpen = true },
+            onBlockClick = { isBlockDialogOpen = true }
+        )
+    }
+
+    if (isReportSheetOpen && selectedItemForAction != null) {
+        ReportBottomSheet(
+            onDismissRequest = {
+                isReportSheetOpen = false
+                selectedItemForAction = null
+            },
+            isSubmitting = isSubmittingReport,
+            onSubmitReport = { reason, details ->
+                viewModel.submitReport(selectedItemForAction!!, reason, details) { success ->
+                    if (success) {
+                        isReportSheetOpen = false
+                        selectedItemForAction = null
+                    }
+                }
+            }
+        )
+    }
+
+    if (isBlockDialogOpen && selectedItemForAction != null) {
+        BlockUserDialog(
+            userName = selectedItemForAction!!.sellerName,
+            isBlocking = isBlockingSeller,
+            onConfirmBlock = {
+                viewModel.blockSeller(selectedItemForAction!!.sellerId) {
+                    isBlockDialogOpen = false
+                    selectedItemForAction = null
+                }
+            },
+            onDismiss = {
+                isBlockDialogOpen = false
+                selectedItemForAction = null
+            }
+        )
+    }
 
     Scaffold(
         containerColor = themeColors.background,
@@ -223,7 +307,8 @@ fun CampusFeedScreen(
                             } else {
                                 RecentUploadCard(
                                     item = item,
-                                    onClick = { onItemClick(item) }
+                                    onClick = { onItemClick(item) },
+                                    onLongClick = { selectedItemForAction = item }
                                 )
                             }
                         }

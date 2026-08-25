@@ -48,6 +48,13 @@ import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
 
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.minimize.uniswap.ui.components.BlockUserDialog
+import com.minimize.uniswap.ui.components.ItemActionBottomSheet
+import com.minimize.uniswap.ui.components.ReportBottomSheet
+
 @Composable
 fun ItemDetailsScreen(
     itemId: String,
@@ -57,9 +64,22 @@ fun ItemDetailsScreen(
     viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    var isActionSheetOpen by remember { mutableStateOf(false) }
+    var isReportSheetOpen by remember { mutableStateOf(false) }
+    var isBlockDialogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(itemId) {
         viewModel.getItem(itemId)
+    }
+
+    // Toast feedback for reporting and blocking
+    LaunchedEffect(state.userMessage) {
+        state.userMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearUserMessage()
+        }
     }
 
     // Email Verification Nudge Barrier
@@ -82,6 +102,62 @@ fun ItemDetailsScreen(
         )
     }
 
+    // Safety & Moderation Dialogs / Sheets
+    if (isActionSheetOpen && state.item != null) {
+        val currentItem = state.item!!
+        ItemActionBottomSheet(
+            onDismissRequest = { isActionSheetOpen = false },
+            itemTitle = currentItem.title,
+            sellerName = currentItem.sellerName,
+            isSellerSelf = currentItem.sellerId == state.currentUserId,
+            onShareClick = {
+                val shareText = context.getString(
+                    R.string.action_share_text,
+                    currentItem.title,
+                    currentItem.price.toInt().toString()
+                )
+                val sendIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                    type = "text/plain"
+                }
+                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
+            },
+            onReportClick = { isReportSheetOpen = true },
+            onBlockClick = { isBlockDialogOpen = true }
+        )
+    }
+
+    if (isReportSheetOpen && state.item != null) {
+        ReportBottomSheet(
+            onDismissRequest = { isReportSheetOpen = false },
+            isSubmitting = state.isSubmittingReport,
+            onSubmitReport = { reason, details ->
+                viewModel.submitReport(reason, details) { success ->
+                    if (success) {
+                        isReportSheetOpen = false
+                    }
+                }
+            }
+        )
+    }
+
+    if (isBlockDialogOpen && state.item != null) {
+        BlockUserDialog(
+            userName = state.item!!.sellerName,
+            isBlocking = state.isBlockingSeller,
+            onConfirmBlock = {
+                viewModel.blockSeller { success ->
+                    isBlockDialogOpen = false
+                    if (success) {
+                        onBackClick()
+                    }
+                }
+            },
+            onDismiss = { isBlockDialogOpen = false }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -100,6 +176,7 @@ fun ItemDetailsScreen(
                     item = state.item!!,
                     currentUserId = state.currentUserId,
                     onBackClick = onBackClick,
+                    onActionMenuClick = { isActionSheetOpen = true },
                     onChatClick = {
                         onChatClick(state.item!!.id)
                     },
@@ -137,6 +214,7 @@ private fun ItemDetailsContent(
     item: CampusItem,
     currentUserId: String,
     onBackClick: () -> Unit,
+    onActionMenuClick: () -> Unit,
     onChatClick: () -> Unit,
     onOfferClick: () -> Unit,
     onToggleSold: () -> Unit,
@@ -198,6 +276,7 @@ private fun ItemDetailsContent(
             // Top Left Circular Back Button (Ellipse 12: 38x38)
             Box(
                 modifier = Modifier
+                    .align(Alignment.TopStart)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                     .padding(start = 24.dp, top = 8.dp)
                     .size(38.dp)
@@ -213,6 +292,26 @@ private fun ItemDetailsContent(
                     modifier = Modifier
                         .width(18.dp)
                         .height(10.dp)
+                )
+            }
+
+            // Top Right Circular 3-Dot Action Button (38x38)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(end = 24.dp, top = 8.dp)
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(themeColors.btnBackBg)
+                    .clickable(onClick = onActionMenuClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.action_share_listing),
+                    tint = themeColors.textPrimary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 

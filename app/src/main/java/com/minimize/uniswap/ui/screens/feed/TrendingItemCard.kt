@@ -1,7 +1,9 @@
 package com.minimize.uniswap.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -21,19 +23,30 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.minimize.uniswap.data.model.CampusItem
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrendingItemCard(
     item: CampusItem,
     onClick: () -> Unit,
     onConnectClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = modifier
             .width(260.dp)
             .height(260.dp)
             .clip(RoundedCornerShape(32.dp))
-            .clickable(onClick = onClick)
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier.clickable(onClick = onClick)
+                }
+            )
     ) {
         AsyncImage(
             model = item.imageUrl.ifBlank { "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800" },
