@@ -42,7 +42,12 @@ class MessagesViewModel @Inject constructor(
     val threads: StateFlow<List<ConversationItemUiModel>> = _threads.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    val isLoading: StateFlow<Boolean> = combine(
+        _isLoading,
+        com.minimize.uniswap.util.DebugConfig.forceShimmerLoading
+    ) { loading, forceShimmer ->
+        loading || forceShimmer
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     fun deleteConversation(threadId: String, onComplete: (Boolean) -> Unit = {}) {
         viewModelScope.launch {

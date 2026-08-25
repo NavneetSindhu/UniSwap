@@ -229,7 +229,23 @@ fun SettingsScreen(
                 }
             }
 
-            // 6. Log Out Button
+            // 6. Developer Options (Debug Build Only)
+            if (BuildConfig.DEBUG) {
+                item {
+                    val forceShimmer by com.minimize.uniswap.util.DebugConfig.forceShimmerLoading.collectAsState()
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_developer)) {
+                        SettingsSwitchItem(
+                            icon = Icons.Outlined.BugReport,
+                            title = stringResource(R.string.settings_force_shimmer),
+                            subtitle = stringResource(R.string.settings_force_shimmer_subtitle),
+                            checked = forceShimmer,
+                            onCheckedChange = { com.minimize.uniswap.util.DebugConfig.setForceShimmer(it) }
+                        )
+                    }
+                }
+            }
+
+            // 7. Log Out Button
             item {
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
@@ -1068,7 +1084,8 @@ private fun SettingsSwitchItem(
     icon: ImageVector,
     title: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    subtitle: String? = null
 ) {
     val themeColors = UniSwapTheme.colors
     Row(
@@ -1084,14 +1101,25 @@ private fun SettingsSwitchItem(
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = title,
-            fontFamily = MatterFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
-            color = themeColors.textPrimary,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+                color = themeColors.textPrimary
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = MatterFontFamily,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    color = themeColors.textSecondary
+                )
+            }
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,

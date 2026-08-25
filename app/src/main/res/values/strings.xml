@@ -377,4 +377,9 @@
     <string name="profile_eco_tier_contributor">Eco Contributor</string>
     <string name="profile_eco_tier_starter">Eco Starter</string>
     <string name="profile_sustainability_motto">Every circular item reduces university waste and campus emissions.</string>
+
+    <!-- Developer & QA Options -->
+    <string name="settings_section_developer">Developer &amp; QA Options</string>
+    <string name="settings_force_shimmer">Preview Shimmer Skeletons</string>
+    <string name="settings_force_shimmer_subtitle">Simulates loading state to preview pixel-perfect UI skeletons</string>
 </resources>
