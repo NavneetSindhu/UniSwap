@@ -28,6 +28,7 @@ data class DetailsUiState(
     val isProcessingVerification: Boolean = false,
     val isSubmittingReport: Boolean = false,
     val isBlockingSeller: Boolean = false,
+    val isSaved: Boolean = false,
     val userMessage: String? = null
 )
 
@@ -42,6 +43,7 @@ class DetailsViewModel @Inject constructor(
     val uiState: StateFlow<DetailsUiState> = _uiState.asStateFlow()
 
     private var observeJob: Job? = null
+    private var savedJob: Job? = null
 
     init {
         val currentUid = authRepository.getCurrentUserId() ?: ""
@@ -101,6 +103,7 @@ class DetailsViewModel @Inject constructor(
         }
 
         observeJob?.cancel()
+        savedJob?.cancel()
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         observeJob = viewModelScope.launch {
@@ -119,6 +122,29 @@ class DetailsViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+
+        savedJob = viewModelScope.launch {
+            repository.getSavedItemIdsFlow()
+                .collect { savedIds ->
+                    _uiState.update { it.copy(isSaved = savedIds.contains(itemId)) }
+                }
+        }
+    }
+
+    fun toggleSaveItem() {
+        val currentItem = _uiState.value.item ?: return
+        viewModelScope.launch {
+            val result = repository.toggleSaveItem(currentItem.id)
+            if (result.isSuccess) {
+                val isSaved = result.getOrNull() ?: false
+                _uiState.update {
+                    it.copy(
+                        isSaved = isSaved,
+                        userMessage = if (isSaved) "Item added to Saved list" else "Item removed from Saved list"
+                    )
+                }
+            }
         }
     }
 

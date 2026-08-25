@@ -50,6 +50,7 @@ import java.util.Locale
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.ui.platform.LocalContext
 import com.minimize.uniswap.ui.components.BlockUserDialog
 import com.minimize.uniswap.ui.components.ItemActionBottomSheet
@@ -181,6 +182,8 @@ fun ItemDetailsScreen(
                 ItemDetailsContent(
                     item = state.item!!,
                     currentUserId = state.currentUserId,
+                    isSaved = state.isSaved,
+                    onSaveClick = { viewModel.toggleSaveItem() },
                     onBackClick = onBackClick,
                     onActionMenuClick = { isActionSheetOpen = true },
                     onChatClick = {
@@ -219,6 +222,8 @@ fun ItemDetailsScreen(
 private fun ItemDetailsContent(
     item: CampusItem,
     currentUserId: String,
+    isSaved: Boolean = false,
+    onSaveClick: () -> Unit = {},
     onBackClick: () -> Unit,
     onActionMenuClick: () -> Unit,
     onChatClick: () -> Unit,
@@ -301,24 +306,48 @@ private fun ItemDetailsContent(
                 )
             }
 
-            // Top Right Circular 3-Dot Action Button (38x38)
-            Box(
+            // Top Right Circular Action Buttons (Heart + 3-Dot)
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                    .padding(end = 24.dp, top = 8.dp)
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(themeColors.btnBackBg)
-                    .clickable(onClick = onActionMenuClick),
-                contentAlignment = Alignment.Center
+                    .padding(end = 24.dp, top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = stringResource(R.string.action_share_listing),
-                    tint = themeColors.textPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
+                // Heart Favorite Button
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(themeColors.btnBackBg)
+                        .clickable(onClick = onSaveClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isSaved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (isSaved) stringResource(R.string.action_unsave_item) else stringResource(R.string.action_save_item),
+                        tint = if (isSaved) Color(0xFFFF4B6E) else themeColors.textPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // 3-Dot More Menu
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(themeColors.btnBackBg)
+                        .clickable(onClick = onActionMenuClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.action_share_listing),
+                        tint = themeColors.textPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             // Dot Indicator (Centered under image, dynamic dots with 8dp gap)

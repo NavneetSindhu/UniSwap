@@ -6,6 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,7 +45,9 @@ fun TrendingCarouselCard(
     height: Dp,
     onClick: () -> Unit,
     onConnectClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSaved: Boolean = false,
+    onSaveClick: () -> Unit = {}
 ) {
     val themeColors = UniSwapTheme.colors
     val cornerRadius = if (width >= 240.dp) 24.dp else 20.dp
@@ -103,6 +110,25 @@ fun TrendingCarouselCard(
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
                 color = Color.White
+            )
+        }
+
+        // Top-Right Favorite Heart Toggle Button
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = 8.dp)
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.25f))
+                .clickable(onClick = onSaveClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isSaved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = if (isSaved) stringResource(R.string.action_unsave_item) else stringResource(R.string.action_save_item),
+                tint = if (isSaved) Color(0xFFFF4B6E) else Color.White,
+                modifier = Modifier.size(14.dp)
             )
         }
 

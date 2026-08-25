@@ -248,7 +248,10 @@ fun MainScreen(
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onBackClick = { navController.popBackStack() },
-                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    onItemClick = { item ->
+                        navController.navigate(Screen.createDetailsRoute(item.id))
+                    }
                 )
             }
 

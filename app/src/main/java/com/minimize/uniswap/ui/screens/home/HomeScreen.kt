@@ -55,6 +55,7 @@ fun HomeScreen(
     val isSubmittingReport by viewModel.isSubmittingReport.collectAsStateWithLifecycle()
     val isBlockingSeller by viewModel.isBlockingSeller.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
+    val savedItemIds by viewModel.savedItemIds.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
@@ -186,6 +187,8 @@ fun HomeScreen(
 
                             TrendingCarousel(
                                 items = items,
+                                savedItemIds = savedItemIds,
+                                onSaveClick = { viewModel.toggleSaveItem(it.id) },
                                 onItemClick = onItemClick
                             )
                         }
@@ -217,6 +220,8 @@ fun HomeScreen(
                                 items(items, key = { "recent_${it.id}" }) { item ->
                                     RecentUploadCard(
                                         item = item,
+                                        isSaved = item.id in savedItemIds,
+                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
                                         onClick = { onItemClick(item) },
                                         onLongClick = { selectedItemForAction = item }
                                     )

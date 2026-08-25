@@ -33,6 +33,9 @@ class FeedViewModel @Inject constructor(
     val blockedUserIds: StateFlow<Set<String>> = reportRepository.getBlockedUserIdsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    val savedItemIds: StateFlow<Set<String>> = repository.getSavedItemIdsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -158,6 +161,16 @@ class FeedViewModel @Inject constructor(
             _isBlockingSeller.value = false
             _userMessage.value = if (result.isSuccess) "User blocked" else "Failed to block user"
             onComplete(result.isSuccess)
+        }
+    }
+
+    fun toggleSaveItem(itemId: String) {
+        viewModelScope.launch {
+            val result = repository.toggleSaveItem(itemId)
+            if (result.isSuccess) {
+                val isSaved = result.getOrNull() ?: false
+                _userMessage.value = if (isSaved) "Item added to Saved list" else "Item removed from Saved list"
+            }
         }
     }
 

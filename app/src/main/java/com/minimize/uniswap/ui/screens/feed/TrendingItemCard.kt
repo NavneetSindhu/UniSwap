@@ -5,7 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,11 +22,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -30,6 +38,8 @@ fun TrendingItemCard(
     onClick: () -> Unit,
     onConnectClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSaved: Boolean = false,
+    onSaveClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null
 ) {
     Box(
@@ -54,6 +64,25 @@ fun TrendingItemCard(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
+        // Top-right Favorite Heart Toggle Button
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(14.dp)
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.25f))
+                .clickable(onClick = onSaveClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isSaved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = if (isSaved) stringResource(R.string.action_unsave_item) else stringResource(R.string.action_save_item),
+                tint = if (isSaved) Color(0xFFFF4B6E) else Color.White,
+                modifier = Modifier.size(15.dp)
+            )
+        }
 
         // Bottom gradient overlay for text readability
         Box(

@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import timber.log.Timber
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repository: ItemRepository,
@@ -25,6 +27,7 @@ class ProfileViewModel @Inject constructor(
     init {
         observeUserProfile()
         observeMyItems()
+        observeSavedItems()
     }
 
     private fun observeUserProfile() {
@@ -67,8 +70,19 @@ class ProfileViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun observeSavedItems() {
+        repository.getSavedItemsFlow()
+            .onEach { savedList ->
+                _uiState.update { it.copy(savedItems = savedList) }
+            }
+            .catch { e ->
+                Timber.e(e, "Error observing saved items in ProfileViewModel")
+            }
+            .launchIn(viewModelScope)
+    }
+
     fun fetchProfileData() {
-        // Handled reactively by observeMyItems & observeUserProfile
+        // Handled reactively by observers
     }
 
     /**
@@ -91,15 +105,11 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * Removes an item from saved items
+     * Removes an item from saved items in Firestore
      */
     fun removeSavedItem(itemId: String) {
         viewModelScope.launch {
-            _uiState.update { current ->
-                current.copy(
-                    savedItems = current.savedItems.filter { it.id != itemId }
-                )
-            }
+            repository.toggleSaveItem(itemId)
         }
     }
 

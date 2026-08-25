@@ -24,6 +24,8 @@ fun TrendingCarousel(
     items: List<CampusItem>,
     onItemClick: (CampusItem) -> Unit,
     modifier: Modifier = Modifier,
+    savedItemIds: Set<String> = emptySet(),
+    onSaveClick: (CampusItem) -> Unit = {},
     autoScrollDelayMs: Long = 3500L
 ) {
     if (items.isEmpty()) return
@@ -94,6 +96,8 @@ fun TrendingCarousel(
                     item = item,
                     width = 252.dp,
                     height = 200.dp,
+                    isSaved = item.id in savedItemIds,
+                    onSaveClick = { onSaveClick(item) },
                     onClick = { onItemClick(item) },
                     onConnectClick = { onItemClick(item) }
                 )

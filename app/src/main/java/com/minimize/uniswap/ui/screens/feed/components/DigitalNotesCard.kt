@@ -4,7 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,6 +38,8 @@ fun DigitalNotesCard(
     item: CampusItem,
     onClick: () -> Unit,
     onChatClick: () -> Unit = onClick,
+    isSaved: Boolean = false,
+    onSaveClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val themeColors = UniSwapTheme.colors
@@ -69,6 +77,25 @@ fun DigitalNotesCard(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
+
+                // Heart Toggle Button
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.25f))
+                        .clickable(onClick = onSaveClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isSaved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (isSaved) stringResource(R.string.action_unsave_item) else stringResource(R.string.action_save_item),
+                        tint = if (isSaved) Color(0xFFFF4B6E) else Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
             }
 
             // 2. Middle Content (Title + Tag)
