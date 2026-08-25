@@ -1,6 +1,5 @@
 package com.minimize.uniswap.ui
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -38,8 +37,7 @@ import com.minimize.uniswap.ui.screens.messages.MessagesScreen
 import com.minimize.uniswap.ui.screens.settings.SettingsScreen
 import com.minimize.uniswap.ui.screens.splash.SplashScreen
 import com.minimize.uniswap.ui.theme.UniSwapTheme
-
-private const val TAG = "LOGCAT_NAV"
+import timber.log.Timber
 
 @Composable
 fun MainScreen(
@@ -173,7 +171,7 @@ fun MainScreen(
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        Log.d(TAG, "onLoginSuccess triggered! Navigating to: ${Screen.Home.route}")
+                        Timber.d("onLoginSuccess triggered! Navigating to: %s", Screen.Home.route)
                         navController.navigate(Screen.Home.route) {
                             popUpTo(0) { inclusive = true }
                         }
@@ -187,7 +185,7 @@ fun MainScreen(
             composable(Screen.SignUp.route) {
                 com.minimize.uniswap.ui.screens.auth.SignUpScreen(
                     onSignUpSuccess = {
-                        Log.d(TAG, "onSignUpSuccess triggered! Navigating to: ${Screen.Home.route}")
+                        Timber.d("onSignUpSuccess triggered! Navigating to: %s", Screen.Home.route)
                         navController.navigate(Screen.Home.route) {
                             popUpTo(0) { inclusive = true }
                         }

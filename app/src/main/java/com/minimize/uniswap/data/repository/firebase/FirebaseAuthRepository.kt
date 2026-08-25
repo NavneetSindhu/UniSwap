@@ -1,6 +1,5 @@
 package com.minimize.uniswap.data.repository.firebase
 
-import android.util.Log
 import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -11,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,27 +20,25 @@ class FirebaseAuthRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : AuthRepository {
 
-    private val TAG = "FirebaseAuthRepo"
-
     override fun isUserLoggedIn(): Boolean {
         return firebaseAuth.currentUser != null
     }
 
     override suspend fun login(email: String, password: String): Result<String> {
         return try {
-            Log.d(TAG, "Attempting login for: $email")
+            Timber.d("Attempting login for: %s", email)
             firebaseAuth.signInWithEmailAndPassword(email.trim(), password).await()
             syncUserToFirestore()
             Result.success("Login successful")
         } catch (e: Exception) {
-            Log.e(TAG, "Login failed: ${e.message}")
+            Timber.e(e, "Login failed: %s", e.message)
             Result.failure(mapAuthException(e))
         }
     }
 
     override suspend fun signUp(email: String, password: String, displayName: String): Result<String> {
         return try {
-            Log.d(TAG, "Attempting signup for: $email")
+            Timber.d("Attempting signup for: %s", email)
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
             if (displayName.isNotBlank()) {
                 val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
@@ -51,7 +49,7 @@ class FirebaseAuthRepository @Inject constructor(
             syncUserToFirestore(customDisplayName = displayName.ifBlank { null })
             Result.success("Account created successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Signup failed: ${e.message}")
+            Timber.e(e, "Signup failed: %s", e.message)
             Result.failure(mapAuthException(e))
         }
     }
@@ -62,13 +60,13 @@ class FirebaseAuthRepository @Inject constructor(
 
     override suspend fun signInWithGoogle(idToken: String): Result<String> {
         return try {
-            Log.d(TAG, "Attempting Google sign-in with token: ${idToken.take(10)}...")
+            Timber.d("Attempting Google sign-in with token: %s...", idToken.take(10))
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             firebaseAuth.signInWithCredential(credential).await()
             syncUserToFirestore()
             Result.success("Google sign-in successful")
         } catch (e: Exception) {
-            Log.e(TAG, "Google sign-in failed: ${e.message}")
+            Timber.e(e, "Google sign-in failed: %s", e.message)
             Result.failure(e)
         }
     }
@@ -138,7 +136,7 @@ class FirebaseAuthRepository @Inject constructor(
         val firebaseUser = firebaseAuth.currentUser ?: return
         val userRef = firestore.collection("users").document(firebaseUser.uid)
         
-        Log.d(TAG, "Syncing user to Firestore: ${firebaseUser.uid}")
+        Timber.d("Syncing user to Firestore: %s", firebaseUser.uid)
         
         try {
             val snapshot = userRef.get().await()
@@ -159,10 +157,10 @@ class FirebaseAuthRepository @Inject constructor(
             
             user?.let { 
                 userRef.set(it).await()
-                Log.d(TAG, "User synced successfully.")
+                Timber.d("User synced successfully.")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync user to Firestore: ${e.message}")
+            Timber.e(e, "Failed to sync user to Firestore: %s", e.message)
         }
     }
 

@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -80,16 +81,21 @@ class ChatViewModel @Inject constructor(
         val currentUserName = currentUser?.displayName?.ifBlank { "User" } ?: "User"
 
         viewModelScope.launch {
-            chatRepository.sendMessage(
-                itemId = currentItem.id,
-                buyerId = buyerId,
-                sellerId = currentItem.sellerId,
-                message = newMessage,
-                itemTitle = currentItem.title,
-                itemImageUrl = currentItem.imageUrl,
-                buyerName = if (currentUserId == buyerId) currentUserName else "Buyer",
-                sellerName = if (currentUserId == currentItem.sellerId) currentUserName else currentItem.sellerName
-            )
+            try {
+                Timber.d("Sending message for item %s from %s", currentItem.id, currentUserId)
+                chatRepository.sendMessage(
+                    itemId = currentItem.id,
+                    buyerId = buyerId,
+                    sellerId = currentItem.sellerId,
+                    message = newMessage,
+                    itemTitle = currentItem.title,
+                    itemImageUrl = currentItem.imageUrl,
+                    buyerName = if (currentUserId == buyerId) currentUserName else "Buyer",
+                    sellerName = if (currentUserId == currentItem.sellerId) currentUserName else currentItem.sellerName
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to send chat message in conversation: %s", currentItem.id)
+            }
         }
     }
 }

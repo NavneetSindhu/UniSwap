@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -127,12 +128,14 @@ class ListViewModel @Inject constructor(
 
             val userId = authRepository.getCurrentUserId() ?: return@launch
             _isPosting.value = true
+            Timber.d("Posting item: %s, Price: %s", _title.value, currentPrice)
 
             // Upload images to Cloudinary if user picked local photos
             val imagesToUpload = _selectedImages.value
             val uploadedUrls = mutableListOf<String>()
 
             if (imagesToUpload.isNotEmpty()) {
+                Timber.d("Uploading %d images to Cloudinary...", imagesToUpload.size)
                 for (uri in imagesToUpload) {
                     val uploadResult = cloudinaryHelper.uploadImage(
                         context = context,
@@ -143,6 +146,7 @@ class ListViewModel @Inject constructor(
                     uploadResult.onSuccess { uploadedUrl ->
                         uploadedUrls.add(uploadedUrl)
                     }.onFailure {
+                        Timber.w(it, "Image upload failed, falling back to local uri: %s", uri)
                         uploadedUrls.add(uri.toString())
                     }
                 }
@@ -175,7 +179,10 @@ class ListViewModel @Inject constructor(
             _isPosting.value = false
 
             if (success) {
+                Timber.i("Item posted successfully with ID: %s", newItem.id)
                 onSuccess()
+            } else {
+                Timber.e("Failed to post item to Firestore repository.")
             }
         }
     }

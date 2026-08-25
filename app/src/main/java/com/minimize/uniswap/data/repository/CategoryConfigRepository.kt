@@ -1,6 +1,5 @@
 package com.minimize.uniswap.data.repository
 
-import android.util.Log
 import com.google.firebase.remoteconfig.ConfigUpdate
 import com.google.firebase.remoteconfig.ConfigUpdateListener
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
@@ -15,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,14 +58,14 @@ class CategoryConfigRepository @Inject constructor() {
                     val categoriesJson = remoteConfig.getString(KEY_CATEGORIES)
                     parseAndEmit(categoriesJson)
                 } else {
-                    Log.w(TAG, "RemoteConfig fetch failed; using default categories.", task.exception)
+                    Timber.w(task.exception, "RemoteConfig fetch failed; using default categories.")
                 }
             }
 
             // 3. Real-time Config Update Listener for instant cloud updates
             remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
                 override fun onUpdate(configUpdate: ConfigUpdate) {
-                    Log.d(TAG, "Real-time RemoteConfig update received. Updated keys: ${configUpdate.updatedKeys}")
+                    Timber.d("Real-time RemoteConfig update received. Updated keys: %s", configUpdate.updatedKeys)
                     if (configUpdate.updatedKeys.contains(KEY_CATEGORIES)) {
                         remoteConfig.activate().addOnCompleteListener { task ->
                             if (task.isSuccessful) {
@@ -77,11 +77,11 @@ class CategoryConfigRepository @Inject constructor() {
                 }
 
                 override fun onError(error: FirebaseRemoteConfigException) {
-                    Log.w(TAG, "RemoteConfig update listener error: ${error.code}", error)
+                    Timber.w(error, "RemoteConfig update listener error: %s", error.code)
                 }
             })
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing RemoteConfig", e)
+            Timber.e(e, "Error initializing RemoteConfig")
             _categories.value = defaultCategories
         }
     }
@@ -97,13 +97,12 @@ class CategoryConfigRepository @Inject constructor() {
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to parse categories JSON: $json", e)
+                Timber.e(e, "Failed to parse categories JSON: %s", json)
             }
         }
     }
 
     companion object {
-        private const val TAG = "CategoryConfigRepo"
         private const val KEY_CATEGORIES = "campus_categories"
     }
 }

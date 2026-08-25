@@ -9,6 +9,7 @@ import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.util.GoogleAuthHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,11 +59,14 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             isEmailLoading = true
             errorMessage = null
+            Timber.d("onSignInClick: attempting login for %s", trimmedEmail)
 
             val result = repository.login(trimmedEmail, trimmedPassword)
             result.onSuccess {
+                Timber.i("Login successful for %s", trimmedEmail)
                 isSuccess = true
             }.onFailure {
+                Timber.e(it, "Login failed for %s: %s", trimmedEmail, it.message)
                 errorMessage = it.message ?: "Sign In failed"
             }
             isEmailLoading = false
@@ -97,11 +101,14 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             isEmailLoading = true
             errorMessage = null
+            Timber.d("onSignUpClick: attempting signup for %s (%s)", trimmedName, trimmedEmail)
 
             val result = repository.signUp(trimmedEmail, trimmedPassword, trimmedName)
             result.onSuccess {
+                Timber.i("Signup successful for %s", trimmedEmail)
                 isSuccess = true
             }.onFailure {
+                Timber.e(it, "Signup failed for %s: %s", trimmedEmail, it.message)
                 errorMessage = it.message ?: "Sign Up failed"
             }
             isEmailLoading = false
@@ -119,16 +126,21 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             isGoogleLoading = true
             errorMessage = null
+            Timber.d("Launching Google Sign-In with Web Client ID: %s", BuildConfig.WEB_CLIENT_ID)
 
             val tokenResult = googleAuthHelper.getGoogleIdToken(context, BuildConfig.WEB_CLIENT_ID)
             tokenResult.onSuccess { idToken ->
+                Timber.d("Google ID token retrieved, signing into Firebase...")
                 val authResult = repository.signInWithGoogle(idToken)
                 authResult.onSuccess {
+                    Timber.i("Google Sign-In successful")
                     isSuccess = true
                 }.onFailure {
-                    errorMessage = it.message ?: "Google Login failed"
+                    Timber.e(it, "Firebase Google Auth failed: %s", it.message)
+                    errorMessage = it.message ?: "Google Authentication failed"
                 }
             }.onFailure {
+                Timber.e(it, "Google ID token retrieval failed: %s", it.message)
                 errorMessage = it.message ?: "Google Sign-In failed"
             }
             isGoogleLoading = false
