@@ -36,7 +36,13 @@ class FirebaseAuthRepository @Inject constructor(
         }
     }
 
-    override suspend fun signUp(email: String, password: String, displayName: String): Result<String> {
+    override suspend fun signUp(
+        email: String,
+        password: String,
+        displayName: String,
+        avatarId: String?,
+        campusCenter: String?
+    ): Result<String> {
         return try {
             Timber.d("Attempting signup for: %s", email)
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
@@ -46,7 +52,11 @@ class FirebaseAuthRepository @Inject constructor(
                     .build()
                 authResult.user?.updateProfile(profileUpdates)?.await()
             }
-            syncUserToFirestore(customDisplayName = displayName.ifBlank { null })
+            syncUserToFirestore(
+                customDisplayName = displayName.ifBlank { null },
+                customAvatarId = avatarId,
+                customCampusCenter = campusCenter
+            )
             Result.success("Account created successfully")
         } catch (e: Exception) {
             Timber.e(e, "Signup failed: %s", e.message)
@@ -160,7 +170,11 @@ class FirebaseAuthRepository @Inject constructor(
         }
     }
 
-    private suspend fun syncUserToFirestore(customDisplayName: String? = null) {
+    private suspend fun syncUserToFirestore(
+        customDisplayName: String? = null,
+        customAvatarId: String? = null,
+        customCampusCenter: String? = null
+    ) {
         val firebaseUser = firebaseAuth.currentUser ?: return
         val userRef = firestore.collection("users").document(firebaseUser.uid)
         
@@ -172,6 +186,8 @@ class FirebaseAuthRepository @Inject constructor(
                 val existing = snapshot.toObject(User::class.java)
                 existing?.copy(
                     displayName = customDisplayName ?: existing.displayName.ifBlank { firebaseUser.displayName ?: "Campus User" },
+                    avatarId = customAvatarId ?: existing.avatarId,
+                    campusCenter = customCampusCenter ?: existing.campusCenter,
                     isEmailVerified = firebaseUser.isEmailVerified
                 )
             } else {
@@ -179,6 +195,8 @@ class FirebaseAuthRepository @Inject constructor(
                     uid = firebaseUser.uid,
                     email = firebaseUser.email ?: "",
                     displayName = customDisplayName ?: firebaseUser.displayName ?: "Campus User",
+                    avatarId = customAvatarId ?: "avatar_scholar",
+                    campusCenter = customCampusCenter ?: "Main Campus Center",
                     isEmailVerified = firebaseUser.isEmailVerified
                 )
             }

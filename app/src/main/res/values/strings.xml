@@ -22,14 +22,50 @@
     <string name="email_placeholder">hello@college.edu.in</string>
     <string name="password_placeholder">Password</string>
     <string name="sign_in_button">Sign in</string>
+    <string name="sign_in_success">Welcome!</string>
     <string name="sign_up_button">Sign Up</string>
+    <string name="sign_up_success">Account Created!</string>
     <string name="dont_have_account">Don&#8217;t have an account? Sign Up</string>
     <string name="already_have_account">Already have an account? Sign in</string>
-    <string name="terms_prefix">By pressing on “Continue with…” you agree to our</string>
-    <string name="terms_of_service">terms of Service</string>
-    <string name="terms_and"> and </string>
+    <string name="terms_prefix">"By continuing, you agree to UniSwap\'s "</string>
+    <string name="terms_of_service">Terms of Service</string>
+    <string name="terms_and">" and "</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="continue_with_google">Continue with Google</string>
+    <string name="prefix_mr">Mr.</string>
+    <string name="prefix_ms">Ms.</string>
+    <string name="prefix_mx">Mx.</string>
+    <string name="select_prefix">Select Title</string>
+    <string name="select_branch">Select Branch / Department</string>
+    <string name="select_batch">Select Batch Year</string>
+    <string name="label_college_campus">College / Campus</string>
+    <string name="label_branch">Branch</string>
+    <string name="label_batch">Batch</string>
+    <string name="label_class_of">Class of %1$s</string>
+
+    <!-- Auth Validation Errors -->
+    <string name="auth_error_enter_name">Please enter your full name</string>
+    <string name="auth_error_enter_email_password">Please enter both email and password</string>
+    <string name="auth_error_invalid_email">Please enter a valid university email address</string>
+    <string name="auth_error_short_password">Password must be at least 6 characters</string>
+    <string name="auth_error_signin_failed">Sign In failed</string>
+    <string name="auth_error_signup_failed">Sign Up failed</string>
+
+    <!-- Engineering Branches -->
+    <string name="branch_automation_robotics">Automation &amp; Robotics Engineering</string>
+    <string name="branch_aiml">Artificial Intelligence &amp; Machine Learning (AIML)</string>
+    <string name="branch_aids">Artificial Intelligence &amp; Data Science (AIDS)</string>
+    <string name="branch_iiot">Industrial Internet of Things (IIOT)</string>
+    <string name="branch_cse">Computer Science &amp; Engineering</string>
+    <string name="branch_it">Information Technology</string>
+    <string name="branch_ece">Electronics &amp; Communication Engineering</string>
+    <string name="branch_ee">Electrical Engineering</string>
+    <string name="branch_me">Mechanical Engineering</string>
+    <string name="branch_ce">Civil Engineering</string>
+    <string name="branch_ba">Business Administration</string>
+    <string name="branch_design">Design &amp; Architecture</string>
+    <string name="branch_biotech">Biotechnology</string>
+    <string name="branch_other">Other / Undeclared</string>
 
     <!-- Item Details -->
     <string name="description_header">Description of product</string>

@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.minimize.uniswap.R
 import com.minimize.uniswap.BuildConfig
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.util.GoogleAuthHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -15,14 +17,16 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val repository: AuthRepository,
-    private val googleAuthHelper: GoogleAuthHelper
+    private val googleAuthHelper: GoogleAuthHelper,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    var namePrefix by mutableStateOf(context.getString(R.string.prefix_mr))
     var name by mutableStateOf("")
     var email by mutableStateOf("")
     var password by mutableStateOf("")
-    var college by mutableStateOf("Main Campus Center")
-    var branch by mutableStateOf("Computer Science & Eng")
+    var college by mutableStateOf(context.getString(R.string.campus_usar_ggsipu))
+    var branch by mutableStateOf(context.getString(R.string.branch_cse))
     var batch by mutableStateOf("2026")
     var isSignUpMode by mutableStateOf(false)
 
@@ -42,17 +46,17 @@ class LoginViewModel @Inject constructor(
         val trimmedPassword = password.trim()
 
         if (trimmedEmail.isBlank() || trimmedPassword.isBlank()) {
-            errorMessage = "Please enter both email and password"
+            errorMessage = context.getString(R.string.auth_error_enter_email_password)
             return
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
-            errorMessage = "Please enter a valid email address"
+            errorMessage = context.getString(R.string.auth_error_invalid_email)
             return
         }
 
         if (trimmedPassword.length < 6) {
-            errorMessage = "Password must be at least 6 characters"
+            errorMessage = context.getString(R.string.auth_error_short_password)
             return
         }
 
@@ -67,7 +71,7 @@ class LoginViewModel @Inject constructor(
                 isSuccess = true
             }.onFailure {
                 Timber.e(it, "Login failed for %s: %s", trimmedEmail, it.message)
-                errorMessage = it.message ?: "Sign In failed"
+                errorMessage = it.message ?: context.getString(R.string.auth_error_signin_failed)
             }
             isEmailLoading = false
         }
@@ -79,37 +83,54 @@ class LoginViewModel @Inject constructor(
         val trimmedName = name.trim()
 
         if (trimmedName.isBlank()) {
-            errorMessage = "Please enter your full name"
+            errorMessage = context.getString(R.string.auth_error_enter_name)
             return
         }
 
         if (trimmedEmail.isBlank() || trimmedPassword.isBlank()) {
-            errorMessage = "Please enter both email and password"
+            errorMessage = context.getString(R.string.auth_error_enter_email_password)
             return
         }
 
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
-            errorMessage = "Please enter a valid university email address"
+            errorMessage = context.getString(R.string.auth_error_invalid_email)
             return
         }
 
         if (trimmedPassword.length < 6) {
-            errorMessage = "Password must be at least 6 characters"
+            errorMessage = context.getString(R.string.auth_error_short_password)
             return
         }
+
+        val msPrefix = context.getString(R.string.prefix_ms)
+        val mxPrefix = context.getString(R.string.prefix_mx)
+
+        val initialAvatarId = when (namePrefix) {
+            msPrefix -> "avatar_creative"
+            mxPrefix -> "avatar_eco_ranger"
+            else -> "avatar_scholar"
+        }
+
+        val fullDisplayName = "$namePrefix $trimmedName"
 
         viewModelScope.launch {
             isEmailLoading = true
             errorMessage = null
-            Timber.d("onSignUpClick: attempting signup for %s (%s)", trimmedName, trimmedEmail)
+            Timber.d("onSignUpClick: attempting signup for %s (%s)", fullDisplayName, trimmedEmail)
 
-            val result = repository.signUp(trimmedEmail, trimmedPassword, trimmedName)
+            val result = repository.signUp(
+                email = trimmedEmail,
+                password = trimmedPassword,
+                displayName = fullDisplayName,
+                avatarId = initialAvatarId,
+                campusCenter = college
+            )
             result.onSuccess {
                 Timber.i("Signup successful for %s", trimmedEmail)
                 isSuccess = true
             }.onFailure {
                 Timber.e(it, "Signup failed for %s: %s", trimmedEmail, it.message)
-                errorMessage = it.message ?: "Sign Up failed"
+                errorMessage = it.message ?: context.getString(R.string.auth_error_signup_failed)
             }
             isEmailLoading = false
         }
