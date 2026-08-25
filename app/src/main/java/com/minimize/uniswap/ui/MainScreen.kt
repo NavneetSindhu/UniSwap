@@ -1,10 +1,7 @@
 package com.minimize.uniswap.ui
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -107,17 +104,28 @@ fun MainScreen(
                 val initialIndex = bottomTabs.indexOf(initialRoute)
                 val targetIndex = bottomTabs.indexOf(targetRoute)
 
-                val direction = if (initialIndex != -1 && targetIndex != -1) {
-                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
-                    else AnimatedContentTransitionScope.SlideDirection.Right
+                if (initialIndex != -1 && targetIndex != -1) {
+                    val direction = if (targetIndex > initialIndex) {
+                        AnimatedContentTransitionScope.SlideDirection.Left
+                    } else {
+                        AnimatedContentTransitionScope.SlideDirection.Right
+                    }
+                    slideIntoContainer(
+                        towards = direction,
+                        initialOffset = { it / 6 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    ) + fadeIn(animationSpec = tween(240, easing = FastOutSlowInEasing)) +
+                    scaleIn(initialScale = 0.98f, animationSpec = tween(240, easing = FastOutSlowInEasing))
                 } else {
-                    AnimatedContentTransitionScope.SlideDirection.Left
+                    // Deep screen forward push
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(320, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(260))
                 }
-
-                slideIntoContainer(
-                    towards = direction,
-                    animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(300))
             },
             exitTransition = {
                 val initialRoute = initialState.destination.route
@@ -125,31 +133,42 @@ fun MainScreen(
                 val initialIndex = bottomTabs.indexOf(initialRoute)
                 val targetIndex = bottomTabs.indexOf(targetRoute)
 
-                val direction = if (initialIndex != -1 && targetIndex != -1) {
-                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
-                    else AnimatedContentTransitionScope.SlideDirection.Right
+                if (initialIndex != -1 && targetIndex != -1) {
+                    val direction = if (targetIndex > initialIndex) {
+                        AnimatedContentTransitionScope.SlideDirection.Left
+                    } else {
+                        AnimatedContentTransitionScope.SlideDirection.Right
+                    }
+                    slideOutOfContainer(
+                        towards = direction,
+                        targetOffset = { it / 6 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    ) + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+                    scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutSlowInEasing))
                 } else {
-                    AnimatedContentTransitionScope.SlideDirection.Left
+                    // Outgoing screen backdrop parallax
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        targetOffset = { it / 4 },
+                        animationSpec = tween(320, easing = FastOutSlowInEasing)
+                    ) + fadeOut(animationSpec = tween(220))
                 }
-
-                slideOutOfContainer(
-                    towards = direction,
-                    targetOffset = { if (initialIndex != -1 && targetIndex != -1) it else it / 3 },
-                    animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(280))
             },
             popEnterTransition = {
                 slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                    initialOffset = { it / 3 },
+                    initialOffset = { it / 4 },
                     animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(300))
+                ) + fadeIn(animationSpec = tween(260))
             },
             popExitTransition = {
                 slideOutOfContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
                     animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(280))
+                ) + fadeOut(animationSpec = tween(220))
             }
         ) {
 
