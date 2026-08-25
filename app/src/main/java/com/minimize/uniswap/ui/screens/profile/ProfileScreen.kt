@@ -51,6 +51,7 @@ import com.minimize.uniswap.ui.theme.*
 fun ProfileScreen(
     onBackClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    onItemClick: (CampusItem) -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -389,26 +390,36 @@ fun ProfileScreen(
                             val emptyTitle = when (tabIndex) {
                                 0 -> stringResource(R.string.empty_my_listings_title)
                                 1 -> stringResource(R.string.empty_sold_title)
-                                else -> stringResource(R.string.empty_feed_title)
+                                else -> stringResource(R.string.empty_saved_title)
                             }
                             val emptySubtitle = when (tabIndex) {
                                 0 -> stringResource(R.string.empty_my_listings_subtitle)
                                 1 -> stringResource(R.string.empty_sold_subtitle)
-                                else -> stringResource(R.string.empty_feed_subtitle)
+                                else -> stringResource(R.string.empty_saved_subtitle)
                             }
                             val fallbackIcon = when (tabIndex) {
                                 0 -> Icons.Outlined.Storefront
                                 1 -> Icons.Outlined.CheckCircleOutline
                                 else -> Icons.Outlined.FavoriteBorder
                             }
+                            val lottieAnim = when (tabIndex) {
+                                0 -> R.raw.anim_user_search
+                                else -> R.raw.anim_cat_relaxing
+                            }
 
                             EmptyStateView(
                                 title = emptyTitle,
                                 subtitle = emptySubtitle,
+                                lottieRes = lottieAnim,
                                 fallbackIcon = fallbackIcon,
+                                animationSize = 190.dp,
                                 modifier = Modifier.padding(vertical = 24.dp)
                             )
                         } else {
+                            val metaSaved = stringResource(R.string.profile_meta_saved)
+                            val metaGiven = stringResource(R.string.profile_meta_given_away)
+                            val metaAvailable = stringResource(R.string.profile_meta_available)
+
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(14.dp),
                                 modifier = Modifier.fillMaxWidth()
@@ -417,8 +428,9 @@ fun ProfileScreen(
                                     ProfileItemCard(
                                         item = item,
                                         metaIcon = if (tabIndex == 2) Icons.Outlined.FavoriteBorder else Icons.Outlined.Visibility,
-                                        metaText = if (tabIndex == 2) "Saved" else if (item.status == ItemStatus.SOLD) "Given Away" else "Available",
+                                        metaText = if (tabIndex == 2) metaSaved else if (item.status == ItemStatus.SOLD) metaGiven else metaAvailable,
                                         isSavedTab = tabIndex == 2,
+                                        onClick = { onItemClick(item) },
                                         onToggleStatus = { viewModel.toggleItemSoldStatus(item) },
                                         onDelete = {
                                             if (tabIndex == 2) viewModel.removeSavedItem(item.id)
@@ -439,8 +451,9 @@ fun ProfileScreen(
 fun ProfileItemCard(
     item: CampusItem,
     metaIcon: ImageVector = Icons.Outlined.Visibility,
-    metaText: String = "Available",
+    metaText: String = stringResource(R.string.profile_meta_available),
     isSavedTab: Boolean = false,
+    onClick: () -> Unit = {},
     onToggleStatus: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
@@ -452,7 +465,8 @@ fun ProfileItemCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(1.dp, RoundedCornerShape(20.dp)),
+            .shadow(1.dp, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = colors.cardSurface
     ) {
@@ -526,7 +540,7 @@ fun ProfileItemCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More Options",
+                        contentDescription = stringResource(R.string.action_share_listing),
                         tint = colors.textSecondary
                     )
                 }
@@ -540,7 +554,7 @@ fun ProfileItemCard(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = if (item.status == ItemStatus.AVAILABLE) "Mark as Sold / Given" else "Mark as Available",
+                                    text = if (item.status == ItemStatus.AVAILABLE) stringResource(R.string.action_mark_sold) else stringResource(R.string.action_mark_available),
                                     fontFamily = MatterFontFamily,
                                     fontSize = 14.sp,
                                     color = colors.textPrimary
@@ -563,7 +577,7 @@ fun ProfileItemCard(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = "Share Item",
+                                text = stringResource(R.string.action_share_listing),
                                 fontFamily = MatterFontFamily,
                                 fontSize = 14.sp,
                                 color = colors.textPrimary
@@ -590,10 +604,10 @@ fun ProfileItemCard(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = if (isSavedTab) "Remove from Saved" else "Delete Listing",
+                                text = if (isSavedTab) stringResource(R.string.action_remove_saved) else stringResource(R.string.action_delete_listing),
                                 fontFamily = MatterFontFamily,
                                 fontSize = 14.sp,
-                                color = Color(0xFFFF5252)
+                                color = MaterialTheme.colorScheme.error
                             )
                         },
                         onClick = {
@@ -602,9 +616,9 @@ fun ProfileItemCard(
                         },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Outlined.Delete,
+                                imageVector = if (isSavedTab) Icons.Outlined.FavoriteBorder else Icons.Outlined.Delete,
                                 contentDescription = null,
-                                tint = Color(0xFFFF5252)
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     )

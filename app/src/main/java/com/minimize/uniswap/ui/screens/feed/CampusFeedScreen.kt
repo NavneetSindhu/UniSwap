@@ -65,6 +65,7 @@ fun CampusFeedScreen(
     val isSubmittingReport by viewModel.isSubmittingReport.collectAsStateWithLifecycle()
     val isBlockingSeller by viewModel.isBlockingSeller.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
+    val savedItemIds by viewModel.savedItemIds.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
@@ -272,6 +273,7 @@ fun CampusFeedScreen(
                             EmptyStateView(
                                 title = stringResource(R.string.empty_search_title),
                                 subtitle = stringResource(R.string.empty_search_subtitle),
+                                lottieRes = R.raw.anim_user_search,
                                 fallbackIcon = Icons.Outlined.SearchOff,
                                 ctaText = stringResource(R.string.empty_search_cta),
                                 onCtaClick = { viewModel.updateSearchQuery("") }
@@ -280,6 +282,7 @@ fun CampusFeedScreen(
                             EmptyStateView(
                                 title = stringResource(R.string.empty_category_title),
                                 subtitle = stringResource(R.string.empty_category_subtitle),
+                                lottieRes = R.raw.anim_empty_feed,
                                 fallbackIcon = Icons.Outlined.Inventory2
                             )
                         }
@@ -301,11 +304,15 @@ fun CampusFeedScreen(
                             if (isDigitalNote) {
                                 DigitalNotesCard(
                                     item = item,
+                                    isSaved = item.id in savedItemIds,
+                                    onSaveClick = { viewModel.toggleSaveItem(item.id) },
                                     onClick = { onItemClick(item) }
                                 )
                             } else {
                                 RecentUploadCard(
                                     item = item,
+                                    isSaved = item.id in savedItemIds,
+                                    onSaveClick = { viewModel.toggleSaveItem(item.id) },
                                     onClick = { onItemClick(item) },
                                     onLongClick = { selectedItemForAction = item }
                                 )

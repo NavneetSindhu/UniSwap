@@ -407,8 +407,9 @@ fun PickupChatScreen(
                 EmptyStateView(
                     title = stringResource(R.string.empty_chat_title),
                     subtitle = stringResource(R.string.empty_chat_subtitle),
+                    lottieRes = R.raw.anim_start_chat,
                     fallbackIcon = Icons.Outlined.Forum,
-                    animationSize = 120.dp
+                    animationSize = 210.dp
                 )
             }
         } else {

@@ -203,12 +203,15 @@ fun MessagesScreen(
                     EmptyStateView(
                         title = stringResource(R.string.empty_inbox_title),
                         subtitle = stringResource(R.string.empty_inbox_subtitle),
-                        fallbackIcon = Icons.Outlined.ChatBubbleOutline
+                        lottieRes = R.raw.anim_empty_chat,
+                        fallbackIcon = Icons.Outlined.ChatBubbleOutline,
+                        animationSize = 210.dp
                     )
                 } else {
                     EmptyStateView(
                         title = stringResource(R.string.empty_inbox_search_title),
                         subtitle = stringResource(R.string.empty_inbox_search_subtitle),
+                        lottieRes = R.raw.anim_user_search,
                         fallbackIcon = Icons.Outlined.SearchOff,
                         ctaText = stringResource(R.string.empty_search_cta),
                         onCtaClick = { searchQuery = "" }
