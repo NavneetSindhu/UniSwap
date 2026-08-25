@@ -14,5 +14,9 @@ data class MessageEntity(
     val timestamp: Long,
     val status: MessageStatus,
     val isLocationPin: Boolean = false,
-    val locationName: String? = null
+    val locationName: String? = null,
+    val isEdited: Boolean = false,
+    val isDeleted: Boolean = false,
+    val readAt: Long? = null,
+    val deliveredAt: Long? = null
 )

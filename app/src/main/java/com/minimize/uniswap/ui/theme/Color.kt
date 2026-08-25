@@ -45,6 +45,11 @@ val ErrorRed = Color(0xFFB3261E)
 val ActionLinkBlue = Color(0xFF3271D7)
 val VerifiedStudentGreen = Color(0xFF02B014)
 
+// Read Receipts & Message Status Tokens
+val ReadReceiptSent = Color(0xFF9E9E9E)        // Single Gray Tick (Uploaded)
+val ReadReceiptDelivered = Color(0xFF22C55E)   // Double Green Tick (Delivered to counterparty)
+val ReadReceiptRead = Color(0xFF3B82F6)        // Double Blue Tick (Read by counterparty)
+
 // Surface & Card Tokens
 val CardDarkSurface = Color(0xFF121416)
 val CardLightContainer = Color(0xFFEBEBEB)

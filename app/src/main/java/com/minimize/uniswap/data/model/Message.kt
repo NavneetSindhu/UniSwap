@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 import java.util.UUID
 
 enum class MessageStatus {
-    SENDING, SENT, FAILED
+    SENDING, SENT, DELIVERED, READ, FAILED
 }
 
 data class Message(
@@ -15,5 +15,10 @@ data class Message(
     val firestoreTimestamp: Timestamp? = null, // Used for server-side sorting
     val isLocationPin: Boolean = false,
     val locationName: String? = null,
+    val isEdited: Boolean = false,
+    val isDeleted: Boolean = false,
+    val deletedForUserIds: List<String> = emptyList(),
+    val readAt: Long? = null,
+    val deliveredAt: Long? = null,
     val status: MessageStatus = MessageStatus.SENT
 )

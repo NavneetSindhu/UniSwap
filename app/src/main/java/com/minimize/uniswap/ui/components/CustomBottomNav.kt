@@ -153,13 +153,13 @@ fun CustomBottomNav(
                             modifier = Modifier.size(24.dp)
                         )
 
-                        // Vibrant Red indicator dot for unread messages
+                        // Emerald indicator dot for unread messages
                         if (route == Screen.Messages.route && hasUnreadMessages) {
                             Box(
                                 modifier = Modifier
                                     .size(8.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFEF4444))
+                                    .background(themeColors.wasteMetricGreen)
                             )
                         }
                     }

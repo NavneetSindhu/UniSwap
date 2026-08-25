@@ -55,9 +55,9 @@ class MainViewModel @Inject constructor(
                 .collect { threads ->
                     val myUid = authRepository.getCurrentUserId() ?: ""
 
-                    // Unread badge logic: true if any thread's last message is from another user
+                    // Unread badge logic: true only if thread has unread messages for current user
                     val hasUnread = threads.any { thread ->
-                        thread.lastSenderId.isNotBlank() && thread.lastSenderId != myUid
+                        thread.unreadByParticipantIds.contains(myUid)
                     }
                     _hasUnreadMessages.value = hasUnread
 

@@ -12,5 +12,8 @@ data class ChatThread(
     val lastMessageTimestamp: Long = 0L,
     val lastSenderId: String = "",
     val itemTitle: String = "",
-    val itemImageUrl: String = ""
+    val itemImageUrl: String = "",
+    val deletedForUserIds: List<String> = emptyList(),
+    val unreadByParticipantIds: List<String> = emptyList(),
+    val lastMessageStatus: MessageStatus = MessageStatus.SENT
 )

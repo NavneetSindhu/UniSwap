@@ -7,7 +7,7 @@ import com.minimize.uniswap.data.local.converter.UniSwapConverters
 import com.minimize.uniswap.data.local.dao.MessageDao
 import com.minimize.uniswap.data.local.entity.MessageEntity
 
-@Database(entities = [MessageEntity::class], version = 3, exportSchema = false)
+@Database(entities = [MessageEntity::class], version = 5, exportSchema = false)
 @TypeConverters(UniSwapConverters::class)
 abstract class UniSwapDatabase : RoomDatabase() {
     abstract fun messageDao(): MessageDao
