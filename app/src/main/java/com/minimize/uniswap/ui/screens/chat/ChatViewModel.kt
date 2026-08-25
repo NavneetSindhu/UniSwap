@@ -69,6 +69,7 @@ class ChatViewModel @Inject constructor(
                     }
                     activeBuyerId = effectiveBuyerId
                     observeMessages(campusItem.id, effectiveBuyerId, campusItem.sellerId)
+                    markChatAsRead(campusItem.id, effectiveBuyerId, campusItem.sellerId)
                 }
         }
     }
@@ -76,8 +77,30 @@ class ChatViewModel @Inject constructor(
     private fun observeMessages(itemId: String, buyerId: String, sellerId: String) {
         messageJob?.cancel()
         messageJob = chatRepository.getMessages(itemId, buyerId, sellerId)
-            .onEach { _messages.value = it }
+            .onEach { messageList ->
+                _messages.value = messageList
+                // If there are incoming unread messages, mark them as read
+                if (messageList.any { it.senderId != currentUserId && it.readAt == null }) {
+                    markChatAsRead(itemId, buyerId, sellerId)
+                }
+            }
             .launchIn(viewModelScope)
+    }
+
+    fun markChatAsRead(
+        itemId: String = _item.value?.id ?: "",
+        buyerId: String = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId,
+        sellerId: String = _item.value?.sellerId ?: ""
+    ) {
+        if (itemId.isBlank() || currentUserId.isBlank()) return
+        viewModelScope.launch {
+            chatRepository.markChatAsRead(
+                itemId = itemId,
+                buyerId = buyerId,
+                sellerId = sellerId,
+                currentUserId = currentUserId
+            )
+        }
     }
 
     fun sendMessage(text: String) {
@@ -112,6 +135,64 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Failed to send chat message in conversation: %s", currentItem.id)
             }
+        }
+    }
+
+    fun editMessage(messageId: String, newText: String) {
+        val currentItem = _item.value ?: return
+        if (newText.isBlank() || messageId.isBlank()) return
+        val buyerId = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId
+
+        viewModelScope.launch {
+            chatRepository.editMessage(
+                itemId = currentItem.id,
+                buyerId = buyerId,
+                sellerId = currentItem.sellerId,
+                messageId = messageId,
+                newText = newText
+            )
+        }
+    }
+
+    fun deleteMessage(messageId: String) {
+        val currentItem = _item.value ?: return
+        if (messageId.isBlank()) return
+        val buyerId = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId
+
+        viewModelScope.launch {
+            chatRepository.deleteMessage(
+                itemId = currentItem.id,
+                buyerId = buyerId,
+                sellerId = currentItem.sellerId,
+                messageId = messageId
+            )
+        }
+    }
+
+    fun clearChatHistory(onComplete: () -> Unit = {}) {
+        val currentItem = _item.value ?: return
+        val buyerId = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId
+
+        viewModelScope.launch {
+            chatRepository.clearChatHistory(
+                itemId = currentItem.id,
+                buyerId = buyerId,
+                sellerId = currentItem.sellerId,
+                userId = currentUserId
+            )
+            onComplete()
+        }
+    }
+
+    fun deleteConversation(onComplete: () -> Unit = {}) {
+        val currentItem = _item.value ?: return
+        val buyerId = if (activeBuyerId.isNotBlank()) activeBuyerId else currentUserId
+        val uids = listOf(buyerId, currentItem.sellerId).sorted()
+        val chatId = "${currentItem.id}_${uids[0]}_${uids[1]}"
+
+        viewModelScope.launch {
+            chatRepository.deleteConversation(chatId, currentUserId)
+            onComplete()
         }
     }
 

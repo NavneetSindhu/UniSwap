@@ -1,11 +1,11 @@
-package com.minimize.uniswap.ui.components
+﻿package com.minimize.uniswap.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,25 +21,23 @@ import com.minimize.uniswap.R
 import com.minimize.uniswap.ui.theme.UniSwapTheme
 
 /**
- * Bottom Sheet displaying quick actions for an item or user (Share, Report, Block).
- * Triggered via 3-dot overflow in Details/Chat screens or long-press on product cards.
- * Reuses [AppBottomSheet] for consistent styling and insets.
+ * Bottom Sheet displaying thread-level actions (Delete Conversation, Block, Report).
+ * Triggered on long-press or 3-dot tap in MessagesScreen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ItemActionBottomSheet(
+fun ConversationActionBottomSheet(
     onDismissRequest: () -> Unit,
+    displayName: String,
     itemTitle: String,
-    sellerName: String,
-    onShareClick: () -> Unit,
+    onDeleteConversationClick: () -> Unit,
     onReportClick: () -> Unit,
     onBlockClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isSellerSelf: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     AppBottomSheet(
         onDismissRequest = onDismissRequest,
-        heightFraction = null, // Wrap content height
+        heightFraction = null,
         containerColor = UniSwapTheme.colors.cardBackground,
         contentColor = UniSwapTheme.colors.textPrimary,
         showCloseIcon = true,
@@ -50,14 +48,14 @@ fun ItemActionBottomSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 4.dp)
         ) {
-            // Header: Item & Seller preview
+            // Header: Participant & Item Title
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 14.dp)
             ) {
                 Text(
-                    text = itemTitle,
+                    text = displayName,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = UniSwapTheme.colors.textPrimary
@@ -65,10 +63,10 @@ fun ItemActionBottomSheet(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (sellerName.isNotBlank()) {
+                if (itemTitle.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Listed by $sellerName",
+                        text = "Regarding ",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = UniSwapTheme.colors.textSecondary
                         ),
@@ -84,65 +82,32 @@ fun ItemActionBottomSheet(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
 
-            // Action: Share
+            // Action: Delete Conversation
             ActionSheetRow(
-                icon = Icons.Outlined.Share,
-                title = stringResource(R.string.action_share_listing),
-                onClick = onShareClick
+                icon = Icons.Outlined.Delete,
+                title = stringResource(R.string.action_delete_conversation),
+                iconTint = MaterialTheme.colorScheme.error,
+                textColor = MaterialTheme.colorScheme.error,
+                onClick = onDeleteConversationClick
             )
 
-            // Actions for other users' listings (Report & Block)
-            if (!isSellerSelf) {
-                ActionSheetRow(
-                    icon = Icons.Outlined.Flag,
-                    title = stringResource(R.string.action_report_listing),
-                    iconTint = MaterialTheme.colorScheme.error,
-                    onClick = onReportClick
-                )
+            // Action: Report User
+            ActionSheetRow(
+                icon = Icons.Outlined.Flag,
+                title = stringResource(R.string.action_report_user),
+                onClick = onReportClick
+            )
 
-                ActionSheetRow(
-                    icon = Icons.Outlined.Block,
-                    title = stringResource(R.string.action_block_seller),
-                    iconTint = MaterialTheme.colorScheme.error,
-                    onClick = onBlockClick
-                )
-            }
+            // Action: Block User
+            ActionSheetRow(
+                icon = Icons.Outlined.Block,
+                title = stringResource(R.string.action_block_seller),
+                iconTint = MaterialTheme.colorScheme.error,
+                textColor = MaterialTheme.colorScheme.error,
+                onClick = onBlockClick
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-}
-
-@Composable
-fun ActionSheetRow(
-    icon: ImageVector,
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    iconTint: Color = UniSwapTheme.colors.textPrimary,
-    textColor: Color = if (iconTint == MaterialTheme.colorScheme.error) iconTint else UniSwapTheme.colors.textPrimary
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            tint = iconTint,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                color = textColor,
-                fontSize = 15.sp
-            )
-        )
     }
 }

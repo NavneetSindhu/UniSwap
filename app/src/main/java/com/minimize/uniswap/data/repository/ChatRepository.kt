@@ -32,5 +32,54 @@ interface ChatRepository {
         buyerName: String = "",
         sellerName: String = ""
     ): Boolean
+
+    /**
+     * Edits the text of an existing message.
+     */
+    suspend fun editMessage(
+        itemId: String,
+        buyerId: String,
+        sellerId: String,
+        messageId: String,
+        newText: String
+    ): Result<Unit>
+
+    /**
+     * Soft deletes a message (marks as deleted).
+     */
+    suspend fun deleteMessage(
+        itemId: String,
+        buyerId: String,
+        sellerId: String,
+        messageId: String
+    ): Result<Unit>
+
+    /**
+     * Deletes / hides a conversation thread for the current user.
+     */
+    suspend fun deleteConversation(
+        chatId: String,
+        userId: String
+    ): Result<Unit>
+
+    /**
+     * Clears all local chat history for the specified conversation.
+     */
+    suspend fun clearChatHistory(
+        itemId: String,
+        buyerId: String,
+        sellerId: String,
+        userId: String
+    ): Result<Unit>
+
+    /**
+     * Marks all unread messages in the conversation as read by the current user.
+     */
+    suspend fun markChatAsRead(
+        itemId: String,
+        buyerId: String,
+        sellerId: String,
+        currentUserId: String
+    ): Result<Unit>
 }
 

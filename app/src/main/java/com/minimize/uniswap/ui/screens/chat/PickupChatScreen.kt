@@ -1,16 +1,33 @@
 package com.minimize.uniswap.ui.screens.chat
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,45 +35,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.minimize.uniswap.R
-import com.minimize.uniswap.ui.components.UserAvatar
+import com.minimize.uniswap.data.model.MessageStatus
+import com.minimize.uniswap.ui.components.*
 import com.minimize.uniswap.ui.theme.*
-import androidx.compose.material.icons.outlined.Forum
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import com.minimize.uniswap.ui.components.EmptyStateView
-
-import android.widget.Toast
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.ui.platform.LocalContext
-import com.minimize.uniswap.ui.components.BlockUserDialog
-import com.minimize.uniswap.ui.components.ItemActionBottomSheet
-import com.minimize.uniswap.ui.components.ReportBottomSheet
-import androidx.compose.ui.window.Dialog
 
 data class ChatBubbleMessage(
     val id: String,
     val text: String,
-    val isFromMe: Boolean
+    val isFromMe: Boolean,
+    val isEdited: Boolean = false,
+    val isDeleted: Boolean = false,
+    val status: MessageStatus = MessageStatus.SENT
 )
 
 /**
  * 1-on-1 Chat Interface matching exact Figma CSS tokens.
  * Features 50dp bottom-rounded header, 29x29 avatar, verified student badge,
- * 20dp corner radius message bubbles, and 50dp capsule input bar with "+" button.
+ * message edit/delete actions, clear history, and 50dp capsule input bar.
  */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PickupChatScreen(
     itemId: String,
@@ -74,11 +83,17 @@ fun PickupChatScreen(
 
     val context = LocalContext.current
     var inputText by remember(initialMessage) { mutableStateOf(initialMessage ?: "") }
+    var editingMessage by remember { mutableStateOf<ChatBubbleMessage?>(null) }
     val listState = rememberLazyListState()
 
     var isActionSheetOpen by remember { mutableStateOf(false) }
     var isReportSheetOpen by remember { mutableStateOf(false) }
     var isBlockDialogOpen by remember { mutableStateOf(false) }
+
+    var selectedMessageForAction by remember { mutableStateOf<ChatBubbleMessage?>(null) }
+    var messageToDelete by remember { mutableStateOf<ChatBubbleMessage?>(null) }
+    var showClearChatDialog by remember { mutableStateOf(false) }
+    var showDeleteConversationDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(itemId, buyerId) {
         viewModel.loadItem(itemId, buyerId)
@@ -108,7 +123,10 @@ fun PickupChatScreen(
             ChatBubbleMessage(
                 id = it.id,
                 text = it.text,
-                isFromMe = it.senderId == viewModel.currentUserId
+                isFromMe = it.senderId == viewModel.currentUserId,
+                isEdited = it.isEdited,
+                isDeleted = it.isDeleted,
+                status = it.status
             )
         }
     }
@@ -121,30 +139,260 @@ fun PickupChatScreen(
 
     val themeColors = UniSwapTheme.colors
 
-    // Safety sheets
+    // Safety & Management Action Bottom Sheet (from top bar 3-dots)
     if (isActionSheetOpen && item != null) {
-        ItemActionBottomSheet(
+        AppBottomSheet(
             onDismissRequest = { isActionSheetOpen = false },
-            itemTitle = item!!.title,
-            sellerName = studentName,
-            isSellerSelf = false,
-            onShareClick = {
-                val shareText = "Chat regarding: ${item!!.title}"
-                val sendIntent = android.content.Intent().apply {
-                    action = android.content.Intent.ACTION_SEND
-                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                context.startActivity(android.content.Intent.createChooser(sendIntent, "Share"))
-            },
-            onReportClick = {
-                isActionSheetOpen = false
-                isReportSheetOpen = true
-            },
-            onBlockClick = {
-                isActionSheetOpen = false
-                isBlockDialogOpen = true
+            heightFraction = null,
+            containerColor = themeColors.cardBackground,
+            contentColor = themeColors.textPrimary,
+            showCloseIcon = true
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = item!!.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = themeColors.textPrimary
+                    )
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Chat with $studentName",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = themeColors.textSecondary
+                    )
+                )
+
+                HorizontalDivider(
+                    color = themeColors.divider,
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Clear Chat History
+                ActionSheetRow(
+                    icon = Icons.Outlined.CleaningServices,
+                    title = stringResource(R.string.action_clear_chat),
+                    onClick = {
+                        isActionSheetOpen = false
+                        showClearChatDialog = true
+                    }
+                )
+
+                // Delete Conversation
+                ActionSheetRow(
+                    icon = Icons.Outlined.Delete,
+                    title = stringResource(R.string.action_delete_conversation),
+                    iconTint = MaterialTheme.colorScheme.error,
+                    textColor = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        isActionSheetOpen = false
+                        showDeleteConversationDialog = true
+                    }
+                )
+
+                // Report User
+                ActionSheetRow(
+                    icon = Icons.Outlined.Forum,
+                    title = stringResource(R.string.action_report_listing),
+                    onClick = {
+                        isActionSheetOpen = false
+                        isReportSheetOpen = true
+                    }
+                )
+
+                // Block User
+                ActionSheetRow(
+                    icon = Icons.Default.Close,
+                    title = stringResource(R.string.action_block_seller),
+                    iconTint = MaterialTheme.colorScheme.error,
+                    textColor = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        isActionSheetOpen = false
+                        isBlockDialogOpen = true
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+
+    // Message Bubble Action Bottom Sheet (from message long-press)
+    selectedMessageForAction?.let { msg ->
+        MessageActionBottomSheet(
+            onDismissRequest = { selectedMessageForAction = null },
+            messageText = msg.text,
+            isFromMe = msg.isFromMe,
+            isDeleted = msg.isDeleted,
+            onCopyClick = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("chat_message", msg.text))
+                Toast.makeText(context, context.getString(R.string.toast_text_copied), Toast.LENGTH_SHORT).show()
+                selectedMessageForAction = null
+            },
+            onEditClick = {
+                editingMessage = msg
+                inputText = msg.text
+                selectedMessageForAction = null
+            },
+            onDeleteClick = {
+                val target = msg
+                selectedMessageForAction = null
+                messageToDelete = target
+            }
+        )
+    }
+
+    // Delete Single Message Confirmation Dialog
+    messageToDelete?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { messageToDelete = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.delete_message_confirm_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = themeColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.delete_message_confirm_msg),
+                    fontFamily = MatterFontFamily,
+                    color = themeColors.textSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val msgId = msg.id
+                        messageToDelete = null
+                        viewModel.deleteMessage(msgId)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_delete),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { messageToDelete = null }) {
+                    Text(
+                        text = stringResource(R.string.action_cancel),
+                        fontFamily = MatterFontFamily,
+                        color = themeColors.textPrimary
+                    )
+                }
+            },
+            containerColor = themeColors.cardSurface,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // Clear Chat History Confirmation Dialog
+    if (showClearChatDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearChatDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.clear_chat_confirm_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = themeColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.clear_chat_confirm_msg),
+                    fontFamily = MatterFontFamily,
+                    color = themeColors.textSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearChatDialog = false
+                        viewModel.clearChatHistory()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_delete),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearChatDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.action_cancel),
+                        fontFamily = MatterFontFamily,
+                        color = themeColors.textPrimary
+                    )
+                }
+            },
+            containerColor = themeColors.cardSurface,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    // Delete Conversation Confirmation Dialog
+    if (showDeleteConversationDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConversationDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.delete_conversation_confirm_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = themeColors.textPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.delete_conversation_confirm_msg),
+                    fontFamily = MatterFontFamily,
+                    color = themeColors.textSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConversationDialog = false
+                        viewModel.deleteConversation {
+                            onBackClick()
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_delete),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConversationDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.action_cancel),
+                        fontFamily = MatterFontFamily,
+                        color = themeColors.textPrimary
+                    )
+                }
+            },
+            containerColor = themeColors.cardSurface,
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
@@ -251,11 +499,10 @@ fun PickupChatScreen(
 
                             Spacer(modifier = Modifier.width(6.dp))
 
-                            // Verified Badge Icon
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_verified),
-                                contentDescription = stringResource(R.string.verified_student),
-                                tint = VerifiedStudentGreen,
+                                contentDescription = "Verified Student",
+                                tint = Color.Unspecified,
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -281,7 +528,6 @@ fun PickupChatScreen(
             }
         },
         bottomBar = {
-            // Bottom Capsule Input Bar with unified navigation bars and IME insets
             Surface(
                 color = themeColors.background,
                 modifier = Modifier
@@ -290,11 +536,45 @@ fun PickupChatScreen(
                         WindowInsets.navigationBars.union(WindowInsets.ime)
                     )
             ) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 10.dp)
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
                 ) {
+                    // Editing Banner (if in edit mode)
+                    AnimatedVisibility(
+                        visible = editingMessage != null,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp, start = 8.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.editing_message_label),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                color = themeColors.wasteMetricGreen
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel Edit",
+                                tint = themeColors.textSubtle,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .clickable {
+                                        editingMessage = null
+                                        inputText = ""
+                                    }
+                            )
+                        }
+                    }
+
                     if (isOtherUserBlocked) {
                         Box(
                             modifier = Modifier
@@ -327,7 +607,6 @@ fun PickupChatScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Typing Indicator (|) + Text Input
                                 Box(
                                     modifier = Modifier.weight(1f),
                                     contentAlignment = Alignment.CenterStart
@@ -362,7 +641,13 @@ fun PickupChatScreen(
                                         keyboardActions = KeyboardActions(
                                             onSend = {
                                                 if (inputText.isNotBlank()) {
-                                                    viewModel.sendMessage(inputText)
+                                                    val currentEdit = editingMessage
+                                                    if (currentEdit != null) {
+                                                        viewModel.editMessage(currentEdit.id, inputText)
+                                                        editingMessage = null
+                                                    } else {
+                                                        viewModel.sendMessage(inputText)
+                                                    }
                                                     inputText = ""
                                                 }
                                             }
@@ -371,14 +656,20 @@ fun PickupChatScreen(
                                     )
                                 }
 
-                                // Send Action Button
+                                // Send / Update Button
                                 Box(
                                     modifier = Modifier
                                         .size(34.dp)
                                         .clip(CircleShape)
                                         .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
                                         .clickable(enabled = inputText.isNotBlank()) {
-                                            viewModel.sendMessage(inputText)
+                                            val currentEdit = editingMessage
+                                            if (currentEdit != null) {
+                                                viewModel.editMessage(currentEdit.id, inputText)
+                                                editingMessage = null
+                                            } else {
+                                                viewModel.sendMessage(inputText)
+                                            }
                                             inputText = ""
                                         },
                                     contentAlignment = Alignment.Center
@@ -426,7 +717,8 @@ fun PickupChatScreen(
                 items(chatMessages, key = { it.id }) { message ->
                     ChatBubbleRow(
                         message = message,
-                        partnerAvatarId = partnerAvatarId
+                        partnerAvatarId = partnerAvatarId,
+                        onLongClick = { selectedMessageForAction = message }
                     )
                 }
             }
@@ -435,14 +727,14 @@ fun PickupChatScreen(
 }
 
 /**
- * Message Row matching Figma specs:
- * Left incoming with 23x23 avatar + 20dp radius bubble
- * Right outgoing with 20dp radius bubble
+ * Message Row matching Figma specs with Long-press action support.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatBubbleRow(
     message: ChatBubbleMessage,
-    partnerAvatarId: String? = null
+    partnerAvatarId: String? = null,
+    onLongClick: () -> Unit = {}
 ) {
     val themeColors = UniSwapTheme.colors
 
@@ -457,17 +749,48 @@ private fun ChatBubbleRow(
                     .widthIn(min = 80.dp, max = 260.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(if (themeColors.isDark) Color(0xFF22252A) else Color(0xFF171717))
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = onLongClick
+                    )
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = message.text,
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 13.sp,
-                    lineHeight = 16.sp,
-                    letterSpacing = (-0.2).sp,
-                    color = Color.White
-                )
+                Column {
+                    Text(
+                        text = if (message.isDeleted) stringResource(R.string.message_deleted_placeholder) else message.text,
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 13.sp,
+                        lineHeight = 16.sp,
+                        letterSpacing = (-0.2).sp,
+                        fontStyle = if (message.isDeleted) FontStyle.Italic else FontStyle.Normal,
+                        color = if (message.isDeleted) Color.White.copy(alpha = 0.5f) else Color.White
+                    )
+                    
+                    // Bottom status row (Edited tag + Read Receipt ticks)
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (message.isEdited && !message.isDeleted) {
+                            Text(
+                                text = stringResource(R.string.message_edited_tag),
+                                fontFamily = MatterFontFamily,
+                                fontSize = 9.sp,
+                                color = Color.White.copy(alpha = 0.5f)
+                            )
+                        }
+                        if (!message.isDeleted) {
+                            MessageReceiptStatus(
+                                status = message.status,
+                                size = 12.dp
+                            )
+                        }
+                    }
+                }
             }
         }
     } else {
@@ -477,7 +800,6 @@ private fun ChatBubbleRow(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
-            // Small participant avatar
             Box(
                 modifier = Modifier
                     .size(23.dp)
@@ -497,17 +819,34 @@ private fun ChatBubbleRow(
                     .widthIn(min = 80.dp, max = 260.dp)
                     .clip(RoundedCornerShape(20.dp))
                     .background(themeColors.cardSurface)
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = onLongClick
+                    )
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                Text(
-                    text = message.text,
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 13.sp,
-                    lineHeight = 16.sp,
-                    letterSpacing = (-0.2).sp,
-                    color = themeColors.textPrimary
-                )
+                Column {
+                    Text(
+                        text = if (message.isDeleted) stringResource(R.string.message_deleted_placeholder) else message.text,
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 13.sp,
+                        lineHeight = 16.sp,
+                        letterSpacing = (-0.2).sp,
+                        fontStyle = if (message.isDeleted) FontStyle.Italic else FontStyle.Normal,
+                        color = if (message.isDeleted) themeColors.textSubtle else themeColors.textPrimary
+                    )
+                    if (message.isEdited && !message.isDeleted) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.message_edited_tag),
+                            fontFamily = MatterFontFamily,
+                            fontSize = 9.sp,
+                            color = themeColors.textSubtle,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                    }
+                }
             }
         }
     }
