@@ -18,6 +18,12 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+import com.minimize.uniswap.util.ImageSanitizer
+import com.minimize.uniswap.util.ListingConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+
 data class ListUiState(
     val isEmailVerified: Boolean = false,
     val userEmail: String = "",
@@ -25,6 +31,8 @@ data class ListUiState(
     val showVerificationFlow: Boolean = false,
     val isVerificationSent: Boolean = false,
     val isProcessingVerification: Boolean = false,
+    val isSanitizing: Boolean = false,
+    val errorMessage: String? = null,
     val uploadProgress: String? = null
 )
 
@@ -70,13 +78,44 @@ class ListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun onTitleChange(newTitle: String) { _title.value = newTitle }
-    fun onPriceChange(newPrice: String) { _price.value = newPrice }
-    fun onDescriptionChange(newDescription: String) { _description.value = newDescription }
-    fun onCategoryChange(category: ItemCategory) { _selectedCategory.value = category }
+    fun onTitleChange(newTitle: String) { 
+        _title.value = newTitle 
+        if (_uiState.value.errorMessage != null) clearError()
+    }
+    fun onPriceChange(newPrice: String) { 
+        _price.value = newPrice 
+        if (_uiState.value.errorMessage != null) clearError()
+    }
+    fun onDescriptionChange(newDescription: String) { 
+        _description.value = newDescription 
+        if (_uiState.value.errorMessage != null) clearError()
+    }
+    fun onCategoryChange(category: ItemCategory) { 
+        _selectedCategory.value = category 
+        if (_uiState.value.errorMessage != null) clearError()
+    }
 
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    /**
+     * Sanitizes images immediately upon user selection on background IO dispatcher:
+     * - Strips EXIF GPS coordinates & private device info
+     * - Corrects orientation
+     * - Downsamples & compresses to WebP cache files
+     */
     fun onImagesSelected(uris: List<Uri>) {
-        _selectedImages.value = (_selectedImages.value + uris).take(5)
+        Timber.i("onImagesSelected() received %d URI(s): %s", uris.size, uris)
+        if (uris.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(isSanitizing = true, errorMessage = null) }
+            val sanitizedUris = ImageSanitizer.sanitizeAll(context, uris)
+            val updatedList = (_selectedImages.value + sanitizedUris).take(ListingConfig.MAX_IMAGES_ALLOWED)
+            _selectedImages.value = updatedList
+            _uiState.update { it.copy(isSanitizing = false) }
+            Timber.i("onImagesSelected() completed. Total selected: %d", updatedList.size)
+        }
     }
 
     fun onRemoveImage(index: Int) {
@@ -117,7 +156,16 @@ class ListViewModel @Inject constructor(
     }
 
     fun onPostAttempt(onSuccess: () -> Unit) {
-        // Email verification requirement is disabled for now
+        if (_title.value.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter an item title") }
+            return
+        }
+
+        if (_selectedImages.value.size < ListingConfig.MIN_IMAGES_REQUIRED) {
+            _uiState.update { it.copy(errorMessage = "Please add at least ${ListingConfig.MIN_IMAGES_REQUIRED} photo of your item") }
+            return
+        }
+
         postItem(onSuccess)
     }
 
@@ -130,25 +178,44 @@ class ListViewModel @Inject constructor(
             _isPosting.value = true
             Timber.d("Posting item: %s, Price: %s", _title.value, currentPrice)
 
-            // Upload images to Cloudinary if user picked local photos
+            // Stream pre-sanitized, compressed WebP files to Cloudinary in parallel
             val imagesToUpload = _selectedImages.value
             val uploadedUrls = mutableListOf<String>()
 
             if (imagesToUpload.isNotEmpty()) {
-                Timber.d("Uploading %d images to Cloudinary...", imagesToUpload.size)
-                for (uri in imagesToUpload) {
-                    val uploadResult = cloudinaryHelper.uploadImage(
-                        context = context,
-                        imageUri = uri,
-                        folder = "uniswap/users/$userId/items",
-                        tags = "user_$userId,uniswap_item"
-                    )
-                    uploadResult.onSuccess { uploadedUrl ->
-                        uploadedUrls.add(uploadedUrl)
-                    }.onFailure {
-                        Timber.w(it, "Image upload failed, falling back to local uri: %s", uri)
-                        uploadedUrls.add(uri.toString())
+                Timber.d("Uploading %d images to Cloudinary in parallel...", imagesToUpload.size)
+                val uploadDeferreds = imagesToUpload.map { uri ->
+                    async(Dispatchers.IO) {
+                        cloudinaryHelper.uploadImage(
+                            context = context,
+                            imageUri = uri,
+                            folder = "uniswap/users/$userId/items",
+                            tags = "user_$userId,uniswap_item"
+                        )
                     }
+                }
+                val results = uploadDeferreds.awaitAll()
+                val moderationErrors = mutableListOf<String>()
+
+                for (i in results.indices) {
+                    results[i].onSuccess { url ->
+                        uploadedUrls.add(url)
+                    }.onFailure { error ->
+                        val msg = error.message ?: "Upload failed"
+                        if (msg.contains("flagged", ignoreCase = true) || msg.contains("inappropriate", ignoreCase = true)) {
+                            moderationErrors.add(msg)
+                        } else {
+                            Timber.w(error, "Image upload failed, falling back to local uri: %s", imagesToUpload[i])
+                            uploadedUrls.add(imagesToUpload[i].toString())
+                        }
+                    }
+                }
+
+                if (moderationErrors.isNotEmpty()) {
+                    _isPosting.value = false
+                    _uiState.update { it.copy(errorMessage = moderationErrors.first()) }
+                    Timber.w("Post item aborted due to AI moderation flag: %s", moderationErrors.first())
+                    return@launch
                 }
             }
 
