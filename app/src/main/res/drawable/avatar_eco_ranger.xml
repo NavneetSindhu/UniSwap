@@ -1,0 +1,64 @@
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- Background Circle -->
+    <path android:pathData="M50,0A50,50 0 1,0 50,100A50,50 0 1,0 50,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="100"
+                android:endY="100"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#059669" />
+                <item android:offset="1.0" android:color="#064E3B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Eco Outdoor Vest Body -->
+    <path
+        android:pathData="M20,96 C22,78 32,72 50,72 C68,72 78,78 80,96 L80,100 L20,100 Z"
+        android:fillColor="#047857" />
+
+    <!-- Olive Inner Tee -->
+    <path
+        android:pathData="M42,72 C42,86 58,86 58,72 Z"
+        android:fillColor="#10B981" />
+
+    <!-- Neck -->
+    <path
+        android:pathData="M44,58 L56,58 L56,72 L44,72 Z"
+        android:fillColor="#FCD34D" />
+
+    <!-- Head / Face -->
+    <path
+        android:pathData="M35,40 C35,26 65,26 65,40 C65,56 57,64 50,64 C43,64 35,56 35,40 Z"
+        android:fillColor="#FDE68A" />
+
+    <!-- Eyes -->
+    <path android:pathData="M42,46 A2,2 0 1,0 42,50 A2,2 0 1,0 42,46 Z" android:fillColor="#064E3B" />
+    <path android:pathData="M58,46 A2,2 0 1,0 58,50 A2,2 0 1,0 58,46 Z" android:fillColor="#064E3B" />
+
+    <!-- Smile -->
+    <path android:pathData="M45,55 C48,59 52,59 55,55" android:strokeColor="#047857" android:strokeWidth="1.6" android:strokeLineCap="round" />
+
+    <!-- Forest Bucket Hat Crown -->
+    <path
+        android:pathData="M36,36 C36,20 64,20 64,36 Z"
+        android:fillColor="#065F46" />
+
+    <!-- Bucket Hat Brim -->
+    <path
+        android:pathData="M26,38 C32,34 68,34 74,38 L72,43 C64,39 36,39 28,43 Z"
+        android:fillColor="#047857" />
+
+    <!-- Golden Leaf Emblem on Hat -->
+    <path
+        android:pathData="M50,23 C47,26 47,30 50,32 C53,30 53,26 50,23 Z"
+        android:fillColor="#FCD34D" />
+</vector>

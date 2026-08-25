@@ -1,0 +1,57 @@
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- Background Circle -->
+    <path android:pathData="M50,0A50,50 0 1,0 50,100A50,50 0 1,0 50,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="100"
+                android:endY="100"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#D97706" />
+                <item android:offset="1.0" android:color="#78350F" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Warm Sweater Body -->
+    <path
+        android:pathData="M20,96 C22,78 32,74 50,74 C68,74 78,78 80,96 L80,100 L20,100 Z"
+        android:fillColor="#92400E" />
+
+    <!-- Chunky Knitted Scarf -->
+    <path
+        android:pathData="M34,64 C38,60 62,60 66,64 C68,74 32,74 34,64 Z"
+        android:fillColor="#F59E0B" />
+    <path
+        android:pathData="M44,68 L52,68 L54,84 L46,84 Z"
+        android:fillColor="#D97706" />
+
+    <!-- Head / Face -->
+    <path
+        android:pathData="M35,40 C35,26 65,26 65,40 C65,56 57,64 50,64 C43,64 35,56 35,40 Z"
+        android:fillColor="#FED7AA" />
+
+    <!-- Fluffy Hair -->
+    <path
+        android:pathData="M32,36 C30,22 42,16 50,16 C62,16 70,22 68,36 C64,28 58,24 50,24 C40,24 35,28 32,36 Z"
+        android:fillColor="#451A03" />
+
+    <!-- Eyes -->
+    <path android:pathData="M42,44 A2,2 0 1,0 42,48 A2,2 0 1,0 42,44 Z" android:fillColor="#1E293B" />
+    <path android:pathData="M58,44 A2,2 0 1,0 58,48 A2,2 0 1,0 58,44 Z" android:fillColor="#1E293B" />
+
+    <!-- Tortoiseshell Reading Glasses -->
+    <path android:pathData="M36,41 A5.5,5.5 0 1,0 47,41 A5.5,5.5 0 1,0 36,41 Z" android:strokeColor="#78350F" android:strokeWidth="1.8" />
+    <path android:pathData="M53,41 A5.5,5.5 0 1,0 64,41 A5.5,5.5 0 1,0 53,41 Z" android:strokeColor="#78350F" android:strokeWidth="1.8" />
+    <path android:pathData="M47,41 L53,41" android:strokeColor="#78350F" android:strokeWidth="1.8" />
+
+    <!-- Gentle Smile -->
+    <path android:pathData="M46,55 C48,58 52,58 54,55" android:strokeColor="#9A3412" android:strokeWidth="1.5" android:strokeLineCap="round" />
+</vector>

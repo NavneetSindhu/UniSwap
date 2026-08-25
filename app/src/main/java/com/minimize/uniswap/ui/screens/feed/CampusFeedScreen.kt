@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.components.UserAvatar
 import com.minimize.uniswap.ui.screens.feed.components.DigitalNotesCard
 import com.minimize.uniswap.ui.screens.feed.components.FeedFilterPills
 import com.minimize.uniswap.ui.screens.home.components.RecentUploadCard
@@ -58,6 +59,7 @@ fun CampusFeedScreen(
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -167,11 +169,9 @@ fun CampusFeedScreen(
                             .background(themeColors.btnBackBg)
                             .clickable(onClick = onProfileClick)
                     ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200",
-                            contentDescription = stringResource(R.string.field_title_label),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                        UserAvatar(
+                            avatarId = userProfile?.avatarId,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 

@@ -1,0 +1,74 @@
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- Background Circle -->
+    <path android:pathData="M50,0A50,50 0 1,0 50,100A50,50 0 1,0 50,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="100"
+                android:endY="100"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#0F172A" />
+                <item android:offset="1.0" android:color="#0284C7" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Tech Hoodie Body -->
+    <path
+        android:pathData="M20,96 C22,78 32,72 50,72 C68,72 78,78 80,96 L80,100 L20,100 Z"
+        android:fillColor="#1E293B" />
+
+    <!-- Hoodie V Neck Inner -->
+    <path
+        android:pathData="M42,72 C42,84 58,84 58,72 Z"
+        android:fillColor="#0EA5E9" />
+
+    <!-- Neck -->
+    <path
+        android:pathData="M44,58 L56,58 L56,72 L44,72 Z"
+        android:fillColor="#FBBF24" />
+
+    <!-- Head / Face -->
+    <path
+        android:pathData="M34,40 C34,26 66,26 66,40 C66,56 58,64 50,64 C42,64 34,56 34,40 Z"
+        android:fillColor="#FDE68A" />
+
+    <!-- Hair -->
+    <path
+        android:pathData="M33,38 C33,24 45,18 50,18 C62,18 67,24 67,38 C64,30 58,26 50,26 C42,26 36,30 33,38 Z"
+        android:fillColor="#1E1B4B" />
+
+    <!-- Eyes -->
+    <path android:pathData="M41,45 A2,2 0 1,0 41,49 A2,2 0 1,0 41,45 Z" android:fillColor="#0284C7" />
+    <path android:pathData="M59,45 A2,2 0 1,0 59,49 A2,2 0 1,0 59,45 Z" android:fillColor="#0284C7" />
+
+    <!-- Modern Rectangular Developer Glasses -->
+    <path android:pathData="M34,41 L47,41 L47,49 L34,49 Z" android:strokeColor="#38BDF8" android:strokeWidth="1.8" />
+    <path android:pathData="M53,41 L66,41 L66,49 L53,49 Z" android:strokeColor="#38BDF8" android:strokeWidth="1.8" />
+    <path android:pathData="M47,44 L53,44" android:strokeColor="#38BDF8" android:strokeWidth="1.8" />
+
+    <!-- Smile -->
+    <path android:pathData="M46,55 C48,58 52,58 54,55" android:strokeColor="#B45309" android:strokeWidth="1.5" android:strokeLineCap="round" />
+
+    <!-- Over-Ear Studio Headphones Band -->
+    <path
+        android:pathData="M27,42 C27,16 73,16 73,42"
+        android:strokeColor="#0EA5E9"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+
+    <!-- Headphone Ear Cups -->
+    <path
+        android:pathData="M24,36 C24,34 29,34 29,36 L29,48 C29,50 24,50 24,48 Z"
+        android:fillColor="#38BDF8" />
+    <path
+        android:pathData="M71,36 C71,34 76,34 76,36 L76,48 C76,50 71,50 71,48 Z"
+        android:fillColor="#38BDF8" />
+</vector>

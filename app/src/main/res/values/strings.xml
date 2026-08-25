@@ -288,4 +288,34 @@
 
     <string name="faq_q8">Can I change my registered Campus Center?</string>
     <string name="faq_a8">Yes. Navigate to Settings, tap \'Campus Center\' under the Account section, and pick your university campus from the list.</string>
+
+    <!-- Avatar Customization Strings -->
+    <string name="avatar_sheet_title">Choose Your Avatar</string>
+    <string name="avatar_sheet_subtitle">Swipe to preview and pick your campus identity</string>
+    <string name="action_save_avatar">Save Avatar</string>
+    <string name="avatar_saved_toast">Profile avatar updated!</string>
+
+    <string name="avatar_scholar_title">The Scholar</string>
+    <string name="avatar_scholar_tag">Academic Excellence &amp; Research</string>
+
+    <string name="avatar_coder_title">The Coder</string>
+    <string name="avatar_coder_tag">Late Night Terminal &amp; Algorithms</string>
+
+    <string name="avatar_creative_title">The Creative</string>
+    <string name="avatar_creative_tag">Art, Design &amp; Visual Thinking</string>
+
+    <string name="avatar_athlete_title">The Athlete</string>
+    <string name="avatar_athlete_tag">Varsity Spirit &amp; Campus Energy</string>
+
+    <string name="avatar_eco_ranger_title">The Eco Ranger</string>
+    <string name="avatar_eco_ranger_tag">Zero Waste &amp; Circular Living</string>
+
+    <string name="avatar_bookworm_title">The Bookworm</string>
+    <string name="avatar_bookworm_tag">Literature, Library &amp; Coffee</string>
+
+    <string name="avatar_gamer_title">The Cyber Gamer</string>
+    <string name="avatar_gamer_tag">Esports, Tech &amp; Neon Nights</string>
+
+    <string name="avatar_nomad_title">The Campus Nomad</string>
+    <string name="avatar_nomad_tag">Always on the Move &amp; Exploring</string>
 </resources>

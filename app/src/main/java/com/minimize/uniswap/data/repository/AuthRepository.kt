@@ -16,4 +16,5 @@ interface AuthRepository {
     fun getUserFlow(): Flow<User?>
     suspend fun sendVerificationEmail(): Result<Unit>
     suspend fun reloadUser(): Result<Unit>
+    suspend fun updateAvatar(avatarId: String): Result<Unit>
 }

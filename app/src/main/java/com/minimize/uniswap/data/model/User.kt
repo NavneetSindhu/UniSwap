@@ -12,5 +12,6 @@ data class User(
     val lbsSaved: Double = 0.0,
     val itemsRecycled: Int = 0,
     val campusCenter: String = "Main Campus",
-    val profilePicUrl: String = ""
+    val profilePicUrl: String = "",
+    val avatarId: String = "avatar_scholar"
 )

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.components.UserAvatar
 import com.minimize.uniswap.ui.theme.*
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -43,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.minimize.uniswap.ui.components.BlockUserDialog
 import com.minimize.uniswap.ui.components.ItemActionBottomSheet
 import com.minimize.uniswap.ui.components.ReportBottomSheet
+import androidx.compose.ui.window.Dialog
 
 data class ChatBubbleMessage(
     val id: String,
@@ -99,6 +101,7 @@ fun PickupChatScreen(
         item?.sellerName?.ifBlank { stringResource(R.string.sample_seller_lokesh) }
             ?: stringResource(R.string.sample_seller_lokesh)
     }
+    val partnerAvatarId = if (isSeller) "avatar_scholar" else (item?.sellerAvatarId ?: "avatar_scholar")
 
     val chatMessages = remember(liveMessages) {
         liveMessages.map {
@@ -223,11 +226,9 @@ fun PickupChatScreen(
                                 .clip(CircleShape)
                                 .background(themeColors.btnBackBg)
                         ) {
-                            AsyncImage(
-                                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100",
-                                contentDescription = studentName,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                            UserAvatar(
+                                avatarId = partnerAvatarId,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 
@@ -423,7 +424,10 @@ fun PickupChatScreen(
                 contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
             ) {
                 items(chatMessages, key = { it.id }) { message ->
-                    ChatBubbleRow(message = message)
+                    ChatBubbleRow(
+                        message = message,
+                        partnerAvatarId = partnerAvatarId
+                    )
                 }
             }
         }
@@ -437,7 +441,8 @@ fun PickupChatScreen(
  */
 @Composable
 private fun ChatBubbleRow(
-    message: ChatBubbleMessage
+    message: ChatBubbleMessage,
+    partnerAvatarId: String? = null
 ) {
     val themeColors = UniSwapTheme.colors
 
@@ -479,11 +484,9 @@ private fun ChatBubbleRow(
                     .clip(CircleShape)
                     .background(themeColors.btnBackBg)
             ) {
-                AsyncImage(
-                    model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100",
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                UserAvatar(
+                    avatarId = partnerAvatarId,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 

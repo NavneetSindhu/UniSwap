@@ -33,6 +33,7 @@ data class CampusItem(
     val imageUrls: List<String> = emptyList(),
     val isVerified: Boolean = false,
     val status: ItemStatus = ItemStatus.AVAILABLE,
+    val sellerAvatarId: String = "avatar_scholar",
     val timestamp: Long = System.currentTimeMillis()
 ) {
     fun getAllImages(): List<String> {

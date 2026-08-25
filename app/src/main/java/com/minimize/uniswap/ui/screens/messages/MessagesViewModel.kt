@@ -29,6 +29,7 @@ class MessagesViewModel @Inject constructor(
 ) : ViewModel() {
 
     val currentUserId: String = authRepository.getCurrentUserId() ?: ""
+    val currentUserFlow: Flow<com.minimize.uniswap.data.model.User?> = authRepository.getUserFlow()
 
     private val _threads = MutableStateFlow<List<ConversationItemUiModel>>(emptyList())
     val threads: StateFlow<List<ConversationItemUiModel>> = _threads.asStateFlow()

@@ -224,6 +224,7 @@ class ListViewModel @Inject constructor(
 
             val currentUser = authRepository.getCurrentUser()
             val sellerDisplayName = currentUser?.displayName?.ifBlank { "Campus User" } ?: "Campus User"
+            val sellerAvatar = currentUser?.avatarId?.ifBlank { "avatar_scholar" } ?: "avatar_scholar"
 
             val newItem = CampusItem(
                 id = UUID.randomUUID().toString(),
@@ -234,6 +235,7 @@ class ListViewModel @Inject constructor(
                 location = "Campus",
                 sellerId = userId,
                 sellerName = sellerDisplayName,
+                sellerAvatarId = sellerAvatar,
                 timeAgo = "Just now",
                 imageUrl = finalImageUrl,
                 imageUrls = finalImageUrls,

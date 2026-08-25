@@ -38,6 +38,8 @@ class ProfileViewModel @Inject constructor(
                         userName = user?.displayName?.ifBlank { "Student User" } ?: "Student User",
                         userEmail = user?.email ?: "",
                         userPhotoUrl = user?.profilePicUrl?.ifBlank { null },
+                        avatarId = user?.avatarId?.ifBlank { "avatar_scholar" } ?: "avatar_scholar",
+                        campusCenter = user?.campusCenter ?: "",
                         isVerified = user?.isEmailVerified ?: false
                     )
                 }
@@ -114,12 +116,24 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
+     * Updates the user's selected character avatar in Firestore
+     */
+    fun updateAvatar(avatarId: String) {
+        viewModelScope.launch {
+            authRepository.updateAvatar(avatarId)
+        }
+    }
+
+    /**
      * UI State for the Profile Screen
      */
     data class ProfileUiState(
         val userName: String = "Student User",
         val userEmail: String = "",
         val userPhotoUrl: String? = null,
+        val avatarId: String = "avatar_scholar",
+        val campusCenter: String = "",
+        val gradYear: String = "",
         val isVerified: Boolean = false,
         val lbsSaved: Double = 0.0,
         val itemsRecycled: Int = 0,

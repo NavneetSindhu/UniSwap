@@ -43,6 +43,8 @@ import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemStatus
+import com.minimize.uniswap.ui.components.UserAvatar
+import com.minimize.uniswap.ui.screens.profile.components.InlineAvatarSelector
 import com.minimize.uniswap.ui.theme.*
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -56,6 +58,7 @@ fun ProfileScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var isEditingAvatar by remember { mutableStateOf(false) }
     val tabs = listOf("Selling", "Given Away", "Saved")
 
     val dimens = UniSwapTheme.dimens
@@ -127,38 +130,14 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Box(
-                            modifier = Modifier.size(108.dp),
-                            contentAlignment = Alignment.BottomEnd
-                        ) {
-                            AsyncImage(
-                                model = state.userPhotoUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400",
-                                contentDescription = "Profile Photo",
-                                modifier = Modifier
-                                    .size(100.dp)
-                                    .align(Alignment.Center)
-                                    .clip(CircleShape)
-                                    .border(2.dp, colors.cardSurface, CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-
-                            Surface(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .shadow(4.dp, CircleShape),
-                                shape = CircleShape,
-                                color = colors.cardSurface
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit Profile",
-                                        tint = colors.wasteMetricGreen,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                        InlineAvatarSelector(
+                            currentAvatarId = state.avatarId,
+                            isEditing = isEditingAvatar,
+                            onEditChange = { isEditingAvatar = it },
+                            onAvatarSaved = { newAvatarId ->
+                                viewModel.updateAvatar(newAvatarId)
                             }
-                        }
+                        )
 
                         Spacer(modifier = Modifier.height(14.dp))
 
@@ -187,13 +166,45 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         val userHandle = if (state.userEmail.isNotBlank()) "@${state.userEmail.substringBefore("@")}" else "@student"
+                        val handleText = if (state.campusCenter.isNotBlank()) "$userHandle • ${state.campusCenter}" else userHandle
                         Text(
-                            text = "$userHandle • Student Member • Campus Center",
+                            text = handleText,
                             fontFamily = MatterFontFamily,
                             fontWeight = FontWeight.Medium,
                             fontSize = 13.sp,
                             color = colors.textSecondary
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Academic & Impact Info Tag Chips
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (state.gradYear.isNotBlank()) {
+                                ProfileTagChip(
+                                    icon = Icons.Outlined.School,
+                                    label = "Class of ${state.gradYear}",
+                                    textColor = colors.textPrimary,
+                                    bgColor = colors.cardSurface
+                                )
+                            }
+
+                            ProfileTagChip(
+                                icon = if (state.isVerified) Icons.Outlined.Verified else Icons.Outlined.Person,
+                                label = if (state.isVerified) "Verified Student" else "Campus Member",
+                                textColor = if (state.isVerified) colors.wasteMetricGreen else colors.textSecondary,
+                                bgColor = colors.cardSurface
+                            )
+
+                            ProfileTagChip(
+                                icon = Icons.Outlined.Recycling,
+                                label = "${state.itemsRecycled} Recycled",
+                                textColor = colors.textPrimary,
+                                bgColor = colors.cardSurface
+                            )
+                        }
                     }
                 }
 
@@ -443,6 +454,39 @@ fun ProfileScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileTagChip(
+    icon: ImageVector,
+    label: String,
+    textColor: Color,
+    bgColor: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(50.dp),
+        color = bgColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier.size(13.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = label,
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 11.sp,
+                color = textColor
+            )
         }
     }
 }

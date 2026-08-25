@@ -33,6 +33,7 @@ import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.ui.components.DotIndicator
+import com.minimize.uniswap.ui.components.UserAvatar
 import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
 import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
 import androidx.compose.runtime.mutableStateOf
@@ -493,11 +494,9 @@ private fun ItemDetailsContent(
                             .clip(CircleShape)
                             .background(themeColors.btnBackBg)
                     ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150",
-                            contentDescription = "Seller Avatar",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                        UserAvatar(
+                            avatarId = item.sellerAvatarId,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 

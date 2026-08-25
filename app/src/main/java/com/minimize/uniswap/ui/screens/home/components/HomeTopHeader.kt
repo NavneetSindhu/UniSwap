@@ -22,8 +22,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.components.UserAvatar
 import com.minimize.uniswap.ui.theme.MatterFontFamily
 
 /**
@@ -34,7 +34,7 @@ import com.minimize.uniswap.ui.theme.MatterFontFamily
 fun HomeTopHeader(
     searchQuery: String,
     onQueryChange: (String) -> Unit,
-    profilePicUrl: String?,
+    avatarId: String? = null,
     onProfileClick: () -> Unit,
     onSearchActionClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -78,11 +78,9 @@ fun HomeTopHeader(
                     .background(themeColors.btnBackBg)
                     .clickable(onClick = onProfileClick)
             ) {
-                AsyncImage(
-                    model = profilePicUrl?.ifBlank { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200" },
-                    contentDescription = stringResource(R.string.field_title_label),
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                UserAvatar(
+                    avatarId = avatarId,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 

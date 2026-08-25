@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.stringResource
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.components.UserAvatar
 import com.minimize.uniswap.ui.theme.*
 
 /**
@@ -148,11 +149,9 @@ fun RecentUploadCard(
                                 .clip(CircleShape)
                                 .background(themeColors.btnBackBg)
                         ) {
-                            AsyncImage(
-                                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100",
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                            UserAvatar(
+                                avatarId = item.sellerAvatarId,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
 

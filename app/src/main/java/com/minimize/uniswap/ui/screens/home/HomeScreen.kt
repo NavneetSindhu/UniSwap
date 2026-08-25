@@ -137,7 +137,7 @@ fun HomeScreen(
             HomeTopHeader(
                 searchQuery = searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
-                profilePicUrl = userProfile?.profilePicUrl?.ifBlank { null },
+                avatarId = userProfile?.avatarId,
                 onProfileClick = onProfileClick
             )
         }

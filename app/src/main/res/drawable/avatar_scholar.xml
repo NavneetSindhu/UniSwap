@@ -1,0 +1,90 @@
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    
+    <!-- Background Circle -->
+    <path android:pathData="M50,0A50,50 0 1,0 50,100A50,50 0 1,0 50,0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="100"
+                android:endY="100"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#1A2A44" />
+                <item android:offset="1.0" android:color="#0F172A" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Collegiate Blazer Body -->
+    <path
+        android:pathData="M22,96 C24,80 34,74 50,74 C66,74 76,80 78,96 L78,100 L22,100 Z"
+        android:fillColor="#1E3A8A" />
+
+    <!-- White Shirt V-Neck -->
+    <path
+        android:pathData="M43,74 L50,86 L57,74 Z"
+        android:fillColor="#F8FAFC" />
+
+    <!-- Red Tie -->
+    <path
+        android:pathData="M48,84 L52,84 L53,98 L50,100 L47,98 Z"
+        android:fillColor="#DC2626" />
+
+    <!-- Neck -->
+    <path
+        android:pathData="M44,60 L56,60 L56,74 L44,74 Z"
+        android:fillColor="#FCD34D" />
+
+    <!-- Head / Face -->
+    <path
+        android:pathData="M34,42 C34,28 66,28 66,42 C66,58 58,66 50,66 C42,66 34,58 34,42 Z"
+        android:fillColor="#FDE68A" />
+
+    <!-- Ears -->
+    <path android:pathData="M32,45 A3,4 0 1,0 32,53 A3,4 0 1,0 32,45 Z" android:fillColor="#FCD34D" />
+    <path android:pathData="M68,45 A3,4 0 1,0 68,53 A3,4 0 1,0 68,45 Z" android:fillColor="#FCD34D" />
+
+    <!-- Eyes -->
+    <path android:pathData="M41,47 A2,2 0 1,0 41,51 A2,2 0 1,0 41,47 Z" android:fillColor="#1E293B" />
+    <path android:pathData="M59,47 A2,2 0 1,0 59,51 A2,2 0 1,0 59,47 Z" android:fillColor="#1E293B" />
+
+    <!-- Eyebrows -->
+    <path android:pathData="M38,42 C40,40 44,40 46,42" android:strokeColor="#78350F" android:strokeWidth="1.5" android:strokeLineCap="round" />
+    <path android:pathData="M54,42 C56,40 60,40 62,42" android:strokeColor="#78350F" android:strokeWidth="1.5" android:strokeLineCap="round" />
+
+    <!-- Golden Round Glasses -->
+    <path android:pathData="M36,44 A6,6 0 1,0 48,44 A6,6 0 1,0 36,44 Z" android:strokeColor="#F59E0B" android:strokeWidth="1.8" />
+    <path android:pathData="M52,44 A6,6 0 1,0 64,44 A6,6 0 1,0 52,44 Z" android:strokeColor="#F59E0B" android:strokeWidth="1.8" />
+    <path android:pathData="M48,44 L52,44" android:strokeColor="#F59E0B" android:strokeWidth="1.8" />
+
+    <!-- Smile -->
+    <path android:pathData="M46,57 C48,60 52,60 54,57" android:strokeColor="#B45309" android:strokeWidth="1.5" android:strokeLineCap="round" />
+
+    <!-- Mortarboard Graduation Cap Skullcap -->
+    <path
+        android:pathData="M34,36 C34,26 66,26 66,36 Z"
+        android:fillColor="#0F172A" />
+
+    <!-- Mortarboard Diamond Top -->
+    <path
+        android:pathData="M50,14 L80,26 L50,38 L20,26 Z"
+        android:fillColor="#1E293B" />
+
+    <!-- Cap Center Button -->
+    <path android:pathData="M48.5,24.5 A1.5,1.5 0 1,0 51.5,24.5 A1.5,1.5 0 1,0 48.5,24.5 Z" android:fillColor="#F59E0B" />
+
+    <!-- Golden Tassel -->
+    <path
+        android:pathData="M50,26 C60,28 68,34 70,44"
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M68,44 L72,44 L71,52 L69,52 Z"
+        android:fillColor="#F59E0B" />
+</vector>

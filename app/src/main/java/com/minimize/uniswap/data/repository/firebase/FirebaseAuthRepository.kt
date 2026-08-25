@@ -132,6 +132,20 @@ class FirebaseAuthRepository @Inject constructor(
         }
     }
 
+    override suspend fun updateAvatar(avatarId: String): Result<Unit> {
+        return try {
+            val uid = firebaseAuth.currentUser?.uid ?: return Result.failure(Exception("User not authenticated"))
+            firestore.collection("users").document(uid)
+                .update("avatarId", avatarId)
+                .await()
+            Timber.d("User avatar updated to %s", avatarId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to update avatar: %s", e.message)
+            Result.failure(e)
+        }
+    }
+
     private suspend fun syncUserToFirestore(customDisplayName: String? = null) {
         val firebaseUser = firebaseAuth.currentUser ?: return
         val userRef = firestore.collection("users").document(firebaseUser.uid)
