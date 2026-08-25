@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.minimize.uniswap.data.model.ChatThread
 import com.minimize.uniswap.data.repository.AuthRepository
-import com.minimize.uniswap.data.repository.ChatRepository
+import com.minimize.uniswap.data.repository.ReportRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+import com.minimize.uniswap.data.model.MessageStatus
+import com.minimize.uniswap.data.repository.ChatRepository
 
 data class ConversationItemUiModel(
     val id: String,
@@ -19,13 +22,17 @@ data class ConversationItemUiModel(
     val lastMessage: String,
     val timeAgo: String,
     val avatarUrl: String? = null,
-    val itemTitle: String = ""
+    val itemTitle: String = "",
+    val isUnread: Boolean = false,
+    val isLastMessageFromMe: Boolean = false,
+    val lastMessageStatus: MessageStatus = MessageStatus.SENT
 )
 
 @HiltViewModel
 class MessagesViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val reportRepository: ReportRepository
 ) : ViewModel() {
 
     val currentUserId: String = authRepository.getCurrentUserId() ?: ""
@@ -36,6 +43,20 @@ class MessagesViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    fun deleteConversation(threadId: String, onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = chatRepository.deleteConversation(threadId, currentUserId)
+            onComplete(result.isSuccess)
+        }
+    }
+
+    fun blockUser(otherUserId: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            reportRepository.blockUser(otherUserId)
+            onComplete()
+        }
+    }
 
     init {
         loadThreads()
@@ -54,6 +75,9 @@ class MessagesViewModel @Inject constructor(
                         val isSeller = currentUserId == thread.sellerId
                         val otherUserName = if (isSeller) thread.buyerName.ifBlank { "Buyer" } else thread.sellerName.ifBlank { "Seller" }
                         val formattedTime = formatTimestamp(thread.lastMessageTimestamp)
+                        val isUnread = thread.unreadByParticipantIds.contains(currentUserId)
+                        val isLastFromMe = thread.lastSenderId == currentUserId
+
                         ConversationItemUiModel(
                             id = thread.id,
                             itemId = thread.itemId,
@@ -63,7 +87,10 @@ class MessagesViewModel @Inject constructor(
                             lastMessage = thread.lastMessage,
                             timeAgo = formattedTime,
                             avatarUrl = thread.itemImageUrl.ifBlank { null },
-                            itemTitle = thread.itemTitle
+                            itemTitle = thread.itemTitle,
+                            isUnread = isUnread,
+                            isLastMessageFromMe = isLastFromMe,
+                            lastMessageStatus = thread.lastMessageStatus
                         )
                     }
                 }
