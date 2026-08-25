@@ -96,6 +96,14 @@ fun ListProductScreen(
         }
     }
 
+    // Auto-clear error messages after 4 seconds
+    LaunchedEffect(uiState.errorMessage) {
+        if (uiState.errorMessage != null) {
+            kotlinx.coroutines.delay(4000)
+            viewModel.clearError()
+        }
+    }
+
     // Email Verification Nudge Barrier
     if (uiState.showNudge) {
         VerificationNudgeDialog(
@@ -287,13 +295,26 @@ fun ListProductScreen(
         },
         bottomBar = {
             // Sticky Bottom Button: Rectangle 7 (height 62dp, radius 50, #F3F3F3)
-            Surface(
-                color = UniSwapTheme.colors.background,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
+                if (uiState.errorMessage != null) {
+                    Text(
+                        text = uiState.errorMessage!!,
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 13.sp,
+                        color = Color(0xFFEF4444),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Button(
                     onClick = { viewModel.onPostAttempt(onPostSuccess) },
                     modifier = Modifier
@@ -304,7 +325,7 @@ fun ListProductScreen(
                         containerColor = NavIndicatorBg,
                         contentColor = PaletteLight.Gray950
                     ),
-                    enabled = !isPosting
+                    enabled = !isPosting && !uiState.isSanitizing
                 ) {
                     if (isPosting) {
                         CircularProgressIndicator(
@@ -359,30 +380,51 @@ fun ListProductScreen(
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(25.dp))
                         .background(BtnChatBg)
-                        .clickable { showPhotoSourceDialog = true },
+                        .clickable(enabled = !uiState.isSanitizing) { showPhotoSourceDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add_photos_label),
-                            tint = PaletteLight.Gray950,
-                            modifier = Modifier.size(36.dp)
-                        )
+                    if (uiState.isSanitizing) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = PaletteLight.Gray950,
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 2.5.dp
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Optimizing...",
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 12.sp,
+                                color = PaletteLight.Gray950
+                            )
+                        }
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = stringResource(R.string.add_photos_label),
+                                tint = PaletteLight.Gray950,
+                                modifier = Modifier.size(36.dp)
+                            )
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
-                        Text(
-                            text = stringResource(R.string.add_photos_label),
-                            fontFamily = MatterFontFamily,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 14.sp,
-                            letterSpacing = (-0.28).sp,
-                            color = PaletteLight.Gray950
-                        )
+                            Text(
+                                text = stringResource(R.string.add_photos_label),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                letterSpacing = (-0.28).sp,
+                                color = PaletteLight.Gray950
+                            )
+                        }
                     }
                 }
             }

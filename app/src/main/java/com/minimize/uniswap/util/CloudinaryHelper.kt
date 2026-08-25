@@ -52,8 +52,11 @@ class CloudinaryHelper @Inject constructor() {
         uploadPreset: String = UPLOAD_PRESET
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val inputStream: InputStream = context.contentResolver.openInputStream(imageUri)
-                ?: return@withContext Result.failure(Exception("Unable to open image stream"))
+            val inputStream: InputStream = if (imageUri.scheme == "file") {
+                java.io.File(imageUri.path ?: "").inputStream()
+            } else {
+                context.contentResolver.openInputStream(imageUri)
+            } ?: return@withContext Result.failure(Exception("Unable to open image stream"))
 
             val byteArray = inputStream.use { input ->
                 val buffer = ByteArrayOutputStream()
@@ -65,11 +68,11 @@ class CloudinaryHelper @Inject constructor() {
                 buffer.toByteArray()
             }
 
-            val requestBody = byteArray.toRequestBody("image/*".toMediaTypeOrNull())
+            val requestBody = byteArray.toRequestBody("image/webp".toMediaTypeOrNull())
 
             val builder = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("file", "upload_${System.currentTimeMillis()}.jpg", requestBody)
+                .addFormDataPart("file", "upload_${System.currentTimeMillis()}.webp", requestBody)
                 .addFormDataPart("upload_preset", uploadPreset)
 
             if (!folder.isNullOrBlank()) {
