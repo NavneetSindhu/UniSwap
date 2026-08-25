@@ -125,7 +125,7 @@ fun ProfileScreen(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = dimens.spaceLarge, vertical = dimens.spaceSmall),
+                contentPadding = PaddingValues(start = dimens.spaceLarge, end = dimens.spaceLarge, top = dimens.spaceSmall, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(dimens.spaceLarge)
             ) {
                 // 1. User Avatar & Details
