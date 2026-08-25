@@ -88,10 +88,7 @@ fun ItemActionBottomSheet(
             ActionSheetRow(
                 icon = Icons.Outlined.Share,
                 title = stringResource(R.string.action_share_listing),
-                onClick = {
-                    onDismissRequest()
-                    onShareClick()
-                }
+                onClick = onShareClick
             )
 
             // Actions for other users' listings (Report & Block)
@@ -100,20 +97,14 @@ fun ItemActionBottomSheet(
                     icon = Icons.Outlined.Flag,
                     title = stringResource(R.string.action_report_listing),
                     iconTint = MaterialTheme.colorScheme.error,
-                    onClick = {
-                        onDismissRequest()
-                        onReportClick()
-                    }
+                    onClick = onReportClick
                 )
 
                 ActionSheetRow(
                     icon = Icons.Outlined.Block,
                     title = stringResource(R.string.action_block_seller),
                     iconTint = MaterialTheme.colorScheme.error,
-                    onClick = {
-                        onDismissRequest()
-                        onBlockClick()
-                    }
+                    onClick = onBlockClick
                 )
             }
 

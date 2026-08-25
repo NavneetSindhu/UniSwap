@@ -68,8 +68,8 @@ fun CampusFeedScreen(
 
     val context = LocalContext.current
     var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
-    var isReportSheetOpen by remember { mutableStateOf(false) }
-    var isBlockDialogOpen by remember { mutableStateOf(false) }
+    var itemToReport by remember { mutableStateOf<CampusItem?>(null) }
+    var itemToBlock by remember { mutableStateOf<CampusItem?>(null) }
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -81,8 +81,7 @@ fun CampusFeedScreen(
     val themeColors = UniSwapTheme.colors
 
     // Safety / Action Bottom Sheet triggered on long-press
-    if (selectedItemForAction != null && !isReportSheetOpen && !isBlockDialogOpen) {
-        val targetItem = selectedItemForAction!!
+    selectedItemForAction?.let { targetItem ->
         ItemActionBottomSheet(
             onDismissRequest = { selectedItemForAction = null },
             itemTitle = targetItem.title,
@@ -102,43 +101,43 @@ fun CampusFeedScreen(
                 context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
                 selectedItemForAction = null
             },
-            onReportClick = { isReportSheetOpen = true },
-            onBlockClick = { isBlockDialogOpen = true }
+            onReportClick = {
+                val item = targetItem
+                selectedItemForAction = null
+                itemToReport = item
+            },
+            onBlockClick = {
+                val item = targetItem
+                selectedItemForAction = null
+                itemToBlock = item
+            }
         )
     }
 
-    if (isReportSheetOpen && selectedItemForAction != null) {
+    itemToReport?.let { reportItem ->
         ReportBottomSheet(
-            onDismissRequest = {
-                isReportSheetOpen = false
-                selectedItemForAction = null
-            },
+            onDismissRequest = { itemToReport = null },
             isSubmitting = isSubmittingReport,
             onSubmitReport = { reason, details ->
-                viewModel.submitReport(selectedItemForAction!!, reason, details) { success ->
+                viewModel.submitReport(reportItem, reason, details) { success ->
                     if (success) {
-                        isReportSheetOpen = false
-                        selectedItemForAction = null
+                        itemToReport = null
                     }
                 }
             }
         )
     }
 
-    if (isBlockDialogOpen && selectedItemForAction != null) {
+    itemToBlock?.let { blockItem ->
         BlockUserDialog(
-            userName = selectedItemForAction!!.sellerName,
+            userName = blockItem.sellerName,
             isBlocking = isBlockingSeller,
             onConfirmBlock = {
-                viewModel.blockSeller(selectedItemForAction!!.sellerId) {
-                    isBlockDialogOpen = false
-                    selectedItemForAction = null
+                viewModel.blockSeller(blockItem.sellerId) {
+                    itemToBlock = null
                 }
             },
-            onDismiss = {
-                isBlockDialogOpen = false
-                selectedItemForAction = null
-            }
+            onDismiss = { itemToBlock = null }
         )
     }
 

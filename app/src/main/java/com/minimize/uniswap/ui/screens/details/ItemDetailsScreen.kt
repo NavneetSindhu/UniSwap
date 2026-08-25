@@ -123,8 +123,14 @@ fun ItemDetailsScreen(
                 }
                 context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
             },
-            onReportClick = { isReportSheetOpen = true },
-            onBlockClick = { isBlockDialogOpen = true }
+            onReportClick = {
+                isActionSheetOpen = false
+                isReportSheetOpen = true
+            },
+            onBlockClick = {
+                isActionSheetOpen = false
+                isBlockDialogOpen = true
+            }
         )
     }
 

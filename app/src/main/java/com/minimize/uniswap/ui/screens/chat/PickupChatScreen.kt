@@ -134,8 +134,14 @@ fun PickupChatScreen(
                 }
                 context.startActivity(android.content.Intent.createChooser(sendIntent, "Share"))
             },
-            onReportClick = { isReportSheetOpen = true },
-            onBlockClick = { isBlockDialogOpen = true }
+            onReportClick = {
+                isActionSheetOpen = false
+                isReportSheetOpen = true
+            },
+            onBlockClick = {
+                isActionSheetOpen = false
+                isBlockDialogOpen = true
+            }
         )
     }
 
