@@ -318,4 +318,63 @@
 
     <string name="avatar_nomad_title">The Campus Nomad</string>
     <string name="avatar_nomad_tag">Always on the Move &amp; Exploring</string>
+
+    <!-- Chat Management & Message Actions -->
+    <string name="action_delete_conversation">Delete Conversation</string>
+    <string name="action_clear_chat">Clear Chat History</string>
+    <string name="delete_conversation_confirm_title">Delete conversation?</string>
+    <string name="delete_conversation_confirm_msg">This chat thread will be removed from your inbox.</string>
+    <string name="clear_chat_confirm_title">Clear chat history?</string>
+    <string name="clear_chat_confirm_msg">All messages in this chat will be cleared from this device.</string>
+    <string name="action_copy_text">Copy Text</string>
+    <string name="action_edit_message">Edit Message</string>
+    <string name="action_delete_message">Delete Message</string>
+    <string name="delete_message_confirm_title">Delete message?</string>
+    <string name="delete_message_confirm_msg">This message will be deleted for everyone in this chat.</string>
+    <string name="toast_text_copied">Text copied to clipboard</string>
+    <string name="message_edited_tag">(edited)</string>
+    <string name="message_deleted_placeholder">This message was deleted</string>
+    <string name="editing_message_label">Editing message</string>
+    <string name="filter_unread">Unread</string>
+    <string name="empty_unread_title">No Unread Messages</string>
+    <string name="empty_unread_subtitle">You\'re all caught up! There are no unread conversations.</string>
+
+    <!-- Campus Center Options -->
+    <string name="campus_usar_ggsipu">University School of Automation &amp; Robotics (USAR), GGSIPU</string>
+    <string name="campus_ggsipu">Guru Gobind Singh Indraprastha University (GGSIPU)</string>
+    <string name="campus_pu">Panjab University, Chandigarh</string>
+    <string name="campus_pec">Panjab Engineering College (PEC)</string>
+    <string name="campus_uiet">UIET Chandigarh</string>
+    <string name="campus_chitkara">Chitkara University</string>
+    <string name="campus_thapar">Thapar Institute (TIET)</string>
+    <string name="campus_iit_ropar">IIT Ropar</string>
+
+    <!-- Campus Abbreviations -->
+    <string name="campus_usar_abbr">USAR</string>
+    <string name="campus_ggsipu_abbr">GGSIPU</string>
+    <string name="campus_pu_abbr">PU</string>
+    <string name="campus_pec_abbr">PEC</string>
+    <string name="campus_uiet_abbr">UIET</string>
+    <string name="campus_chitkara_abbr">Chitkara</string>
+    <string name="campus_thapar_abbr">TIET</string>
+    <string name="campus_iit_ropar_abbr">IIT Ropar</string>
+    <string name="campus_main_abbr">Campus</string>
+
+    <!-- Profile Screen Strings -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_tab_selling">Selling</string>
+    <string name="profile_tab_given_away">Given Away</string>
+    <string name="profile_tab_saved">Saved</string>
+    <string name="profile_class_of">Class of %1$s</string>
+    <string name="profile_campus_member">Campus Member</string>
+    <string name="profile_items_recycled_tag">%1$d Recycled</string>
+    <string name="profile_sustainability_impact">Sustainability Impact</string>
+    <string name="profile_metric_rehomed">Items Rehomed</string>
+    <string name="profile_metric_waste_diverted">Waste Diverted</string>
+    <string name="profile_metric_co2_offset">CO₂ Offset</string>
+    <string name="profile_metric_kg_unit">%1$.1f kg</string>
+    <string name="profile_eco_tier_champion">Eco Champion</string>
+    <string name="profile_eco_tier_contributor">Eco Contributor</string>
+    <string name="profile_eco_tier_starter">Eco Starter</string>
+    <string name="profile_sustainability_motto">Every circular item reduces university waste and campus emissions.</string>
 </resources>

@@ -79,6 +79,7 @@ class SettingsViewModel @Inject constructor(
     fun onCampusCenterChanged(campus: String) {
         viewModelScope.launch {
             preferencesManager.updateCampusCenter(campus)
+            authRepository.updateCampusCenter(campus)
         }
     }
 

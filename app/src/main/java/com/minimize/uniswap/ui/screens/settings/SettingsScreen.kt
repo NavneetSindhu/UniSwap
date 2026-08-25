@@ -267,41 +267,61 @@ fun SettingsScreen(
 
     // --- Interactive Dialogs ---
 
-    // 1. Campus Selection Dialog
+    // 1. Campus Selection Bottom Sheet
     if (showCampusDialog) {
         val campusOptions = listOf(
-            "Panjab University, Chandigarh",
-            "Panjab Engineering College (PEC)",
-            "UIET Chandigarh",
-            "Chitkara University",
-            "Thapar Institute (TIET)",
-            "IIT Ropar"
+            stringResource(R.string.campus_usar_ggsipu),
+            stringResource(R.string.campus_ggsipu),
+            stringResource(R.string.campus_pu),
+            stringResource(R.string.campus_pec),
+            stringResource(R.string.campus_uiet),
+            stringResource(R.string.campus_chitkara),
+            stringResource(R.string.campus_thapar),
+            stringResource(R.string.campus_iit_ropar)
         )
-        AlertDialog(
+        AppBottomSheet(
             onDismissRequest = { showCampusDialog = false },
+            heightFraction = null,
             containerColor = themeColors.cardSurface,
-            title = {
+            contentColor = themeColors.textPrimary,
+            showCloseIcon = true
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.settings_select_campus),
                     fontFamily = MatterFontFamily,
                     fontWeight = FontWeight.Bold,
-                    color = themeColors.textPrimary
+                    fontSize = 18.sp,
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.padding(bottom = 14.dp)
                 )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                HorizontalDivider(
+                    color = themeColors.divider,
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     campusOptions.forEach { campus ->
                         val isSelected = preferences.campusCenter == campus
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(14.dp))
                                 .background(if (isSelected) themeColors.btnBackBg else Color.Transparent)
                                 .clickable {
                                     viewModel.onCampusCenterChanged(campus)
                                     showCampusDialog = false
                                 }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 14.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -309,25 +329,27 @@ fun SettingsScreen(
                                 onClick = {
                                     viewModel.onCampusCenterChanged(campus)
                                     showCampusDialog = false
-                                }
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = themeColors.wasteMetricGreen,
+                                    unselectedColor = themeColors.textSubtle
+                                )
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = campus,
                                 fontFamily = MatterFontFamily,
-                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                fontSize = 14.sp,
                                 color = themeColors.textPrimary
                             )
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showCampusDialog = false }) {
-                    Text(text = stringResource(R.string.action_close), color = themeColors.textPrimary)
-                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
-        )
+        }
     }
 
     // 2. Edit Profile Dialog

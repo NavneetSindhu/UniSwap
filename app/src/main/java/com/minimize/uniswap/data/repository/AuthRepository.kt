@@ -17,4 +17,5 @@ interface AuthRepository {
     suspend fun sendVerificationEmail(): Result<Unit>
     suspend fun reloadUser(): Result<Unit>
     suspend fun updateAvatar(avatarId: String): Result<Unit>
+    suspend fun updateCampusCenter(campusCenter: String): Result<Unit>
 }

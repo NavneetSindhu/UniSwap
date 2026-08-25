@@ -59,7 +59,11 @@ fun ProfileScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var isEditingAvatar by remember { mutableStateOf(false) }
-    val tabs = listOf("Selling", "Given Away", "Saved")
+    val tabs = listOf(
+        stringResource(R.string.profile_tab_selling),
+        stringResource(R.string.profile_tab_given_away),
+        stringResource(R.string.profile_tab_saved)
+    )
 
     val dimens = UniSwapTheme.dimens
     val colors = UniSwapTheme.colors
@@ -82,7 +86,7 @@ fun ProfileScreen(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_back),
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.action_back),
                         tint = colors.textPrimary,
                         modifier = Modifier
                             .width(18.dp)
@@ -91,7 +95,7 @@ fun ProfileScreen(
                 }
 
                 Text(
-                    text = "Profile",
+                    text = stringResource(R.string.profile_title),
                     fontFamily = MatterFontFamily,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 17.sp,
@@ -104,7 +108,7 @@ fun ProfileScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.settings_title),
                         tint = colors.textPrimary,
                         modifier = Modifier.size(22.dp)
                     )
@@ -165,8 +169,10 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
+                        val context = LocalContext.current
                         val userHandle = if (state.userEmail.isNotBlank()) "@${state.userEmail.substringBefore("@")}" else "@student"
-                        val handleText = if (state.campusCenter.isNotBlank()) "$userHandle • ${state.campusCenter}" else userHandle
+                        val campusAbbr = com.minimize.uniswap.util.CampusMapper.toAbbreviation(context, state.campusCenter)
+                        val handleText = if (campusAbbr.isNotBlank()) "$userHandle • $campusAbbr" else userHandle
                         Text(
                             text = handleText,
                             fontFamily = MatterFontFamily,
@@ -185,7 +191,7 @@ fun ProfileScreen(
                             if (state.gradYear.isNotBlank()) {
                                 ProfileTagChip(
                                     icon = Icons.Outlined.School,
-                                    label = "Class of ${state.gradYear}",
+                                    label = stringResource(R.string.profile_class_of, state.gradYear),
                                     textColor = colors.textPrimary,
                                     bgColor = colors.cardSurface
                                 )
@@ -193,14 +199,14 @@ fun ProfileScreen(
 
                             ProfileTagChip(
                                 icon = if (state.isVerified) Icons.Outlined.Verified else Icons.Outlined.Person,
-                                label = if (state.isVerified) "Verified Student" else "Campus Member",
+                                label = if (state.isVerified) stringResource(R.string.verified_student) else stringResource(R.string.profile_campus_member),
                                 textColor = if (state.isVerified) colors.wasteMetricGreen else colors.textSecondary,
                                 bgColor = colors.cardSurface
                             )
 
                             ProfileTagChip(
                                 icon = Icons.Outlined.Recycling,
-                                label = "${state.itemsRecycled} Recycled",
+                                label = stringResource(R.string.profile_items_recycled_tag, state.itemsRecycled),
                                 textColor = colors.textPrimary,
                                 bgColor = colors.cardSurface
                             )
@@ -223,96 +229,174 @@ fun ProfileScreen(
                                 )
                             )
                             .border(1.dp, colors.wasteMetricGreen.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                            .padding(22.dp)
+                            .padding(20.dp)
                     ) {
                         Column {
+                            // Header Row: Leaf Icon + Title + Eco Tier Badge
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(colors.wasteMetricGreen.copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Eco,
-                                        contentDescription = null,
-                                        tint = colors.wasteMetricGreen,
-                                        modifier = Modifier.size(18.dp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(colors.wasteMetricGreen.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Eco,
+                                            contentDescription = null,
+                                            tint = colors.wasteMetricGreen,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = stringResource(R.string.profile_sustainability_impact),
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = colors.textPrimary
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "Sustainability Impact",
-                                    fontFamily = MatterFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = colors.textPrimary
-                                )
+
+                                // Eco Tier Badge
+                                val tierText = when (state.ecoTier) {
+                                    "champion" -> stringResource(R.string.profile_eco_tier_champion)
+                                    "contributor" -> stringResource(R.string.profile_eco_tier_contributor)
+                                    else -> stringResource(R.string.profile_eco_tier_starter)
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(colors.wasteMetricGreen.copy(alpha = 0.18f))
+                                        .border(0.5.dp, colors.wasteMetricGreen.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = tierText,
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        color = colors.wasteMetricGreen
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(18.dp))
 
+                            // 3-Metric Circular Grid
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "450",
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 28.sp,
-                                        color = colors.wasteMetricGreen
-                                    )
-                                    Text(
-                                        text = "Impact Score",
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 12.sp,
-                                        color = colors.textSecondary
-                                    )
+                                // Metric 1: Items Rehomed
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(colors.cardSurface.copy(alpha = 0.7f))
+                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = state.itemsRecycled.toString(),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 19.sp,
+                                            color = colors.wasteMetricGreen
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = stringResource(R.string.profile_metric_rehomed),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 10.sp,
+                                            textAlign = TextAlign.Center,
+                                            color = colors.textSecondary,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    val lbsText = "%.1f lbs".format(state.lbsSaved)
-                                    Text(
-                                        text = lbsText,
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 24.sp,
-                                        color = colors.textPrimary
-                                    )
-                                    Text(
-                                        text = "Waste Diverted",
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 12.sp,
-                                        color = colors.textSecondary
-                                    )
+                                // Metric 2: Waste Diverted (kg)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(colors.cardSurface.copy(alpha = 0.7f))
+                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = stringResource(R.string.profile_metric_kg_unit, state.kgSaved),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 19.sp,
+                                            color = colors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = stringResource(R.string.profile_metric_waste_diverted),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 10.sp,
+                                            textAlign = TextAlign.Center,
+                                            color = colors.textSecondary,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+
+                                // Metric 3: CO2 Offset (kg)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(colors.cardSurface.copy(alpha = 0.7f))
+                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = stringResource(R.string.profile_metric_kg_unit, state.co2Saved),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 19.sp,
+                                            color = colors.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = stringResource(R.string.profile_metric_co2_offset),
+                                            fontFamily = MatterFontFamily,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 10.sp,
+                                            textAlign = TextAlign.Center,
+                                            color = colors.textSecondary,
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Column {
-                                Text(
-                                    text = state.itemsRecycled.toString(),
-                                    fontFamily = MatterFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 22.sp,
-                                    color = colors.textPrimary
-                                )
-                                Text(
-                                    text = "Items Recycled & Reused",
-                                    fontFamily = MatterFontFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 12.sp,
-                                    color = colors.textSecondary
-                                )
-                            }
+                            // Sustainability Motto Subtitle
+                            Text(
+                                text = stringResource(R.string.profile_sustainability_motto),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 11.sp,
+                                lineHeight = 14.sp,
+                                color = colors.textSecondary.copy(alpha = 0.85f),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }

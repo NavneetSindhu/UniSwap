@@ -13,10 +13,13 @@ import javax.inject.Inject
 
 import timber.log.Timber
 
+import com.minimize.uniswap.data.preferences.UserPreferencesManager
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repository: ItemRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val preferencesManager: UserPreferencesManager
 ) : ViewModel() {
 
     private val myUserId = authRepository.getCurrentUserId() ?: ""
@@ -31,20 +34,22 @@ class ProfileViewModel @Inject constructor(
     }
 
     private fun observeUserProfile() {
-        authRepository.getUserFlow()
-            .onEach { user ->
-                _uiState.update { current ->
-                    current.copy(
-                        userName = user?.displayName?.ifBlank { "Student User" } ?: "Student User",
-                        userEmail = user?.email ?: "",
-                        userPhotoUrl = user?.profilePicUrl?.ifBlank { null },
-                        avatarId = user?.avatarId?.ifBlank { "avatar_scholar" } ?: "avatar_scholar",
-                        campusCenter = user?.campusCenter ?: "",
-                        isVerified = user?.isEmailVerified ?: false
-                    )
-                }
+        combine(
+            authRepository.getUserFlow(),
+            preferencesManager.preferencesFlow
+        ) { user, preferences ->
+            val campus = user?.campusCenter?.ifBlank { null } ?: preferences.campusCenter.ifBlank { "" }
+            _uiState.update { current ->
+                current.copy(
+                    userName = user?.displayName?.ifBlank { "Student User" } ?: "Student User",
+                    userEmail = user?.email ?: "",
+                    userPhotoUrl = user?.profilePicUrl?.ifBlank { null },
+                    avatarId = user?.avatarId?.ifBlank { "avatar_scholar" } ?: "avatar_scholar",
+                    campusCenter = campus,
+                    isVerified = user?.isEmailVerified ?: false
+                )
             }
-            .launchIn(viewModelScope)
+        }.launchIn(viewModelScope)
     }
 
     private fun observeMyItems() {
@@ -55,11 +60,22 @@ class ProfileViewModel @Inject constructor(
 
         repository.getItemsBySellerFlow(myUserId)
             .onEach { myItems ->
+                val rehomedCount = myItems.count { it.status == ItemStatus.SOLD }
+                val kgDiverted = rehomedCount * 1.8 // 1.8 kg avg per university item
+                val co2Offset = rehomedCount * 3.2 // 3.2 kg CO2 eq saved per circular item
+                val tier = when {
+                    rehomedCount >= 8 -> "champion"
+                    rehomedCount >= 3 -> "contributor"
+                    else -> "starter"
+                }
+
                 _uiState.update { current ->
                     current.copy(
                         isLoading = false,
-                        lbsSaved = myItems.size * 2.5,
-                        itemsRecycled = myItems.count { it.status == ItemStatus.SOLD },
+                        kgSaved = kgDiverted,
+                        co2Saved = co2Offset,
+                        itemsRecycled = rehomedCount,
+                        ecoTier = tier,
                         sellingItems = myItems.filter { it.status == ItemStatus.AVAILABLE },
                         givenAwayItems = myItems.filter { it.status == ItemStatus.SOLD && it.price == 0.0 },
                         error = null
@@ -135,8 +151,10 @@ class ProfileViewModel @Inject constructor(
         val campusCenter: String = "",
         val gradYear: String = "",
         val isVerified: Boolean = false,
-        val lbsSaved: Double = 0.0,
+        val kgSaved: Double = 0.0,
+        val co2Saved: Double = 0.0,
         val itemsRecycled: Int = 0,
+        val ecoTier: String = "starter",
         val sellingItems: List<CampusItem> = emptyList(),
         val givenAwayItems: List<CampusItem> = emptyList(),
         val savedItems: List<CampusItem> = emptyList(),
