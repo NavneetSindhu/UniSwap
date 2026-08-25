@@ -203,4 +203,28 @@
     <string name="block_success_toast">User has been blocked.</string>
     <string name="block_failed_toast">Failed to block user. Please try again.</string>
     <string name="user_blocked_notice">You have blocked this user.</string>
+    <string name="action_unblock">Unblock</string>
+    <string name="unblock_success_toast">User has been unblocked.</string>
+    <string name="unblock_failed_toast">Failed to unblock user.</string>
+
+    <!-- Privacy & Safety Settings Section -->
+    <string name="settings_section_privacy_safety">Privacy &amp; Safety</string>
+    <string name="settings_blocked_users">Blocked Users</string>
+    <string name="settings_blocked_users_subtitle">Manage accounts you have blocked</string>
+    <string name="settings_my_reports">My Reports</string>
+    <string name="settings_my_reports_subtitle">View status of submitted reports</string>
+    
+    <!-- Blocked Users Sheet -->
+    <string name="blocked_users_title">Blocked Accounts</string>
+    <string name="blocked_users_empty_title">No Blocked Accounts</string>
+    <string name="blocked_users_empty_subtitle">You have not blocked any users. When you block someone, they will appear here.</string>
+    
+    <!-- My Reports Sheet -->
+    <string name="my_reports_title">Submitted Reports</string>
+    <string name="my_reports_empty_title">No Reports Submitted</string>
+    <string name="my_reports_empty_subtitle">You have not submitted any safety or moderation reports.</string>
+    <string name="report_status_pending">Pending Review</string>
+    <string name="report_status_under_review">Under Review</string>
+    <string name="report_status_resolved">Resolved</string>
+    <string name="report_status_dismissed">Dismissed</string>
 </resources>

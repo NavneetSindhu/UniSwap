@@ -27,8 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
-import androidx.hilt.navigation.compose.hiltViewModel
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.lazy.items
+import com.minimize.uniswap.data.model.Report
+import com.minimize.uniswap.data.model.ReportStatus
+import com.minimize.uniswap.ui.components.EmptyStateView
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.preferences.ThemeMode
 import com.minimize.uniswap.ui.theme.*
@@ -36,11 +40,12 @@ import com.minimize.uniswap.ui.theme.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.res.painterResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.minimize.uniswap.ui.components.AppBottomSheet
 
 /**
  * Fully functional Settings Screen matching UniSwap dark aesthetic and AGENTS.md guidelines.
- * All settings (Appearance, Campus Center, Notifications, Profile, Terms, Help, Logout)
+ * All settings (Appearance, Campus Center, Notifications, Profile, Privacy & Safety, Terms, Help, Logout)
  * are completely interactive and connected to ViewModel and DataStore.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,12 +57,26 @@ fun SettingsScreen(
 ) {
     val preferences by viewModel.preferences.collectAsState()
     val currentUser by viewModel.user.collectAsState()
+    val blockedUserIds by viewModel.blockedUserIds.collectAsState()
+    val myReports by viewModel.myReports.collectAsState()
+    val userFeedbackMessage by viewModel.userFeedbackMessage.collectAsState()
+
+    val context = LocalContext.current
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showCampusDialog by remember { mutableStateOf(false) }
+    var showBlockedUsersDialog by remember { mutableStateOf(false) }
+    var showMyReportsDialog by remember { mutableStateOf(false) }
     var showTermsDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userFeedbackMessage) {
+        userFeedbackMessage?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearFeedbackMessage()
+        }
+    }
 
     val themeColors = UniSwapTheme.colors
 
@@ -145,7 +164,26 @@ fun SettingsScreen(
                 }
             }
 
-            // 3. Notifications Section
+            // 3. Privacy & Safety Section
+            item {
+                SettingsSectionCard(title = stringResource(R.string.settings_section_privacy_safety)) {
+                    SettingsNavigationItem(
+                        icon = Icons.Outlined.Block,
+                        title = stringResource(R.string.settings_blocked_users),
+                        subtitle = if (blockedUserIds.isEmpty()) stringResource(R.string.blocked_users_empty_title) else "${blockedUserIds.size} accounts blocked",
+                        onClick = { showBlockedUsersDialog = true }
+                    )
+                    SettingsDivider()
+                    SettingsNavigationItem(
+                        icon = Icons.Outlined.Flag,
+                        title = stringResource(R.string.settings_my_reports),
+                        subtitle = if (myReports.isEmpty()) stringResource(R.string.my_reports_empty_title) else "${myReports.size} submitted reports",
+                        onClick = { showMyReportsDialog = true }
+                    )
+                }
+            }
+
+            // 4. Notifications Section
             item {
                 SettingsSectionCard(title = stringResource(R.string.settings_section_notifications)) {
                     SettingsSwitchItem(
@@ -164,7 +202,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 4. About Section
+            // 5. About Section
             item {
                 SettingsSectionCard(title = stringResource(R.string.settings_section_about)) {
                     SettingsNavigationItem(
@@ -181,7 +219,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 5. Log Out Button
+            // 6. Log Out Button
             item {
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
@@ -210,8 +248,6 @@ fun SettingsScreen(
                             text = stringResource(R.string.settings_logout),
                             fontFamily = MatterFontFamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -356,7 +392,237 @@ fun SettingsScreen(
         )
     }
 
-    // 3. Terms of Service Bottom Sheet
+    // 3. Blocked Users Bottom Sheet
+    if (showBlockedUsersDialog) {
+        AppBottomSheet(
+            onDismissRequest = { showBlockedUsersDialog = false },
+            heightFraction = 0.70f,
+            containerColor = themeColors.cardSurface,
+            contentColor = themeColors.textPrimary
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.blocked_users_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                if (blockedUserIds.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        EmptyStateView(
+                            title = stringResource(R.string.blocked_users_empty_title),
+                            subtitle = stringResource(R.string.blocked_users_empty_subtitle),
+                            fallbackIcon = Icons.Outlined.Block
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(blockedUserIds.toList(), key = { it }) { userId ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(themeColors.btnBackBg)
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(themeColors.cardSurface),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.PersonOff,
+                                        contentDescription = null,
+                                        tint = themeColors.textSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "User (${userId.take(8)}...)",
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 14.sp,
+                                        color = themeColors.textPrimary
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.user_blocked_notice),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 11.sp,
+                                        color = themeColors.textSecondary
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = { viewModel.unblockUser(userId) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = themeColors.textPrimary
+                                    )
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.action_unblock),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. My Reports Bottom Sheet
+    if (showMyReportsDialog) {
+        AppBottomSheet(
+            onDismissRequest = { showMyReportsDialog = false },
+            heightFraction = 0.75f,
+            containerColor = themeColors.cardSurface,
+            contentColor = themeColors.textPrimary
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.my_reports_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                if (myReports.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        EmptyStateView(
+                            title = stringResource(R.string.my_reports_empty_title),
+                            subtitle = stringResource(R.string.my_reports_empty_subtitle),
+                            fallbackIcon = Icons.Outlined.Flag
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(myReports, key = { it.id }) { report ->
+                            val (statusText, statusBg, statusColor) = when (report.status) {
+                                ReportStatus.PENDING -> Triple(
+                                    stringResource(R.string.report_status_pending),
+                                    CampusAmber.copy(alpha = 0.15f),
+                                    CampusAmber
+                                )
+                                ReportStatus.UNDER_REVIEW -> Triple(
+                                    stringResource(R.string.report_status_under_review),
+                                    ActionLinkBlue.copy(alpha = 0.15f),
+                                    ActionLinkBlue
+                                )
+                                ReportStatus.RESOLVED -> Triple(
+                                    stringResource(R.string.report_status_resolved),
+                                    SuccessGreen.copy(alpha = 0.15f),
+                                    SuccessGreen
+                                )
+                                ReportStatus.DISMISSED -> Triple(
+                                    stringResource(R.string.report_status_dismissed),
+                                    PaletteDark.Gray400.copy(alpha = 0.15f),
+                                    PaletteDark.Gray400
+                                )
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(themeColors.btnBackBg)
+                                    .padding(14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = report.itemTitle?.ifBlank { stringResource(report.reason.stringResId) }
+                                            ?: stringResource(report.reason.stringResId),
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = themeColors.textPrimary,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(statusBg)
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = statusText,
+                                            fontFamily = MatterFontFamily,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = statusColor
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Text(
+                                    text = "Reason: ${stringResource(report.reason.stringResId)}",
+                                    fontFamily = MatterFontFamily,
+                                    fontSize = 12.sp,
+                                    color = themeColors.textSecondary
+                                )
+
+                                if (report.additionalDetails.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Notes: ${report.additionalDetails}",
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 12.sp,
+                                        color = themeColors.textSubtle,
+                                        maxLines = 2
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. Terms of Service Bottom Sheet
     if (showTermsDialog) {
         AppBottomSheet(
             onDismissRequest = { showTermsDialog = false },
@@ -415,7 +681,7 @@ fun SettingsScreen(
         }
     }
 
-    // 4. Help Center Bottom Sheet
+    // 6. Help Center Bottom Sheet
     if (showHelpDialog) {
         AppBottomSheet(
             onDismissRequest = { showHelpDialog = false },
@@ -474,7 +740,7 @@ fun SettingsScreen(
         }
     }
 
-    // 5. Logout Confirmation Dialog
+    // 7. Logout Confirmation Dialog
     if (showLogoutConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirmDialog = false },
