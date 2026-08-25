@@ -52,4 +52,35 @@ data class Report(
         "timestamp" to timestamp,
         "status" to status.name
     )
+
+    companion object {
+        fun fromMap(map: Map<String, Any?>, documentId: String = ""): Report {
+            val reasonStr = map["reason"] as? String ?: ReportReason.OTHER.name
+            val statusStr = map["status"] as? String ?: ReportStatus.PENDING.name
+
+            val parsedReason = try {
+                ReportReason.valueOf(reasonStr)
+            } catch (e: Exception) {
+                ReportReason.OTHER
+            }
+
+            val parsedStatus = try {
+                ReportStatus.valueOf(statusStr)
+            } catch (e: Exception) {
+                ReportStatus.PENDING
+            }
+
+            return Report(
+                id = (map["id"] as? String)?.ifBlank { documentId } ?: documentId,
+                reporterId = map["reporterId"] as? String ?: "",
+                reportedUserId = map["reportedUserId"] as? String ?: "",
+                itemId = map["itemId"] as? String,
+                itemTitle = map["itemTitle"] as? String,
+                reason = parsedReason,
+                additionalDetails = map["additionalDetails"] as? String ?: "",
+                timestamp = (map["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                status = parsedStatus
+            )
+        }
+    }
 }

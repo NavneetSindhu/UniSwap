@@ -124,4 +124,30 @@ class FirebaseReportRepository @Inject constructor(
 
         awaitClose { listenerRegistration.remove() }
     }
+
+    override fun getMyReportsFlow(): Flow<List<Report>> = callbackFlow {
+        val currentUserId = firebaseAuth.currentUser?.uid
+        if (currentUserId.isNullOrBlank()) {
+            trySend(emptyList())
+            awaitClose { }
+            return@callbackFlow
+        }
+
+        val listenerRegistration = firestore.collection("reports")
+            .whereEqualTo("reporterId", currentUserId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Timber.e(error, "Error listening to my reports from Firestore")
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val reports = snapshot?.documents?.mapNotNull { doc ->
+                    Report.fromMap(doc.data ?: return@mapNotNull null, doc.id)
+                } ?: emptyList()
+                trySend(reports.sortedByDescending { it.timestamp })
+            }
+
+        awaitClose { listenerRegistration.remove() }
+    }
 }

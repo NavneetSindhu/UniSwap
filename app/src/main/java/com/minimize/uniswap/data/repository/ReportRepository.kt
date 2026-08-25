@@ -27,4 +27,9 @@ interface ReportRepository {
      * Real-time stream of all user IDs blocked by the current signed-in user.
      */
     fun getBlockedUserIdsFlow(): Flow<Set<String>>
+
+    /**
+     * Real-time stream of reports submitted by the current user.
+     */
+    fun getMyReportsFlow(): Flow<List<Report>>
 }
