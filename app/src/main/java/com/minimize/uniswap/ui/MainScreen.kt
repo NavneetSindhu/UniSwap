@@ -2,6 +2,7 @@ package com.minimize.uniswap.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -50,34 +52,14 @@ fun MainScreen(
         Screen.Home.route,
         Screen.Feed.route,
         Screen.Messages.route,
-        Screen.Profile.route,
-        Screen.Sell.route
+        Screen.Profile.route
     )
 
-    Scaffold(
-        containerColor = UniSwapTheme.colors.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (showBottomNav) {
-                Box(modifier = Modifier.navigationBarsPadding()) {
-                    CustomBottomNav(
-                        currentRoute = currentRoute ?: Screen.Home.route,
-                        hasUnreadMessages = hasUnreadMessages,
-                        onNavigate = { route ->
-                            if (route == Screen.Messages.route) {
-                                viewModel.markMessagesAsRead()
-                            }
-                            navController.navigate(route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(UniSwapTheme.colors.background)
+    ) {
         val startDestination = remember {
             if (viewModel.isUserLoggedIn()) Screen.Home.route else Screen.Onboarding.route
         }
@@ -95,37 +77,29 @@ fun MainScreen(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = if (showBottomNav) innerPadding.calculateBottomPadding() else innerPadding.calculateBottomPadding()),
+            modifier = Modifier.fillMaxSize(),
             enterTransition = {
                 val initialRoute = initialState.destination.route
                 val targetRoute = targetState.destination.route
                 val initialIndex = bottomTabs.indexOf(initialRoute)
                 val targetIndex = bottomTabs.indexOf(targetRoute)
 
-                if (initialIndex != -1 && targetIndex != -1) {
-                    val direction = if (targetIndex > initialIndex) {
-                        AnimatedContentTransitionScope.SlideDirection.Left
-                    } else {
-                        AnimatedContentTransitionScope.SlideDirection.Right
-                    }
-                    slideIntoContainer(
-                        towards = direction,
-                        initialOffset = { it / 6 },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    ) + fadeIn(animationSpec = tween(240, easing = FastOutSlowInEasing)) +
-                    scaleIn(initialScale = 0.98f, animationSpec = tween(240, easing = FastOutSlowInEasing))
+                val direction = if (initialIndex != -1 && targetIndex != -1) {
+                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
+                    else AnimatedContentTransitionScope.SlideDirection.Right
                 } else {
-                    // Deep screen forward push
-                    slideIntoContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                        animationSpec = tween(320, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(260))
+                    AnimatedContentTransitionScope.SlideDirection.Left
                 }
+
+                slideIntoContainer(
+                    towards = direction,
+                    initialOffset = { it / 6 },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = FastOutSlowInEasing))
             },
             exitTransition = {
                 val initialRoute = initialState.destination.route
@@ -133,42 +107,44 @@ fun MainScreen(
                 val initialIndex = bottomTabs.indexOf(initialRoute)
                 val targetIndex = bottomTabs.indexOf(targetRoute)
 
-                if (initialIndex != -1 && targetIndex != -1) {
-                    val direction = if (targetIndex > initialIndex) {
-                        AnimatedContentTransitionScope.SlideDirection.Left
-                    } else {
-                        AnimatedContentTransitionScope.SlideDirection.Right
-                    }
-                    slideOutOfContainer(
-                        towards = direction,
-                        targetOffset = { it / 6 },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    ) + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
-                    scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutSlowInEasing))
+                val direction = if (initialIndex != -1 && targetIndex != -1) {
+                    if (targetIndex > initialIndex) AnimatedContentTransitionScope.SlideDirection.Left
+                    else AnimatedContentTransitionScope.SlideDirection.Right
                 } else {
-                    // Outgoing screen backdrop parallax
-                    slideOutOfContainer(
-                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                        targetOffset = { it / 4 },
-                        animationSpec = tween(320, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(220))
+                    AnimatedContentTransitionScope.SlideDirection.Left
                 }
+
+                slideOutOfContainer(
+                    towards = direction,
+                    targetOffset = { it / 6 },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+                scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutSlowInEasing))
             },
             popEnterTransition = {
                 slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                    initialOffset = { it / 4 },
-                    animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(260))
+                    initialOffset = { it / 6 },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = FastOutSlowInEasing))
             },
             popExitTransition = {
                 slideOutOfContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                    animationSpec = tween(320, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(220))
+                    targetOffset = { it / 6 },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                ) + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+                scaleOut(targetScale = 0.98f, animationSpec = tween(180, easing = FastOutSlowInEasing))
             }
         ) {
 
@@ -348,5 +324,41 @@ fun MainScreen(
             }
         }
 
+        // Floating Glassmorphic Bottom Navigation Bar Overlay
+        AnimatedVisibility(
+            visible = showBottomNav,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding(),
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            ) + fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+            ) + fadeOut(animationSpec = tween(160, easing = FastOutSlowInEasing))
+        ) {
+            CustomBottomNav(
+                currentRoute = currentRoute ?: Screen.Home.route,
+                hasUnreadMessages = hasUnreadMessages,
+                onNavigate = { route ->
+                    if (route == Screen.Messages.route) {
+                        viewModel.markMessagesAsRead()
+                    }
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
     }
 }
