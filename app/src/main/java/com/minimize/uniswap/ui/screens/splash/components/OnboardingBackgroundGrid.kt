@@ -50,14 +50,14 @@ fun OnboardingBackgroundGrid(
                     .offset(y = (-30).dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Sneaker Card 1
+                // Textbooks & Study Notes Card
                 ShowcaseCard(
-                    imageUrl = "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=400",
+                    imageUrl = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=400",
                     height = 200.dp
                 )
-                // Sneaker Card 2
+                // Backpack & Campus Gear Card
                 ShowcaseCard(
-                    imageUrl = "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?q=80&w=400",
+                    imageUrl = "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=400",
                     height = 220.dp
                 )
             }
@@ -69,7 +69,7 @@ fun OnboardingBackgroundGrid(
                     .offset(y = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Main Featured Drop Card
+                // Main Featured Drop Card (Laptop & Electronics)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -93,7 +93,7 @@ fun OnboardingBackgroundGrid(
                         )
 
                         AsyncImage(
-                            model = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600",
+                            model = "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600",
                             contentDescription = stringResource(R.string.app_name),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -103,9 +103,9 @@ fun OnboardingBackgroundGrid(
                     }
                 }
 
-                // Sub Card
+                // Headphones & Audio Gear Card
                 ShowcaseCard(
-                    imageUrl = "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?q=80&w=400",
+                    imageUrl = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400",
                     height = 180.dp
                 )
             }
@@ -117,12 +117,14 @@ fun OnboardingBackgroundGrid(
                     .offset(y = (-15).dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // Scientific Calculator & Tech Tools Card
                 ShowcaseCard(
-                    imageUrl = "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?q=80&w=400",
+                    imageUrl = "https://images.unsplash.com/photo-1587145820266-a5951ee6f620?q=80&w=400",
                     height = 210.dp
                 )
+                // Sneaker & Campus Lifestyle Card
                 ShowcaseCard(
-                    imageUrl = "https://images.unsplash.com/photo-1579338559194-a162d19bf842?q=80&w=400",
+                    imageUrl = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400",
                     height = 190.dp
                 )
             }
