@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.lottie.compose)
+    implementation(libs.timber)
 
     implementation("com.google.android.gms:play-services-auth:21.0.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
