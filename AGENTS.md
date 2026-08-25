@@ -31,3 +31,14 @@
   - Push the single source of truth `main` branch to remote (`git push origin main`).
   - Delete merged local branches (`git branch -d <branch>`) to maintain a clean workspace.
 
+## 6. Zero Import Errors & Reference Integrity
+- **Mandatory Pre-Flight Import Verification**: Whenever adding, modifying, or using any class, interface, repository, model, utility, composable, extension function, or constructor dependency, you MUST inspect the file's import block first.
+- **Immediate Import Addition**: If an import is missing, not in scope, or stripped during a code edit, immediately add the explicit import statement at the top of that file. Never assume implicit imports or leave unresolved references.
+- **Pre-Usage Property & Token Existence Check**: Whenever accessing properties on design tokens or custom objects (e.g. `UniSwapTheme.colors.*`, theme models, data classes), you MUST inspect the definition first to verify the property actually exists, rather than guessing property names (e.g., verifying `cardBackground`, `cardSurface`, `divider` exist in `ExtendedColors`).
+## 7. Proactive Experimental API Opt-In (`@OptIn`)
+- **Mandatory Annotation for Experimental APIs**: Whenever writing or modifying composables that consume experimental Jetpack Compose or Material 3 APIs (such as `ModalBottomSheet`, `rememberModalBottomSheetState`, `BottomSheetDefaults`, `PullToRefreshBox`, `combinedClickable`), always proactively annotate the function with the required `@OptIn(...)` annotation (e.g., `@OptIn(ExperimentalMaterial3Api::class)`, `@OptIn(ExperimentalFoundationApi::class)`).
+- **Mandatory Opt-In Imports**: Always ensure that the corresponding import statement (e.g., `import androidx.compose.material3.ExperimentalMaterial3Api`) is added at the top of the file alongside the annotation.
+
+
+
+
