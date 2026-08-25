@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Search
@@ -28,6 +29,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -652,13 +654,61 @@ private fun UploadedPhotosCard(
             .background(CardDarkSurface)
     ) {
         if (images.isEmpty()) {
-            // Default placeholder image
-            AsyncImage(
-                model = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600",
-                contentDescription = "Default Product",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            // Modern vector art graphic placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                CardDarkSurface,
+                                BtnBackBg.copy(alpha = 0.45f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(BtnBackBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.PhotoLibrary,
+                            contentDescription = stringResource(R.string.photo_placeholder_title),
+                            tint = TextMutedLight,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = stringResource(R.string.photo_placeholder_title),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 13.sp,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = stringResource(R.string.photo_placeholder_subtitle),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 11.sp,
+                        color = TextSubtle
+                    )
+                }
+            }
         } else {
             val pagerState = rememberPagerState(pageCount = { images.size })
 
@@ -786,32 +836,56 @@ private fun ListProductCardField(
                 .then(if (!singleLine) Modifier.weight(1f) else Modifier),
             contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
         ) {
-            if (value.isEmpty()) {
-                Text(
-                    text = placeholder,
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 13.sp,
-                    letterSpacing = (-0.26).sp,
-                    color = themeColors.textSubtle
+            if (readOnly) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = value.ifEmpty { placeholder },
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 13.sp,
+                        letterSpacing = (-0.26).sp,
+                        color = if (value.isEmpty()) themeColors.textSubtle else themeColors.textPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = themeColors.textSubtle,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            } else {
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 13.sp,
+                        letterSpacing = (-0.26).sp,
+                        color = themeColors.textSubtle
+                    )
+                }
+
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        color = themeColors.textPrimary,
+                        fontSize = 13.sp,
+                        letterSpacing = (-0.26).sp
+                    ),
+                    singleLine = singleLine,
+                    cursorBrush = SolidColor(themeColors.textPrimary)
                 )
             }
-
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = readOnly,
-                textStyle = TextStyle(
-                    fontFamily = MatterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    color = themeColors.textPrimary,
-                    fontSize = 13.sp,
-                    letterSpacing = (-0.26).sp
-                ),
-                singleLine = singleLine,
-                cursorBrush = SolidColor(themeColors.textPrimary)
-            )
         }
     }
 }

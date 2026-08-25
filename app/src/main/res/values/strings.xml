@@ -135,6 +135,8 @@
     <string name="photo_source_dialog_title">Add Photo</string>
     <string name="photo_source_camera">Take Photo</string>
     <string name="photo_source_gallery">Choose from Gallery</string>
+    <string name="photo_placeholder_title">No Photos</string>
+    <string name="photo_placeholder_subtitle">Add product images</string>
 
     <!-- Listing Management -->
     <string name="action_mark_sold">Mark as Sold</string>
