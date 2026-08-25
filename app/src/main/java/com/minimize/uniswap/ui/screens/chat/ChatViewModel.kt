@@ -35,6 +35,14 @@ class ChatViewModel @Inject constructor(
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = combine(
+        _isLoading,
+        com.minimize.uniswap.util.DebugConfig.forceShimmerLoading
+    ) { loading, forceShimmer ->
+        loading || forceShimmer
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     private val _isSubmittingReport = MutableStateFlow(false)
     val isSubmittingReport: StateFlow<Boolean> = _isSubmittingReport.asStateFlow()
 
@@ -79,10 +87,15 @@ class ChatViewModel @Inject constructor(
         messageJob = chatRepository.getMessages(itemId, buyerId, sellerId)
             .onEach { messageList ->
                 _messages.value = messageList
+                _isLoading.value = false
                 // If there are incoming unread messages, mark them as read
                 if (messageList.any { it.senderId != currentUserId && it.readAt == null }) {
                     markChatAsRead(itemId, buyerId, sellerId)
                 }
+            }
+            .catch { e ->
+                timber.log.Timber.e(e, "Error observing messages")
+                _isLoading.value = false
             }
             .launchIn(viewModelScope)
     }

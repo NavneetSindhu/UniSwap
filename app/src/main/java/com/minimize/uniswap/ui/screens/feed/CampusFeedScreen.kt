@@ -1,7 +1,7 @@
 package com.minimize.uniswap.ui.screens.feed
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +23,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import com.minimize.uniswap.ui.components.AppSkeletonView
 import com.minimize.uniswap.ui.components.EmptyStateView
+import com.minimize.uniswap.ui.components.SkeletonType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,6 +61,7 @@ fun CampusFeedScreen(
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -256,66 +259,88 @@ fun CampusFeedScreen(
                 .padding(innerPadding)
         ) {
             AnimatedContent(
-                targetState = items,
+                targetState = when {
+                    isLoading -> "LOADING"
+                    items.isEmpty() -> "EMPTY"
+                    else -> "CONTENT"
+                },
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(150))
+                    (fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                     scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                        .togetherWith(fadeOut(animationSpec = tween(160, easing = FastOutSlowInEasing)))
                 },
                 label = "feed_grid_transition"
-            ) { targetItems ->
-                if (targetItems.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 40.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (searchQuery.isNotBlank()) {
-                            EmptyStateView(
-                                title = stringResource(R.string.empty_search_title),
-                                subtitle = stringResource(R.string.empty_search_subtitle),
-                                lottieRes = R.raw.anim_user_search,
-                                fallbackIcon = Icons.Outlined.SearchOff,
-                                ctaText = stringResource(R.string.empty_search_cta),
-                                onCtaClick = { viewModel.updateSearchQuery("") }
-                            )
-                        } else {
-                            EmptyStateView(
-                                title = stringResource(R.string.empty_category_title),
-                                subtitle = stringResource(R.string.empty_category_subtitle),
-                                lottieRes = R.raw.anim_empty_feed,
-                                fallbackIcon = Icons.Outlined.Inventory2
-                            )
-                        }
+            ) { targetState ->
+                when (targetState) {
+                    "LOADING" -> {
+                        AppSkeletonView(type = SkeletonType.FEED_GRID)
                     }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(targetItems, key = { it.id }) { item ->
-                            val isDigitalNote = item.category.name.contains("ENGINEERING", ignoreCase = true) ||
-                                    item.title.contains("note", ignoreCase = true) ||
-                                    item.title.contains("book", ignoreCase = true) ||
-                                    item.title.contains("pdf", ignoreCase = true)
-
-                            if (isDigitalNote) {
-                                DigitalNotesCard(
-                                    item = item,
-                                    isSaved = item.id in savedItemIds,
-                                    onSaveClick = { viewModel.toggleSaveItem(item.id) },
-                                    onClick = { onItemClick(item) }
+                    "EMPTY" -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (searchQuery.isNotBlank()) {
+                                EmptyStateView(
+                                    title = stringResource(R.string.empty_search_title),
+                                    subtitle = stringResource(R.string.empty_search_subtitle),
+                                    lottieRes = R.raw.anim_user_search,
+                                    fallbackIcon = Icons.Outlined.SearchOff,
+                                    ctaText = stringResource(R.string.empty_search_cta),
+                                    onCtaClick = { viewModel.updateSearchQuery("") }
                                 )
                             } else {
-                                RecentUploadCard(
-                                    item = item,
-                                    isSaved = item.id in savedItemIds,
-                                    onSaveClick = { viewModel.toggleSaveItem(item.id) },
-                                    onClick = { onItemClick(item) },
-                                    onLongClick = { selectedItemForAction = item }
+                                EmptyStateView(
+                                    title = stringResource(R.string.empty_category_title),
+                                    subtitle = stringResource(R.string.empty_category_subtitle),
+                                    lottieRes = R.raw.anim_empty_feed,
+                                    fallbackIcon = Icons.Outlined.Inventory2
                                 )
+                            }
+                        }
+                    }
+                    else -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(items, key = { it.id }) { item ->
+                                val isDigitalNote = item.category.name.contains("ENGINEERING", ignoreCase = true) ||
+                                        item.title.contains("note", ignoreCase = true) ||
+                                        item.title.contains("book", ignoreCase = true) ||
+                                        item.title.contains("pdf", ignoreCase = true)
+
+                                if (isDigitalNote) {
+                                    DigitalNotesCard(
+                                        item = item,
+                                        isSaved = item.id in savedItemIds,
+                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                        onClick = { onItemClick(item) },
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(220),
+                                            fadeOutSpec = tween(160),
+                                            placementSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                        )
+                                    )
+                                } else {
+                                    RecentUploadCard(
+                                        item = item,
+                                        isSaved = item.id in savedItemIds,
+                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                        onClick = { onItemClick(item) },
+                                        onLongClick = { selectedItemForAction = item },
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(220),
+                                            fadeOutSpec = tween(160),
+                                            placementSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                        )
+                                    )
+                                }
                             }
                         }
                     }

@@ -5,9 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -76,6 +75,7 @@ fun PickupChatScreen(
 ) {
     val item by viewModel.item.collectAsState()
     val liveMessages by viewModel.messages.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val isSubmittingReport by viewModel.isSubmittingReport.collectAsState()
     val isBlockingUser by viewModel.isBlockingUser.collectAsState()
     val userMessage by viewModel.userMessage.collectAsState()
@@ -688,38 +688,65 @@ fun PickupChatScreen(
             }
         }
     ) { innerPadding ->
-        if (chatMessages.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                EmptyStateView(
-                    title = stringResource(R.string.empty_chat_title),
-                    subtitle = stringResource(R.string.empty_chat_subtitle),
-                    lottieRes = R.raw.anim_start_chat,
-                    fallbackIcon = Icons.Outlined.Forum,
-                    animationSize = 210.dp
-                )
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
-            ) {
-                items(chatMessages, key = { it.id }) { message ->
-                    ChatBubbleRow(
-                        message = message,
-                        partnerAvatarId = partnerAvatarId,
-                        onLongClick = { selectedMessageForAction = message }
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            AnimatedContent(
+                targetState = when {
+                    isLoading -> "LOADING"
+                    chatMessages.isEmpty() -> "EMPTY"
+                    else -> "CONTENT"
+                },
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+                     scaleIn(initialScale = 0.98f, animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                        .togetherWith(fadeOut(animationSpec = tween(160, easing = FastOutSlowInEasing)))
+                },
+                label = "pickup_chat_content_transition",
+                modifier = Modifier.fillMaxSize()
+            ) { targetState ->
+                when (targetState) {
+                    "LOADING" -> {
+                        com.minimize.uniswap.ui.components.AppSkeletonView(
+                            type = com.minimize.uniswap.ui.components.SkeletonType.CHAT_THREAD
+                        )
+                    }
+                    "EMPTY" -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            EmptyStateView(
+                                title = stringResource(R.string.empty_chat_title),
+                                subtitle = stringResource(R.string.empty_chat_subtitle),
+                                lottieRes = R.raw.anim_start_chat,
+                                fallbackIcon = Icons.Outlined.Forum,
+                                animationSize = 210.dp
+                            )
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp)
+                        ) {
+                            items(chatMessages, key = { it.id }) { message ->
+                                ChatBubbleRow(
+                                    message = message,
+                                    partnerAvatarId = partnerAvatarId,
+                                    onLongClick = { selectedMessageForAction = message }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

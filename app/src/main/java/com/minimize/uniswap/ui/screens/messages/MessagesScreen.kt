@@ -329,16 +329,9 @@ fun MessagesScreen(
             ) { stateKey ->
                 when (stateKey) {
                     "LOADING" -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = themeColors.textPrimary,
-                                modifier = Modifier.size(32.dp),
-                                strokeWidth = 3.dp
-                            )
-                        }
+                        com.minimize.uniswap.ui.components.AppSkeletonView(
+                            type = com.minimize.uniswap.ui.components.SkeletonType.MESSAGES_INBOX
+                        )
                     }
                     "EMPTY_UNREAD" -> {
                         Box(

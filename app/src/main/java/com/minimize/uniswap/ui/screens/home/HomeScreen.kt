@@ -1,5 +1,7 @@
 package com.minimize.uniswap.ui.screens.home
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
+import com.minimize.uniswap.ui.components.AppSkeletonView
+import com.minimize.uniswap.ui.components.SkeletonType
 import com.minimize.uniswap.ui.screens.feed.FeedViewModel
 import com.minimize.uniswap.ui.screens.home.components.HomeSectionHeader
 import com.minimize.uniswap.ui.screens.home.components.HomeTopHeader
@@ -49,6 +53,7 @@ fun HomeScreen(
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -149,82 +154,108 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (items.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    EmptyStateView(
-                        title = stringResource(R.string.empty_feed_title),
-                        subtitle = stringResource(R.string.empty_feed_subtitle),
-                        fallbackIcon = Icons.Outlined.Inventory2
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(28.dp),
-                    contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)
-                ) {
-                    // 1. Section 1: "Trending on Campus" Carousel (Endless Auto-scroll + Left/Right Peek Cards)
-                    item {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            HomeSectionHeader(
-                                title = stringResource(R.string.trending_on_campus),
-                                actionContent = {
-                                    Icon(
-                                        imageVector = Icons.Default.NorthEast,
-                                        contentDescription = stringResource(R.string.trending_on_campus),
-                                        tint = UniSwapTheme.colors.textPrimary,
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .clickable(onClick = onSeeAllClick)
-                                    )
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            TrendingCarousel(
-                                items = items,
-                                savedItemIds = savedItemIds,
-                                onSaveClick = { viewModel.toggleSaveItem(it.id) },
-                                onItemClick = onItemClick
+            AnimatedContent(
+                targetState = when {
+                    isLoading -> "LOADING"
+                    items.isEmpty() -> "EMPTY"
+                    else -> "CONTENT"
+                },
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(240, easing = FastOutSlowInEasing)) +
+                     scaleIn(initialScale = 0.98f, animationSpec = tween(240, easing = FastOutSlowInEasing)))
+                        .togetherWith(fadeOut(animationSpec = tween(160, easing = FastOutSlowInEasing)))
+                },
+                label = "home_screen_feed_transition",
+                modifier = Modifier.fillMaxSize()
+            ) { targetState ->
+                when (targetState) {
+                    "LOADING" -> {
+                        AppSkeletonView(type = SkeletonType.HOME_FEED)
+                    }
+                    "EMPTY" -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            EmptyStateView(
+                                title = stringResource(R.string.empty_feed_title),
+                                subtitle = stringResource(R.string.empty_feed_subtitle),
+                                fallbackIcon = Icons.Outlined.Inventory2
                             )
                         }
                     }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(28.dp),
+                            contentPadding = PaddingValues(top = 10.dp, bottom = 120.dp)
+                        ) {
+                            // 1. Section 1: "Trending on Campus" Carousel (Endless Auto-scroll + Left/Right Peek Cards)
+                            item {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.trending_on_campus),
+                                        actionContent = {
+                                            Icon(
+                                                imageVector = Icons.Default.NorthEast,
+                                                contentDescription = stringResource(R.string.trending_on_campus),
+                                                tint = UniSwapTheme.colors.textPrimary,
+                                                modifier = Modifier
+                                                    .size(18.dp)
+                                                    .clickable(onClick = onSeeAllClick)
+                                            )
+                                        }
+                                    )
 
-                    // 2. Section 2: "Recently Uploads" Section
-                    item {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            HomeSectionHeader(
-                                title = stringResource(R.string.recently_uploads),
-                                actionContent = {
-                                    Text(
-                                        text = stringResource(R.string.see_all),
-                                        fontFamily = MatterFontFamily,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 14.sp,
-                                        color = ActionLinkBlue,
-                                        modifier = Modifier.clickable(onClick = onSeeAllClick)
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    TrendingCarousel(
+                                        items = items,
+                                        savedItemIds = savedItemIds,
+                                        onSaveClick = { viewModel.toggleSaveItem(it.id) },
+                                        onItemClick = onItemClick
                                     )
                                 }
-                            )
+                            }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 24.dp),
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
-                            ) {
-                                items(items, key = { "recent_${it.id}" }) { item ->
-                                    RecentUploadCard(
-                                        item = item,
-                                        isSaved = item.id in savedItemIds,
-                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
-                                        onClick = { onItemClick(item) },
-                                        onLongClick = { selectedItemForAction = item }
+                            // 2. Section 2: "Recently Uploads" Section
+                            item {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    HomeSectionHeader(
+                                        title = stringResource(R.string.recently_uploads),
+                                        actionContent = {
+                                            Text(
+                                                text = stringResource(R.string.see_all),
+                                                fontFamily = MatterFontFamily,
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 14.sp,
+                                                color = ActionLinkBlue,
+                                                modifier = Modifier.clickable(onClick = onSeeAllClick)
+                                            )
+                                        }
                                     )
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    LazyRow(
+                                        contentPadding = PaddingValues(horizontal = 24.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        items(items, key = { "recent_${it.id}" }) { item ->
+                                            RecentUploadCard(
+                                                item = item,
+                                                isSaved = item.id in savedItemIds,
+                                                onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                                onClick = { onItemClick(item) },
+                                                onLongClick = { selectedItemForAction = item },
+                                                modifier = Modifier.animateItem(
+                                                    fadeInSpec = tween(220),
+                                                    fadeOutSpec = tween(160),
+                                                    placementSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                                )
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -46,6 +46,14 @@ class FeedViewModel @Inject constructor(
 
     private val _rawItems = MutableStateFlow<List<CampusItem>>(emptyList())
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = combine(
+        _isLoading,
+        com.minimize.uniswap.util.DebugConfig.forceShimmerLoading
+    ) { loading, forceShimmer ->
+        loading || forceShimmer
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
@@ -101,22 +109,30 @@ class FeedViewModel @Inject constructor(
     }
 
     private fun observeItems() {
-        _isRefreshing.value = true
         repository.getItemsFlow()
             .onEach { result ->
                 _rawItems.value = result
-                _isRefreshing.value = false
+                _isLoading.value = false
             }
-            .catch { _isRefreshing.value = false }
+            .catch { e ->
+                timber.log.Timber.e(e, "Error observing items")
+                _isLoading.value = false
+            }
             .launchIn(viewModelScope)
     }
 
     fun fetchItems() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            val result = repository.getItems()
-            _rawItems.value = result
-            _isRefreshing.value = false
+            try {
+                val result = repository.getItems()
+                _rawItems.value = result
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Failed to refresh items")
+            } finally {
+                _isRefreshing.value = false
+                _isLoading.value = false
+            }
         }
     }
 
