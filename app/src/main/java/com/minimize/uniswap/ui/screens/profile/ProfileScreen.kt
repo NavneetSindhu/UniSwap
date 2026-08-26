@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import com.minimize.uniswap.ui.components.EmptyStateView
+import com.minimize.uniswap.ui.components.verification.StudentVerificationBottomSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +60,7 @@ fun ProfileScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var isEditingAvatar by remember { mutableStateOf(false) }
+    var showVerificationSheet by remember { mutableStateOf(false) }
     val tabs = listOf(
         stringResource(R.string.profile_tab_selling),
         stringResource(R.string.profile_tab_given_away),
@@ -164,6 +166,23 @@ fun ProfileScreen(
                                     contentDescription = "Verified Student",
                                     modifier = Modifier.size(20.dp)
                                 )
+                            } else {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50.dp))
+                                        .background(colors.wasteMetricGreen.copy(alpha = 0.15f))
+                                        .clickable { showVerificationSheet = true }
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = "Verify ID",
+                                        fontFamily = MatterFontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        color = colors.wasteMetricGreen
+                                    )
+                                }
                             }
                         }
 
@@ -535,6 +554,20 @@ fun ProfileScreen(
                     }
                 }
             }
+        }
+
+        if (showVerificationSheet) {
+            StudentVerificationBottomSheet(
+                initialEmail = state.userEmail,
+                isAlreadyPending = state.isVerificationSent,
+                onDismissRequest = { showVerificationSheet = false },
+                onSendVerificationEmail = { email, studentId -> viewModel.sendVerificationEmail(email, studentId) },
+                onCheckVerificationStatus = { viewModel.checkVerificationStatus() },
+                isSendingEmail = state.isProcessingVerification,
+                isCheckingStatus = state.isProcessingVerification,
+                isVerified = state.isVerified,
+                onVerificationComplete = { showVerificationSheet = false }
+            )
         }
     }
 }

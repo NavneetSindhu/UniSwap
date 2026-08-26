@@ -52,8 +52,7 @@ import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.ui.components.AppBottomSheet
 import com.minimize.uniswap.ui.components.LocalToastHostState
-import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
-import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
+import com.minimize.uniswap.ui.components.verification.StudentVerificationBottomSheet
 import com.minimize.uniswap.ui.theme.*
 import java.util.Locale
 
@@ -115,23 +114,18 @@ fun ListProductScreen(
         }
     }
 
-    // Email Verification Nudge Barrier
-    if (uiState.showNudge) {
-        VerificationNudgeDialog(
-            onDismiss = { viewModel.dismissNudge() },
-            onVerifyClick = { viewModel.startVerificationFlow() }
-        )
-    }
-
-    if (uiState.showVerificationFlow) {
-        EmailVerificationFlow(
-            email = uiState.userEmail,
-            onSendEmail = { viewModel.sendVerificationEmail() },
-            onCheckStatus = { viewModel.checkVerificationStatus() },
-            isProcessing = uiState.isProcessingVerification,
-            isSent = uiState.isVerificationSent,
+    // Campus Student ID & Email Verification Sheet
+    if (uiState.showNudge || uiState.showVerificationFlow) {
+        StudentVerificationBottomSheet(
+            initialEmail = uiState.userEmail,
+            isAlreadyPending = uiState.isVerificationSent,
+            onDismissRequest = { viewModel.dismissNudge() },
+            onSendVerificationEmail = { email, studentId -> viewModel.sendVerificationEmail(email, studentId) },
+            onCheckVerificationStatus = { viewModel.checkVerificationStatus() },
+            isSendingEmail = uiState.isProcessingVerification,
+            isCheckingStatus = uiState.isProcessingVerification,
             isVerified = uiState.isEmailVerified,
-            onDismiss = { viewModel.dismissNudge() }
+            onVerificationComplete = { viewModel.dismissNudge() }
         )
     }
 

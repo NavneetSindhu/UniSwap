@@ -34,8 +34,7 @@ import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.ui.components.DotIndicator
 import com.minimize.uniswap.ui.components.UserAvatar
-import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
-import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
+import com.minimize.uniswap.ui.components.verification.StudentVerificationBottomSheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -94,24 +93,18 @@ fun ItemDetailsScreen(
         }
     }
 
-    // Email Verification Nudge Barrier
-    if (state.showNudge) {
-        VerificationNudgeDialog(
-            onDismiss = { viewModel.dismissNudge() },
-            onVerifyClick = { viewModel.startVerificationFlow() }
-        )
-    }
-
-    // Email Verification Flow
-    if (state.showVerificationFlow) {
-        EmailVerificationFlow(
-            email = state.userEmail,
-            onSendEmail = { viewModel.sendVerificationEmail() },
-            onCheckStatus = { viewModel.checkVerificationStatus() },
-            isProcessing = state.isProcessingVerification,
-            isSent = state.isVerificationSent,
+    // Campus Student ID & Email Verification Sheet
+    if (state.showNudge || state.showVerificationFlow) {
+        StudentVerificationBottomSheet(
+            initialEmail = state.userEmail,
+            isAlreadyPending = state.isVerificationSent,
+            onDismissRequest = { viewModel.dismissNudge() },
+            onSendVerificationEmail = { email, studentId -> viewModel.sendVerificationEmail(email, studentId) },
+            onCheckVerificationStatus = { viewModel.checkVerificationStatus() },
+            isSendingEmail = state.isProcessingVerification,
+            isCheckingStatus = state.isProcessingVerification,
             isVerified = state.isEmailVerified,
-            onDismiss = { viewModel.dismissNudge() }
+            onVerificationComplete = { viewModel.dismissNudge() }
         )
     }
 

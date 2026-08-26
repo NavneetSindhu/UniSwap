@@ -140,6 +140,35 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun sendVerificationEmail(email: String = "", studentId: String = "") {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingVerification = true) }
+            val result = authRepository.sendVerificationEmail()
+            if (result.isSuccess) {
+                preferencesManager.updateStudentVerificationDetails(
+                    collegeEmail = email.ifBlank { _uiState.value.userEmail },
+                    studentId = studentId,
+                    isPending = true,
+                    sentTimestamp = System.currentTimeMillis()
+                )
+            }
+            _uiState.update { 
+                it.copy(
+                    isProcessingVerification = false,
+                    isVerificationSent = result.isSuccess
+                )
+            }
+        }
+    }
+
+    fun checkVerificationStatus() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingVerification = true) }
+            authRepository.reloadUser()
+            _uiState.update { it.copy(isProcessingVerification = false) }
+        }
+    }
+
     /**
      * UI State for the Profile Screen
      */
@@ -151,6 +180,8 @@ class ProfileViewModel @Inject constructor(
         val campusCenter: String = "",
         val gradYear: String = "",
         val isVerified: Boolean = false,
+        val isVerificationSent: Boolean = false,
+        val isProcessingVerification: Boolean = false,
         val kgSaved: Double = 0.0,
         val co2Saved: Double = 0.0,
         val itemsRecycled: Int = 0,

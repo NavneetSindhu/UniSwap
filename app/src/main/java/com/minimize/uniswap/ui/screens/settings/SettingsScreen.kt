@@ -57,6 +57,12 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.minimize.uniswap.ui.components.AppBottomSheet
 import com.minimize.uniswap.ui.components.LocalToastHostState
+import com.minimize.uniswap.ui.components.verification.StudentVerificationBottomSheet
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
+import com.minimize.uniswap.ui.components.ReportBottomSheet
+import com.minimize.uniswap.ui.components.BlockUserDialog
+import com.minimize.uniswap.ui.components.prompt.RateAppBottomSheet
+import com.minimize.uniswap.ui.components.prompt.AppUpdateBottomSheet
 
 /**
  * Fully functional Settings Screen matching UniSwap dark aesthetic and AGENTS.md guidelines.
@@ -87,6 +93,12 @@ fun SettingsScreen(
     var showHelpDialog by remember { mutableStateOf(false) }
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showDebugVerificationSheet by remember { mutableStateOf(false) }
+    var showDebugGuestNudgeSheet by remember { mutableStateOf(false) }
+    var showDebugReportSheet by remember { mutableStateOf(false) }
+    var showDebugBlockDialog by remember { mutableStateOf(false) }
+    var showDebugReviewSheet by remember { mutableStateOf(false) }
+    var showDebugUpdateSheet by remember { mutableStateOf(false) }
     val isDeletingAccount by viewModel.isDeletingAccount.collectAsState()
 
     val toastHostState = LocalToastHostState.current
@@ -277,6 +289,138 @@ fun SettingsScreen(
                                         fontFamily = MatterFontFamily,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = stringResource(R.string.settings_test_sheets_title),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                color = themeColors.textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { showDebugVerificationSheet = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = themeColors.wasteMetricGreen.copy(alpha = 0.2f),
+                                        contentColor = themeColors.wasteMetricGreen
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_verify),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { showDebugGuestNudgeSheet = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ActionLinkBlue.copy(alpha = 0.2f),
+                                        contentColor = ActionLinkBlue
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_guest),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { showDebugReportSheet = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = CampusAmber.copy(alpha = 0.2f),
+                                        contentColor = CampusAmber
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_report),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { showDebugBlockDialog = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_block),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { showDebugReviewSheet = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = CampusAmber.copy(alpha = 0.2f),
+                                        contentColor = CampusAmber
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_review),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { showDebugUpdateSheet = true },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ActionLinkBlue.copy(alpha = 0.2f),
+                                        contentColor = ActionLinkBlue
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_sheet_update),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
                                     )
                                 }
                             }
@@ -1395,6 +1539,54 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+
+    // --- Developer Debug Sheets ---
+    if (showDebugVerificationSheet) {
+        StudentVerificationBottomSheet(
+            initialEmail = currentUser?.email ?: "student@campus.edu",
+            onDismissRequest = { showDebugVerificationSheet = false },
+            onSendVerificationEmail = { _, _ -> },
+            onCheckVerificationStatus = { },
+            isVerified = false,
+            onVerificationComplete = { showDebugVerificationSheet = false }
+        )
+    }
+
+    if (showDebugGuestNudgeSheet) {
+        GuestNudgeBottomSheet(
+            onDismissRequest = { showDebugGuestNudgeSheet = false },
+            onSignInClick = { showDebugGuestNudgeSheet = false },
+            onSignUpClick = { showDebugGuestNudgeSheet = false }
+        )
+    }
+
+    if (showDebugReportSheet) {
+        ReportBottomSheet(
+            onDismissRequest = { showDebugReportSheet = false },
+            onSubmitReport = { _, _ -> showDebugReportSheet = false }
+        )
+    }
+
+    if (showDebugBlockDialog) {
+        BlockUserDialog(
+            userName = "Senior Student",
+            onConfirmBlock = { showDebugBlockDialog = false },
+            onDismiss = { showDebugBlockDialog = false }
+        )
+    }
+
+    if (showDebugReviewSheet) {
+        RateAppBottomSheet(
+            onDismissRequest = { showDebugReviewSheet = false }
+        )
+    }
+
+    if (showDebugUpdateSheet) {
+        AppUpdateBottomSheet(
+            latestVersion = BuildConfig.VERSION_NAME.ifBlank { "1.2.0" },
+            onDismissRequest = { showDebugUpdateSheet = false }
+        )
     }
 }
 

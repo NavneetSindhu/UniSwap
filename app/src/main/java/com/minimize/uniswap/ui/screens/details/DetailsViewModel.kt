@@ -37,7 +37,9 @@ data class DetailsUiState(
 class DetailsViewModel @Inject constructor(
     private val repository: ItemRepository,
     private val authRepository: AuthRepository,
-    private val reportRepository: ReportRepository
+    private val reportRepository: ReportRepository,
+    private val preferencesManager: com.minimize.uniswap.data.preferences.UserPreferencesManager,
+    private val promptManager: com.minimize.uniswap.data.prompt.GlobalPromptManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailsUiState(isLoading = true))
@@ -56,7 +58,7 @@ class DetailsViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
         
-        // Observe User Profile for verification status
+        // Observe User Profile for verification status & preferences
         authRepository.getUserFlow()
             .onEach { user ->
                 _uiState.update { 
@@ -70,22 +72,32 @@ class DetailsViewModel @Inject constructor(
     }
 
     fun onClaimAttempt(onSuccess: () -> Unit) {
-        // Email verification requirement is disabled for now
         onSuccess()
     }
 
     fun dismissNudge() {
-        _uiState.update { it.copy(showNudge = false, showVerificationFlow = false) }
+        viewModelScope.launch {
+            promptManager.recordPromptShown(com.minimize.uniswap.data.prompt.PromptType.STUDENT_VERIFICATION)
+            _uiState.update { it.copy(showNudge = false, showVerificationFlow = false) }
+        }
     }
 
     fun startVerificationFlow() {
         _uiState.update { it.copy(showNudge = false, showVerificationFlow = true) }
     }
 
-    fun sendVerificationEmail() {
+    fun sendVerificationEmail(email: String = "", studentId: String = "") {
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingVerification = true) }
             val result = authRepository.sendVerificationEmail()
+            if (result.isSuccess) {
+                preferencesManager.updateStudentVerificationDetails(
+                    collegeEmail = email.ifBlank { _uiState.value.userEmail },
+                    studentId = studentId,
+                    isPending = true,
+                    sentTimestamp = System.currentTimeMillis()
+                )
+            }
             _uiState.update { 
                 it.copy(
                     isProcessingVerification = false,
