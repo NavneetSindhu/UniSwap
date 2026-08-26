@@ -27,4 +27,5 @@ interface AuthRepository {
     suspend fun updateCampusCenter(campusCenter: String): Result<Unit>
     val isGuestMode: StateFlow<Boolean>
     suspend fun continueAsGuest()
+    suspend fun deleteAccount(): Result<Unit>
 }

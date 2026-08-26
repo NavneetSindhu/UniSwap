@@ -236,9 +236,53 @@ class FirebaseAuthRepository @Inject constructor(
             user?.let { 
                 userRef.set(it).await()
                 Timber.d("User synced successfully.")
+                
+                // Sync FCM Token for push notifications
+                try {
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                        if (!token.isNullOrBlank()) {
+                            userRef.update("fcmToken", token)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Could not fetch FCM token on user sync")
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to sync user to Firestore: %s", e.message)
+        }
+    }
+
+    override suspend fun deleteAccount(): Result<Unit> {
+        val user = firebaseAuth.currentUser ?: return Result.failure(Exception("No user currently signed in"))
+        val uid = user.uid
+        return try {
+            Timber.i("Starting account deletion for user: %s", uid)
+            // 1. Delete user's active listings
+            val itemsSnapshot = firestore.collection("items")
+                .whereEqualTo("sellerId", uid)
+                .get()
+                .await()
+            for (doc in itemsSnapshot.documents) {
+                doc.reference.delete().await()
+            }
+            // 2. Delete user's profile document from Firestore
+            firestore.collection("users").document(uid).delete().await()
+            // 3. Delete Firebase Auth account
+            user.delete().await()
+            // 4. Clear local preferences and state
+            preferencesManager.clearAll()
+            _isGuestMode.value = false
+            Timber.i("Account deletion completed successfully for user: %s", uid)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to delete account: %s", e.message)
+            val mapped = if (e is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
+                Exception("For security reasons, please log in again before deleting your account.", e)
+            } else {
+                mapAuthException(e)
+            }
+            Result.failure(mapped)
         }
     }
 

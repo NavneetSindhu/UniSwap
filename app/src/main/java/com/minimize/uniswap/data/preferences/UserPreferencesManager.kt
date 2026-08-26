@@ -99,4 +99,10 @@ class UserPreferencesManager @Inject constructor(
     suspend fun updateGuestMode(enabled: Boolean) {
         context.dataStore.edit { it[PreferencesKeys.GUEST_MODE] = enabled }
     }
+
+    suspend fun clearAll() {
+        context.dataStore.edit { preferences ->
+            preferences.clear()
+        }
+    }
 }
