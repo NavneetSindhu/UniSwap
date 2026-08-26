@@ -9,25 +9,26 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import com.minimize.uniswap.ui.components.AppSkeletonView
-import com.minimize.uniswap.ui.components.EmptyStateView
-import com.minimize.uniswap.ui.components.SkeletonType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,18 +36,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.CampusItem
-import com.minimize.uniswap.ui.components.UserAvatar
+import com.minimize.uniswap.ui.components.*
+import com.minimize.uniswap.ui.screens.feed.components.CampusScope
 import com.minimize.uniswap.ui.screens.feed.components.DigitalNotesCard
+import com.minimize.uniswap.ui.screens.feed.components.FeedFilterBottomSheet
 import com.minimize.uniswap.ui.screens.feed.components.FeedFilterPills
+import com.minimize.uniswap.ui.screens.feed.components.FeedSortOption
 import com.minimize.uniswap.ui.screens.home.components.RecentUploadCard
 import com.minimize.uniswap.ui.theme.*
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.border
 import androidx.compose.ui.platform.LocalContext
-import com.minimize.uniswap.ui.components.BlockUserDialog
-import com.minimize.uniswap.ui.components.ItemActionBottomSheet
-import com.minimize.uniswap.ui.components.ReportBottomSheet
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
 
 /**
  * All Feed Screen ("See All" / Explore Tab).
@@ -58,6 +61,8 @@ import com.minimize.uniswap.ui.components.ReportBottomSheet
 fun CampusFeedScreen(
     onItemClick: (CampusItem) -> Unit,
     onProfileClick: () -> Unit = {},
+    onSignInClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
@@ -71,11 +76,23 @@ fun CampusFeedScreen(
     val isBlockingSeller by viewModel.isBlockingSeller.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
     val savedItemIds by viewModel.savedItemIds.collectAsStateWithLifecycle()
+    val isGuestMode by viewModel.isGuestMode.collectAsStateWithLifecycle()
+
+    val campusScope by viewModel.campusScope.collectAsStateWithLifecycle()
+    val selectedSort by viewModel.selectedSort.collectAsStateWithLifecycle()
+    val selectedCondition by viewModel.selectedCondition.collectAsStateWithLifecycle()
+    val priceRange by viewModel.priceRange.collectAsStateWithLifecycle()
+    val freeOnly by viewModel.freeOnly.collectAsStateWithLifecycle()
+    val verifiedOnly by viewModel.verifiedOnly.collectAsStateWithLifecycle()
+    val activeFilterCount by viewModel.activeFilterCount.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
     var itemToReport by remember { mutableStateOf<CampusItem?>(null) }
     var itemToBlock by remember { mutableStateOf<CampusItem?>(null) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    var isGuestNudgeOpen by remember { mutableStateOf(false) }
+    var guestNudgeSubtitle by remember { mutableStateOf("") }
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -94,17 +111,7 @@ fun CampusFeedScreen(
             sellerName = targetItem.sellerName,
             isSellerSelf = targetItem.sellerId == viewModel.currentUserId,
             onShareClick = {
-                val shareText = context.getString(
-                    R.string.action_share_text,
-                    targetItem.title,
-                    targetItem.price.toInt().toString()
-                )
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
+                com.minimize.uniswap.util.ShareUtils.shareProduct(context, targetItem)
                 selectedItemForAction = null
             },
             onReportClick = {
@@ -147,6 +154,28 @@ fun CampusFeedScreen(
         )
     }
 
+    // Filter & Sort Bottom Sheet
+    if (showFilterSheet) {
+        FeedFilterBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            campusScope = campusScope,
+            onCampusScopeChanged = { viewModel.setCampusScope(it) },
+            campusName = userProfile?.campusCenter,
+            selectedSort = selectedSort,
+            onSortSelected = { viewModel.setSortOption(it) },
+            selectedCondition = selectedCondition,
+            onConditionSelected = { viewModel.setCondition(it) },
+            priceRange = priceRange,
+            onPriceRangeChanged = { viewModel.setPriceRange(it) },
+            freeOnly = freeOnly,
+            onFreeOnlyChanged = { viewModel.setFreeOnly(it) },
+            verifiedOnly = verifiedOnly,
+            onVerifiedOnlyChanged = { viewModel.setVerifiedOnly(it) },
+            onResetAll = { viewModel.resetAllFilters() },
+            activeFilterCount = activeFilterCount
+        )
+    }
+
     Scaffold(
         containerColor = themeColors.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -158,11 +187,11 @@ fun CampusFeedScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
-                // 1. Profile Avatar (42x42) + Capsule Search Bar (50dp height)
+                // 1. Profile Avatar (42x42) + Capsule Search Bar (50dp height) + Filter Button (42x42)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Profile Icon on Left (42x42)
                     Box(
@@ -182,10 +211,10 @@ fun CampusFeedScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(50.dp)
+                            .height(48.dp)
                             .clip(CircleShape)
                             .background(themeColors.cardSurface)
-                            .padding(start = 18.dp, end = 10.dp),
+                            .padding(start = 16.dp, end = 8.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Row(
@@ -201,7 +230,7 @@ fun CampusFeedScreen(
                                         text = stringResource(R.string.search_placeholder),
                                         fontFamily = MatterFontFamily,
                                         fontWeight = FontWeight.Normal,
-                                        fontSize = 14.sp,
+                                        fontSize = 13.sp,
                                         color = themeColors.textSubtle
                                     )
                                 }
@@ -214,17 +243,17 @@ fun CampusFeedScreen(
                                         fontFamily = MatterFontFamily,
                                         fontWeight = FontWeight.Medium,
                                         color = themeColors.textPrimary,
-                                        fontSize = 14.sp
+                                        fontSize = 13.sp
                                     ),
                                     cursorBrush = SolidColor(themeColors.textPrimary),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
 
-                            // 30x30 Action Circle Icon on Right
+                            // 28x28 Search Icon
                             Box(
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(28.dp)
                                     .clip(CircleShape)
                                     .background(themeColors.textPrimary),
                                 contentAlignment = Alignment.Center
@@ -233,14 +262,59 @@ fun CampusFeedScreen(
                                     imageVector = Icons.Outlined.Search,
                                     contentDescription = stringResource(R.string.search_placeholder),
                                     tint = themeColors.background,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Filter Action Button with Unclipped Badge
+                    Box(
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        // 42x42 Circular Button Base
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(if (activeFilterCount > 0) themeColors.textPrimary else themeColors.cardSurface)
+                                .clickable { showFilterSheet = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Tune,
+                                contentDescription = stringResource(R.string.filter_sheet_title),
+                                tint = if (activeFilterCount > 0) themeColors.background else themeColors.textPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Active Filter Counter Badge
+                        if (activeFilterCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .size(18.dp)
+                                    .clip(CircleShape)
+                                    .background(SuccessGreen)
+                                    .border(1.5.dp, themeColors.background, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = activeFilterCount.toString(),
+                                    color = Color.White,
+                                    fontFamily = MatterFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    lineHeight = 10.sp
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // 2. Category Filter Pills
                 FeedFilterPills(
@@ -319,7 +393,14 @@ fun CampusFeedScreen(
                                     DigitalNotesCard(
                                         item = item,
                                         isSaved = item.id in savedItemIds,
-                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                        onSaveClick = {
+                                            if (isGuestMode) {
+                                                guestNudgeSubtitle = context.getString(R.string.guest_nudge_favorite_subtitle)
+                                                isGuestNudgeOpen = true
+                                            } else {
+                                                viewModel.toggleSaveItem(item.id)
+                                            }
+                                        },
                                         onClick = { onItemClick(item) },
                                         modifier = Modifier.animateItem(
                                             fadeInSpec = tween(220),
@@ -331,7 +412,14 @@ fun CampusFeedScreen(
                                     RecentUploadCard(
                                         item = item,
                                         isSaved = item.id in savedItemIds,
-                                        onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                        onSaveClick = {
+                                            if (isGuestMode) {
+                                                guestNudgeSubtitle = context.getString(R.string.guest_nudge_favorite_subtitle)
+                                                isGuestNudgeOpen = true
+                                            } else {
+                                                viewModel.toggleSaveItem(item.id)
+                                            }
+                                        },
                                         onClick = { onItemClick(item) },
                                         onLongClick = { selectedItemForAction = item },
                                         modifier = Modifier.animateItem(
@@ -348,4 +436,19 @@ fun CampusFeedScreen(
             }
         }
     }
-}
+
+    if (isGuestNudgeOpen) {
+        GuestNudgeBottomSheet(
+            onDismissRequest = { isGuestNudgeOpen = false },
+            onSignInClick = {
+                isGuestNudgeOpen = false
+                onSignInClick()
+            },
+            onSignUpClick = {
+                isGuestNudgeOpen = false
+                onSignUpClick()
+            },
+            subtitle = guestNudgeSubtitle
+        )
+    }
+}
