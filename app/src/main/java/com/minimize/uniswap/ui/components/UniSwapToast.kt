@@ -222,8 +222,11 @@ fun UniSwapToastHost(
     val currentToast = hostState.currentToast
     val haptic = LocalHapticFeedback.current
 
-    LaunchedEffect(currentToast?.id) {
+    var activeToast by remember { mutableStateOf<ToastData?>(null) }
+
+    LaunchedEffect(currentToast) {
         if (currentToast != null) {
+            activeToast = currentToast
             when (currentToast.type) {
                 ToastType.Error -> haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 ToastType.Success -> haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -252,12 +255,12 @@ fun UniSwapToastHost(
             ) + fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)),
             exit = slideOutVertically(
                 targetOffsetY = { -it },
-                animationSpec = tween(220, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
+                animationSpec = tween(240, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing))
         ) {
-            if (currentToast != null) {
+            activeToast?.let { toast ->
                 UniSwapToastCard(
-                    toast = currentToast,
+                    toast = toast,
                     onDismiss = { hostState.dismiss() }
                 )
             }

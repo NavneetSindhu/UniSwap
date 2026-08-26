@@ -1,99 +1,171 @@
 package com.minimize.uniswap.ui.components.nudge
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MarkEmailRead
-import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import com.minimize.uniswap.util.LottieAnimationWrapper
 import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.components.AppBottomSheet
+import com.minimize.uniswap.ui.theme.MatterFontFamily
+import com.minimize.uniswap.ui.theme.UniSwapTheme
 
+/**
+ * Modern Bottom Sheet Nudge for Unverified College Students.
+ * Explains student verification benefits and triggers the verification email workflow.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VerificationNudgeDialog(
     onDismiss: () -> Unit,
     onVerifyClick: () -> Unit
 ) {
-    Dialog(
+    val themeColors = UniSwapTheme.colors
+
+    AppBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        heightFraction = 0.85f,
+        containerColor = themeColors.cardSurface,
+        contentColor = themeColors.textPrimary
     ) {
-        Surface(
+        val dismissSheet = com.minimize.uniswap.ui.components.LocalBottomSheetDismiss.current
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Icon Badge
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .clip(CircleShape)
+                    .background(themeColors.wasteMetricGreen.copy(alpha = 0.15f))
+                    .border(1.dp, themeColors.wasteMetricGreen.copy(alpha = 0.35f), CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                // Dummy Lottie Animation
-                // LottieAnimationWrapper(
-                //     resId = R.raw.verification_nudge, 
-                //     modifier = Modifier.size(160.dp)
-                // )
-                
-                // Fallback Icon for now
                 Icon(
-                    imageVector = Icons.Default.VerifiedUser,
+                    imageVector = Icons.Outlined.School,
                     contentDescription = null,
-                    modifier = Modifier.size(80.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = themeColors.wasteMetricGreen,
+                    modifier = Modifier.size(34.dp)
                 )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Verify College Email",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "To ensure a safe campus community, we require all students to verify their university email before posting or chatting.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = onVerifyClick,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Verify Now", fontWeight = FontWeight.Bold)
-                }
-
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text("Maybe Later", color = Color.Gray)
-                }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.verification_sheet_title),
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = themeColors.textPrimary,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = stringResource(R.string.verification_sheet_subtitle),
+                fontFamily = MatterFontFamily,
+                fontSize = 13.sp,
+                color = themeColors.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Benefit 1: Badge
+            VerificationBenefitRow(
+                icon = Icons.Outlined.VerifiedUser,
+                title = stringResource(R.string.verification_benefit_1_title),
+                body = stringResource(R.string.verification_benefit_1_body),
+                tint = themeColors.wasteMetricGreen
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Benefit 2: Listings
+            VerificationBenefitRow(
+                icon = Icons.Outlined.Inventory2,
+                title = stringResource(R.string.verification_benefit_2_title),
+                body = stringResource(R.string.verification_benefit_2_body),
+                tint = themeColors.wasteMetricGreen
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Benefit 3: Chat
+            VerificationBenefitRow(
+                icon = Icons.Outlined.ChatBubbleOutline,
+                title = stringResource(R.string.verification_benefit_3_title),
+                body = stringResource(R.string.verification_benefit_3_body),
+                tint = themeColors.wasteMetricGreen
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Verify Now Button
+            Button(
+                onClick = onVerifyClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = themeColors.textPrimary,
+                    contentColor = themeColors.background
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.verification_send_link_btn),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(
+                onClick = { dismissSheet() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.verification_later_btn),
+                    fontFamily = MatterFontFamily,
+                    color = themeColors.textSubtle,
+                    fontSize = 13.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmailVerificationFlow(
     email: String,
@@ -104,115 +176,289 @@ fun EmailVerificationFlow(
     isVerified: Boolean,
     onDismiss: () -> Unit
 ) {
-    Dialog(
+    val themeColors = UniSwapTheme.colors
+
+    AppBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        heightFraction = 0.85f,
+        containerColor = themeColors.cardSurface,
+        contentColor = themeColors.textPrimary
     ) {
-        Surface(
+        val dismissSheet = com.minimize.uniswap.ui.components.LocalBottomSheetDismiss.current
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surface
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                when {
-                    isVerified -> {
+            when {
+                isVerified -> {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.wasteMetricGreen.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.VerifiedUser,
+                            imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = Color(0xFF43A047)
+                            tint = themeColors.wasteMetricGreen,
+                            modifier = Modifier.size(40.dp)
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_success_title),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = themeColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_success_body),
+                        fontFamily = MatterFontFamily,
+                        fontSize = 13.sp,
+                        color = themeColors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { dismissSheet() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = themeColors.textPrimary,
+                            contentColor = themeColors.background
+                        )
+                    ) {
                         Text(
-                            text = "Email Verified!",
-                            style = MaterialTheme.typography.titleLarge,
+                            text = stringResource(R.string.verification_continue_btn),
+                            fontFamily = MatterFontFamily,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "You've successfully verified your university identity. You can now post and chat freely!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
+                    }
+                }
+
+                !isSent -> {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.btnBackBg),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MarkEmailUnread,
+                            contentDescription = null,
+                            tint = themeColors.textPrimary,
+                            modifier = Modifier.size(36.dp)
                         )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier.fillMaxWidth().height(52.dp)
-                        ) {
-                            Text("Awesome!")
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_sheet_title),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = themeColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_sent_body, email),
+                        fontFamily = MatterFontFamily,
+                        fontSize = 13.sp,
+                        color = themeColors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = onSendEmail,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isProcessing,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = themeColors.textPrimary,
+                            contentColor = themeColors.background
+                        )
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = themeColors.background,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.verification_send_link_btn),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
-                    !isSent -> {
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(onClick = { dismissSheet() }) {
                         Text(
-                            text = "Check Your Email",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.verification_later_btn),
+                            color = themeColors.textSubtle
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "We will send a verification link to:\n$email",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Button(
-                            onClick = onSendEmail,
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            enabled = !isProcessing
-                        ) {
-                            if (isProcessing) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                            } else {
-                                Text("Send Link")
-                            }
-                        }
                     }
-                    else -> {
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(themeColors.wasteMetricGreen.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.MarkEmailRead,
                             contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = Color(0xFF43A047)
+                            tint = themeColors.wasteMetricGreen,
+                            modifier = Modifier.size(36.dp)
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Verification Sent!",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_sent_title),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = themeColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(R.string.verification_sent_body, email),
+                        fontFamily = MatterFontFamily,
+                        fontSize = 13.sp,
+                        color = themeColors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = onCheckStatus,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isProcessing,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = themeColors.textPrimary,
+                            contentColor = themeColors.background
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Please click the link in the email we sent you. Once done, click 'I've Verified'.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        Button(
-                            onClick = onCheckStatus,
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            enabled = !isProcessing
-                        ) {
-                            if (isProcessing) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                            } else {
-                                Text("I've Verified")
-                            }
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = themeColors.background,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.verification_check_status_btn),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
-                }
-                
-                if (!isVerified) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 8.dp)) {
-                        Text("Close")
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(onClick = { dismissSheet() }) {
+                        Text(
+                            text = stringResource(R.string.action_cancel),
+                            color = themeColors.textSubtle
+                        )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun VerificationBenefitRow(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    tint: Color
+) {
+    val themeColors = UniSwapTheme.colors
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(themeColors.cardSurface)
+            .border(0.75.dp, themeColors.divider, RoundedCornerShape(16.dp))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = themeColors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = body,
+                fontFamily = MatterFontFamily,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                color = themeColors.textSecondary
+            )
         }
     }
 }
