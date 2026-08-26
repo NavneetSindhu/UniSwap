@@ -32,9 +32,12 @@ class LoginViewModel @Inject constructor(
 
     var isEmailLoading by mutableStateOf(false)
     var isGoogleLoading by mutableStateOf(false)
-    val isLoading get() = isEmailLoading || isGoogleLoading
+    var isGuestLoading by mutableStateOf(false)
+    val isLoading get() = isEmailLoading || isGoogleLoading || isGuestLoading
     var errorMessage by mutableStateOf<String?>(null)
     var isSuccess by mutableStateOf(false)
+
+    val isGuestMode: kotlinx.coroutines.flow.StateFlow<Boolean> = repository.isGuestMode
 
     fun toggleAuthMode() {
         isSignUpMode = !isSignUpMode
@@ -165,6 +168,22 @@ class LoginViewModel @Inject constructor(
                 errorMessage = it.message ?: "Google Sign-In failed"
             }
             isGoogleLoading = false
+        }
+    }
+
+    fun continueAsGuest(onSuccess: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            isGuestLoading = true
+            errorMessage = null
+            Timber.d("continueAsGuest: Activating guest mode")
+            Timber.i("analytics_event: guest_activation")
+            repository.continueAsGuest()
+            isGuestLoading = false
+            if (onSuccess != null) {
+                onSuccess()
+            } else {
+                isSuccess = true
+            }
         }
     }
 }

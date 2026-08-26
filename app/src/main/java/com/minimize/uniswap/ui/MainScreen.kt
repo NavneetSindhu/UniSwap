@@ -12,7 +12,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.minimize.uniswap.ui.components.CustomBottomNav
 import com.minimize.uniswap.ui.navigation.Screen
 import com.minimize.uniswap.ui.screens.auth.LoginScreen
@@ -36,17 +39,26 @@ import com.minimize.uniswap.ui.screens.messages.MessagesScreen
 import com.minimize.uniswap.ui.screens.settings.SettingsScreen
 import com.minimize.uniswap.ui.screens.splash.SplashScreen
 import com.minimize.uniswap.ui.theme.UniSwapTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.minimize.uniswap.R
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
 import timber.log.Timber
 
 @Composable
 fun MainScreen(
     viewModel: MainViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     val hasUnreadMessages by viewModel.hasUnreadMessages.collectAsState()
+    val isGuestMode by viewModel.isGuestMode.collectAsState()
+
+    var isGuestNudgeOpen by remember { mutableStateOf(false) }
+    var guestNudgeSubtitle by remember { mutableStateOf("") }
 
     val showBottomNav = currentRoute in listOf(
         Screen.Home.route,
@@ -203,7 +215,9 @@ fun MainScreen(
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    onSignInClick = { navController.navigate(Screen.Login.route) },
+                    onSignUpClick = { navController.navigate(Screen.SignUp.route) }
                 )
             }
 
@@ -225,7 +239,9 @@ fun MainScreen(
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    onSignInClick = { navController.navigate(Screen.Login.route) },
+                    onSignUpClick = { navController.navigate(Screen.SignUp.route) }
                 )
             }
 
@@ -264,7 +280,11 @@ fun MainScreen(
 
             composable(
                 route = Screen.Details.route,
-                arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+                arguments = listOf(navArgument("itemId") { type = NavType.StringType }),
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "uniswap://item/{itemId}" },
+                    navDeepLink { uriPattern = "https://uniswap.app/item/{itemId}" }
+                )
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
                 ItemDetailsScreen(
@@ -275,7 +295,9 @@ fun MainScreen(
                     },
                     onOfferClick = { targetItemId, defaultMsg ->
                         navController.navigate(Screen.createChatRoute(targetItemId, defaultMsg))
-                    }
+                    },
+                    onSignInClick = { navController.navigate(Screen.Login.route) },
+                    onSignUpClick = { navController.navigate(Screen.SignUp.route) }
                 )
             }
 
@@ -304,7 +326,9 @@ fun MainScreen(
                     itemId = itemId,
                     initialMessage = initialMessage,
                     buyerId = buyerId,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    onSignInClick = { navController.navigate(Screen.Login.route) },
+                    onSignUpClick = { navController.navigate(Screen.SignUp.route) }
                 )
             }
 
@@ -349,6 +373,11 @@ fun MainScreen(
                 currentRoute = currentRoute ?: Screen.Home.route,
                 hasUnreadMessages = hasUnreadMessages,
                 onNavigate = { route ->
+                    if (isGuestMode && route == Screen.Sell.route) {
+                        guestNudgeSubtitle = context.getString(R.string.guest_nudge_sell_subtitle)
+                        isGuestNudgeOpen = true
+                        return@CustomBottomNav
+                    }
                     if (route == Screen.Messages.route) {
                         viewModel.markMessagesAsRead()
                     }
@@ -358,6 +387,21 @@ fun MainScreen(
                         restoreState = true
                     }
                 }
+            )
+        }
+
+        if (isGuestNudgeOpen) {
+            GuestNudgeBottomSheet(
+                onDismissRequest = { isGuestNudgeOpen = false },
+                onSignInClick = {
+                    isGuestNudgeOpen = false
+                    navController.navigate(Screen.Login.route)
+                },
+                onSignUpClick = {
+                    isGuestNudgeOpen = false
+                    navController.navigate(Screen.SignUp.route)
+                },
+                subtitle = guestNudgeSubtitle
             )
         }
     }

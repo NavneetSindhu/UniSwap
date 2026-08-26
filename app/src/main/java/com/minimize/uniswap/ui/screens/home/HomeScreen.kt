@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.minimize.uniswap.ui.components.BlockUserDialog
 import com.minimize.uniswap.ui.components.ItemActionBottomSheet
 import com.minimize.uniswap.ui.components.ReportBottomSheet
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +51,8 @@ fun HomeScreen(
     onItemClick: (CampusItem) -> Unit,
     onProfileClick: () -> Unit = {},
     onSeeAllClick: () -> Unit = {},
+    onSignInClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val items by viewModel.filteredItems.collectAsStateWithLifecycle()
@@ -61,11 +64,14 @@ fun HomeScreen(
     val isBlockingSeller by viewModel.isBlockingSeller.collectAsStateWithLifecycle()
     val userMessage by viewModel.userMessage.collectAsStateWithLifecycle()
     val savedItemIds by viewModel.savedItemIds.collectAsStateWithLifecycle()
+    val isGuestMode by viewModel.isGuestMode.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     var selectedItemForAction by remember { mutableStateOf<CampusItem?>(null) }
     var itemToReport by remember { mutableStateOf<CampusItem?>(null) }
     var itemToBlock by remember { mutableStateOf<CampusItem?>(null) }
+    var isGuestNudgeOpen by remember { mutableStateOf(false) }
+    var guestNudgeSubtitle by remember { mutableStateOf("") }
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
@@ -82,17 +88,7 @@ fun HomeScreen(
             sellerName = targetItem.sellerName,
             isSellerSelf = targetItem.sellerId == viewModel.currentUserId,
             onShareClick = {
-                val shareText = context.getString(
-                    R.string.action_share_text,
-                    targetItem.title,
-                    targetItem.price.toInt().toString()
-                )
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
+                com.minimize.uniswap.util.ShareUtils.shareProduct(context, targetItem)
                 selectedItemForAction = null
             },
             onReportClick = {
@@ -212,7 +208,14 @@ fun HomeScreen(
                                     TrendingCarousel(
                                         items = items,
                                         savedItemIds = savedItemIds,
-                                        onSaveClick = { viewModel.toggleSaveItem(it.id) },
+                                        onSaveClick = { item ->
+                                            if (isGuestMode) {
+                                                guestNudgeSubtitle = context.getString(R.string.guest_nudge_favorite_subtitle)
+                                                isGuestNudgeOpen = true
+                                            } else {
+                                                viewModel.toggleSaveItem(item.id)
+                                            }
+                                        },
                                         onItemClick = onItemClick
                                     )
                                 }
@@ -245,7 +248,14 @@ fun HomeScreen(
                                             RecentUploadCard(
                                                 item = item,
                                                 isSaved = item.id in savedItemIds,
-                                                onSaveClick = { viewModel.toggleSaveItem(item.id) },
+                                                onSaveClick = {
+                                                    if (isGuestMode) {
+                                                        guestNudgeSubtitle = context.getString(R.string.guest_nudge_favorite_subtitle)
+                                                        isGuestNudgeOpen = true
+                                                    } else {
+                                                        viewModel.toggleSaveItem(item.id)
+                                                    }
+                                                },
                                                 onClick = { onItemClick(item) },
                                                 onLongClick = { selectedItemForAction = item },
                                                 modifier = Modifier.animateItem(
@@ -263,5 +273,20 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (isGuestNudgeOpen) {
+        GuestNudgeBottomSheet(
+            onDismissRequest = { isGuestNudgeOpen = false },
+            onSignInClick = {
+                isGuestNudgeOpen = false
+                onSignInClick()
+            },
+            onSignUpClick = {
+                isGuestNudgeOpen = false
+                onSignUpClick()
+            },
+            subtitle = guestNudgeSubtitle
+        )
     }
 }

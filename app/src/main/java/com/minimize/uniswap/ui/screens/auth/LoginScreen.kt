@@ -375,7 +375,38 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Tertiary Action: Browse as Guest
+        TextButton(
+            onClick = {
+                viewModel.continueAsGuest(onSuccess = onLoginSuccess)
+            },
+            enabled = !viewModel.isLoading && !viewModel.isSuccess,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(50.dp)
+        ) {
+            if (viewModel.isGuestLoading) {
+                CircularProgressIndicator(
+                    color = themeColors.textPrimary,
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.auth_browse_as_guest),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    letterSpacing = (-0.28).sp,
+                    color = themeColors.textPrimary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // 7. Navigation link to Sign Up
         Text(

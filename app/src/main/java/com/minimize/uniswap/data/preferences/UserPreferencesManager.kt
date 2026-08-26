@@ -26,6 +26,7 @@ class UserPreferencesManager @Inject constructor(
         val IS_VERIFIED = booleanPreferencesKey("is_verified")
         val PUSH_NOTIFICATIONS = booleanPreferencesKey("push_notifications")
         val EMAIL_DIGEST = booleanPreferencesKey("email_digest")
+        val GUEST_MODE = booleanPreferencesKey("guest_mode")
     }
 
     val preferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -81,5 +82,21 @@ class UserPreferencesManager @Inject constructor(
 
     suspend fun updateEmailDigest(enabled: Boolean) {
         context.dataStore.edit { it[PreferencesKeys.EMAIL_DIGEST] = enabled }
+    }
+
+    val isGuestModeFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.GUEST_MODE] ?: false
+        }
+
+    suspend fun updateGuestMode(enabled: Boolean) {
+        context.dataStore.edit { it[PreferencesKeys.GUEST_MODE] = enabled }
     }
 }

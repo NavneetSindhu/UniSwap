@@ -3,6 +3,7 @@ package com.minimize.uniswap.data.repository
 
 import com.minimize.uniswap.data.model.User
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface AuthRepository {
     suspend fun login(email: String, password: String): Result<String>
@@ -24,4 +25,6 @@ interface AuthRepository {
     suspend fun reloadUser(): Result<Unit>
     suspend fun updateAvatar(avatarId: String): Result<Unit>
     suspend fun updateCampusCenter(campusCenter: String): Result<Unit>
+    val isGuestMode: StateFlow<Boolean>
+    suspend fun continueAsGuest()
 }

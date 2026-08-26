@@ -1,14 +1,21 @@
 package com.minimize.uniswap.data.repository.firebase
 
 import com.minimize.uniswap.data.model.User
+import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import javax.inject.Inject
@@ -17,17 +24,36 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseAuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val preferencesManager: UserPreferencesManager
 ) : AuthRepository {
 
+    private val _isGuestMode = MutableStateFlow(false)
+    override val isGuestMode: StateFlow<Boolean> = _isGuestMode.asStateFlow()
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+            preferencesManager.isGuestModeFlow.collect { isGuest ->
+                _isGuestMode.value = isGuest
+            }
+        }
+    }
+
+    override suspend fun continueAsGuest() {
+        preferencesManager.updateGuestMode(true)
+        _isGuestMode.value = true
+    }
+
     override fun isUserLoggedIn(): Boolean {
-        return firebaseAuth.currentUser != null
+        return firebaseAuth.currentUser != null || _isGuestMode.value
     }
 
     override suspend fun login(email: String, password: String): Result<String> {
         return try {
             Timber.d("Attempting login for: %s", email)
             firebaseAuth.signInWithEmailAndPassword(email.trim(), password).await()
+            preferencesManager.updateGuestMode(false)
+            _isGuestMode.value = false
             syncUserToFirestore()
             Result.success("Login successful")
         } catch (e: Exception) {
@@ -46,6 +72,8 @@ class FirebaseAuthRepository @Inject constructor(
         return try {
             Timber.d("Attempting signup for: %s", email)
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), password).await()
+            preferencesManager.updateGuestMode(false)
+            _isGuestMode.value = false
             if (displayName.isNotBlank()) {
                 val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
                     .setDisplayName(displayName)
@@ -73,6 +101,8 @@ class FirebaseAuthRepository @Inject constructor(
             Timber.d("Attempting Google sign-in with token: %s...", idToken.take(10))
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             firebaseAuth.signInWithCredential(credential).await()
+            preferencesManager.updateGuestMode(false)
+            _isGuestMode.value = false
             syncUserToFirestore()
             Result.success("Google sign-in successful")
         } catch (e: Exception) {
@@ -82,6 +112,8 @@ class FirebaseAuthRepository @Inject constructor(
     }
 
     override suspend fun logout() {
+        preferencesManager.updateGuestMode(false)
+        _isGuestMode.value = false
         firebaseAuth.signOut()
     }
 

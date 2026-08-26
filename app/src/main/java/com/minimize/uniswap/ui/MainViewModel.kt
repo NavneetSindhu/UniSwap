@@ -38,6 +38,8 @@ class MainViewModel @Inject constructor(
     private val _hasUnreadMessages = MutableStateFlow(false)
     val hasUnreadMessages: StateFlow<Boolean> = _hasUnreadMessages.asStateFlow()
 
+    val isGuestMode: StateFlow<Boolean> = authRepository.isGuestMode
+
     private val notifiedMessageTimestamps = mutableSetOf<Long>()
     private val sessionStartTime = System.currentTimeMillis()
 

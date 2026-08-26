@@ -80,6 +80,8 @@
     <string name="field_title_placeholder">eg Nike Jordan Air 1</string>
     <string name="field_category_label">Category</string>
     <string name="field_category_placeholder">Select the category</string>
+    <string name="field_condition_label">Condition</string>
+    <string name="field_condition_placeholder">Select item condition</string>
     <string name="field_price_label">Price</string>
     <string name="field_price_placeholder">₹000</string>
     <string name="field_description_label">Description</string>
@@ -420,4 +422,44 @@
     <string name="settings_section_developer">Developer &amp; QA Options</string>
     <string name="settings_force_shimmer">Preview Shimmer Skeletons</string>
     <string name="settings_force_shimmer_subtitle">Simulates loading state to preview pixel-perfect UI skeletons</string>
+
+    <!-- Feed Sort & Filter Strings -->
+    <string name="filter_campus_scope">Campus Scope</string>
+    <string name="feed_scope_my_campus">My Campus</string>
+    <string name="feed_scope_all_campuses">All Campuses</string>
+    <string name="feed_sort_newest">Newest</string>
+    <string name="feed_sort_trending">Trending 🔥</string>
+    <string name="feed_sort_price_low_high">Price: Low to High</string>
+    <string name="feed_sort_price_high_low">Price: High to Low</string>
+    <string name="filter_sheet_title">Filters &amp; Sort</string>
+    <string name="filter_sort_by">Sort By</string>
+    <string name="filter_item_condition">Item Condition</string>
+    <string name="filter_condition_any">Any Condition</string>
+    <string name="filter_condition_brand_new">Brand New</string>
+    <string name="filter_condition_like_new">Like New</string>
+    <string name="filter_condition_good">Good</string>
+    <string name="filter_condition_fair">Fair</string>
+    <string name="filter_price_range">Price Range</string>
+    <string name="filter_price_format">₹%1$d – ₹%2$d%3$s</string>
+    <string name="filter_free_only">Free Items Only</string>
+    <string name="filter_verified_only">Verified Student Sellers Only</string>
+    <string name="filter_reset_all">Reset All</string>
+    <string name="filter_apply_btn">Apply Filters</string>
+    <string name="filter_apply_with_count">Apply Filters (%1$d)</string>
+
+    <!-- Guest Mode & Action Gating -->
+    <string name="auth_browse_as_guest">Browse as Guest</string>
+    <string name="guest_nudge_title">Join your Campus Community</string>
+    <string name="guest_nudge_default_subtitle">Sign in with your campus account to message peers, list items, and save favorites.</string>
+    <string name="guest_nudge_chat_subtitle">Sign in to chat with %1$s and negotiate campus pickups.</string>
+    <string name="guest_nudge_sell_subtitle">Sign in to list items on your campus marketplace in seconds.</string>
+    <string name="guest_nudge_favorite_subtitle">Sign in to save items to your campus wishlist.</string>
+    <string name="guest_nudge_profile_subtitle">Sign in to manage your listings and university reputation.</string>
+    <string name="guest_sign_in_email">Sign In with Email</string>
+    <string name="guest_create_account">Create Student Account</string>
+    <string name="guest_nudge_sign_in_btn">Sign in to chat</string>
+
+    <!-- Centralized Sharing -->
+    <string name="share_item_template">Check out "%1$s" on UniSwap for ₹%2$d!\n\n📱 Open in UniSwap: %3$s\n📥 Get UniSwap: %4$s</string>
+    <string name="share_item_free_template">Check out "%1$s" on UniSwap (Free Giveaway)!\n\n📱 Open in UniSwap: %2$s\n📥 Get UniSwap: %3$s</string>
 </resources>
