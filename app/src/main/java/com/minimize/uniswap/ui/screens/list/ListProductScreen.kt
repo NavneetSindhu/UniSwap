@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,6 +37,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -71,10 +74,13 @@ fun ListProductScreen(
     val price by viewModel.price.collectAsStateWithLifecycle()
     val description by viewModel.description.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val customCategory by viewModel.customCategory.collectAsStateWithLifecycle()
+    val selectedCondition by viewModel.selectedCondition.collectAsStateWithLifecycle()
     val selectedImages by viewModel.selectedImages.collectAsStateWithLifecycle()
     val isPosting by viewModel.isPosting.collectAsStateWithLifecycle()
 
     var showCategorySheet by remember { mutableStateOf(false) }
+    var showConditionSheet by remember { mutableStateOf(false) }
     var categorySearchQuery by remember { mutableStateOf("") }
     var previewImageUri by remember { mutableStateOf<Uri?>(null) }
     var showPhotoSourceDialog by remember { mutableStateOf(false) }
@@ -434,47 +440,84 @@ fun ListProductScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             // 2. Form Input Fields (All in CardDarkSurface #121416, radius 22dp)
-            // Field 1: Title
+            // Field 1: Title (Single line, max 60 chars)
             ListProductCardField(
                 label = stringResource(R.string.field_title_label),
                 value = title,
                 onValueChange = { viewModel.onTitleChange(it) },
                 placeholder = stringResource(R.string.field_title_placeholder),
-                minHeight = 74.dp
+                minHeight = 74.dp,
+                singleLine = true,
+                counterText = "${title.length}/60",
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Field 2: Category (clickable dropdown)
-            ListProductCardField(
-                label = stringResource(R.string.field_category_label),
-                value = selectedCategory?.name?.replace("_", " ")?.lowercase(Locale.getDefault())
-                    ?.replaceFirstChar { it.uppercase() } ?: "",
-                onValueChange = { },
-                placeholder = stringResource(R.string.field_category_placeholder),
-                readOnly = true,
-                onClick = {
-                    categorySearchQuery = ""
-                    showCategorySheet = true
-                },
-                minHeight = 74.dp
-            )
+            // 50% / 50% Shared Row for Category & Condition Dropdowns
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Field 2: Category (clickable dropdown, 50% width)
+                val categoryDisplayValue = if (customCategory.isNotBlank()) {
+                    customCategory
+                } else {
+                    selectedCategory?.name?.replace("_", " ")?.lowercase(Locale.getDefault())
+                        ?.replaceFirstChar { it.uppercase() } ?: ""
+                }
 
-            // Field 3: Price
+                ListProductCardField(
+                    label = stringResource(R.string.field_category_label),
+                    value = categoryDisplayValue,
+                    onValueChange = { },
+                    placeholder = stringResource(R.string.field_category_placeholder),
+                    readOnly = true,
+                    onClick = {
+                        categorySearchQuery = ""
+                        showCategorySheet = true
+                    },
+                    minHeight = 74.dp,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Field 3: Condition (clickable dropdown, 50% width)
+                ListProductCardField(
+                    label = stringResource(R.string.field_condition_label),
+                    value = selectedCondition,
+                    onValueChange = { },
+                    placeholder = stringResource(R.string.field_condition_placeholder),
+                    readOnly = true,
+                    onClick = {
+                        showConditionSheet = true
+                    },
+                    minHeight = 74.dp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Field 4: Price (Numbers only, max 6 digits)
             ListProductCardField(
                 label = stringResource(R.string.field_price_label),
                 value = price,
                 onValueChange = { viewModel.onPriceChange(it) },
                 placeholder = stringResource(R.string.field_price_placeholder),
-                minHeight = 74.dp
+                minHeight = 74.dp,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Field 4: Description
+            // Field 5: Description (Multi-line, max 500 chars)
             ListProductCardField(
                 label = stringResource(R.string.field_description_label),
                 value = description,
                 onValueChange = { viewModel.onDescriptionChange(it) },
                 placeholder = stringResource(R.string.field_description_placeholder),
                 minHeight = 150.dp,
-                singleLine = false
+                singleLine = false,
+                counterText = "${description.length}/500",
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -494,6 +537,8 @@ fun ListProductScreen(
                 containerColor = themeColors.cardSurface,
                 contentColor = themeColors.textPrimary
             ) {
+                val dismissSheet = com.minimize.uniswap.ui.components.LocalBottomSheetDismiss.current
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -569,8 +614,8 @@ fun ListProductScreen(
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(themeColors.btnBackBg)
                                         .clickable {
-                                            viewModel.onCategoryChange(ItemCategory.OTHER)
-                                            showCategorySheet = false
+                                            viewModel.onCustomCategoryAdded(trimmedQuery)
+                                            dismissSheet()
                                         }
                                         .padding(vertical = 14.dp, horizontal = 14.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -595,7 +640,7 @@ fun ListProductScreen(
                         }
 
                         items(filteredCategories) { category ->
-                            val isSelected = selectedCategory == category
+                            val isSelected = selectedCategory == category && customCategory.isBlank()
                             val formattedName = category.name
                                 .replace("_", " ")
                                 .lowercase(Locale.getDefault())
@@ -606,7 +651,7 @@ fun ListProductScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         viewModel.onCategoryChange(category)
-                                        showCategorySheet = false
+                                        dismissSheet()
                                     }
                                     .padding(vertical = 14.dp, horizontal = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -616,6 +661,77 @@ fun ListProductScreen(
                                     text = formattedName,
                                     fontFamily = MatterFontFamily,
                                     fontSize = 14.sp,
+                                    color = if (isSelected) themeColors.textPrimary else themeColors.textSecondary,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = themeColors.textPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            HorizontalDivider(thickness = 0.8.dp, color = PaletteDark.Gray700)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Condition Picker Bottom Sheet
+        if (showConditionSheet) {
+            val conditions = listOf(
+                Pair("Brand New", stringResource(R.string.filter_condition_brand_new)),
+                Pair("Like New", stringResource(R.string.filter_condition_like_new)),
+                Pair("Good", stringResource(R.string.filter_condition_good)),
+                Pair("Fair", stringResource(R.string.filter_condition_fair))
+            )
+
+            AppBottomSheet(
+                onDismissRequest = { showConditionSheet = false },
+                heightFraction = 0.45f,
+                containerColor = themeColors.cardSurface,
+                contentColor = themeColors.textPrimary
+            ) {
+                val dismissSheet = com.minimize.uniswap.ui.components.LocalBottomSheetDismiss.current
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.field_condition_placeholder),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = themeColors.textPrimary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(conditions) { (conditionKey, displayName) ->
+                            val isSelected = selectedCondition.equals(conditionKey, ignoreCase = true)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.onConditionChange(conditionKey)
+                                        dismissSheet()
+                                    }
+                                    .padding(vertical = 16.dp, horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = displayName,
+                                    fontFamily = MatterFontFamily,
+                                    fontSize = 15.sp,
                                     color = if (isSelected) themeColors.textPrimary else themeColors.textSecondary,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                 )
@@ -801,17 +917,18 @@ private fun ListProductCardField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    minHeight: Dp = 74.dp,
+    minHeight: Dp,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     readOnly: Boolean = false,
+    counterText: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onClick: () -> Unit = {}
 ) {
     val themeColors = UniSwapTheme.colors
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .heightIn(min = minHeight)
             .clip(RoundedCornerShape(22.dp))
             .background(themeColors.cardSurface)
@@ -819,14 +936,29 @@ private fun ListProductCardField(
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = if (singleLine) Arrangement.Center else Arrangement.Top
     ) {
-        Text(
-            text = label,
-            fontFamily = MatterFontFamily,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            letterSpacing = (-0.26).sp,
-            color = themeColors.textPrimary
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                fontFamily = MatterFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                letterSpacing = (-0.26).sp,
+                color = themeColors.textPrimary
+            )
+            if (!counterText.isNullOrBlank()) {
+                Text(
+                    text = counterText,
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp,
+                    color = themeColors.textSubtle
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -883,6 +1015,7 @@ private fun ListProductCardField(
                         letterSpacing = (-0.26).sp
                     ),
                     singleLine = singleLine,
+                    keyboardOptions = keyboardOptions,
                     cursorBrush = SolidColor(themeColors.textPrimary)
                 )
             }

@@ -59,6 +59,12 @@ class ListViewModel @Inject constructor(
     private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
     val selectedCategory = _selectedCategory.asStateFlow()
 
+    private val _customCategory = MutableStateFlow("")
+    val customCategory = _customCategory.asStateFlow()
+
+    private val _selectedCondition = MutableStateFlow<String>("Good")
+    val selectedCondition = _selectedCondition.asStateFlow()
+
     private val _selectedImages = MutableStateFlow<List<Uri>>(emptyList())
     val selectedImages = _selectedImages.asStateFlow()
 
@@ -78,20 +84,44 @@ class ListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    companion object {
+        const val MAX_TITLE_LENGTH = 60
+        const val MAX_DESCRIPTION_LENGTH = 500
+        const val MAX_PRICE_DIGITS = 6 // Up to ₹999,999
+    }
+
     fun onTitleChange(newTitle: String) { 
-        _title.value = newTitle 
-        if (_uiState.value.errorMessage != null) clearError()
+        val sanitized = newTitle.replace("\n", "")
+        if (sanitized.length <= MAX_TITLE_LENGTH) {
+            _title.value = sanitized 
+            if (_uiState.value.errorMessage != null) clearError()
+        }
     }
     fun onPriceChange(newPrice: String) { 
-        _price.value = newPrice 
-        if (_uiState.value.errorMessage != null) clearError()
+        val digitsOnly = newPrice.filter { it.isDigit() }
+        if (digitsOnly.length <= MAX_PRICE_DIGITS) {
+            _price.value = digitsOnly 
+            if (_uiState.value.errorMessage != null) clearError()
+        }
     }
     fun onDescriptionChange(newDescription: String) { 
-        _description.value = newDescription 
-        if (_uiState.value.errorMessage != null) clearError()
+        if (newDescription.length <= MAX_DESCRIPTION_LENGTH) {
+            _description.value = newDescription 
+            if (_uiState.value.errorMessage != null) clearError()
+        }
     }
     fun onCategoryChange(category: ItemCategory) { 
         _selectedCategory.value = category 
+        _customCategory.value = ""
+        if (_uiState.value.errorMessage != null) clearError()
+    }
+    fun onCustomCategoryAdded(customCategoryName: String) {
+        _selectedCategory.value = ItemCategory.OTHER
+        _customCategory.value = customCategoryName.trim()
+        if (_uiState.value.errorMessage != null) clearError()
+    }
+    fun onConditionChange(condition: String) {
+        _selectedCondition.value = condition
         if (_uiState.value.errorMessage != null) clearError()
     }
 
@@ -156,8 +186,19 @@ class ListViewModel @Inject constructor(
     }
 
     fun onPostAttempt(onSuccess: () -> Unit) {
-        if (_title.value.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter an item title") }
+        val trimmedTitle = _title.value.trim()
+        if (trimmedTitle.length < 3) {
+            _uiState.update { it.copy(errorMessage = "Please enter an item title (at least 3 characters)") }
+            return
+        }
+
+        if (_selectedCategory.value == null && _customCategory.value.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please select or enter a category for your item") }
+            return
+        }
+
+        if (_price.value.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter a price (enter 0 for free giveaway)") }
             return
         }
 
@@ -232,6 +273,8 @@ class ListViewModel @Inject constructor(
                 description = _description.value.ifBlank { "No description provided." },
                 price = currentPrice,
                 category = _selectedCategory.value ?: ItemCategory.OTHER,
+                customCategory = _customCategory.value.trim(),
+                condition = _selectedCondition.value.ifBlank { "Good" },
                 location = "Campus",
                 sellerId = userId,
                 sellerName = sellerDisplayName,
