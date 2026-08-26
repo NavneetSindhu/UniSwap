@@ -31,8 +31,17 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+
+/**
+ * CompositionLocal providing an animated slide-down dismissal trigger for any child inside AppBottomSheet.
+ */
+val LocalBottomSheetDismiss = staticCompositionLocalOf<() -> Unit> { {} }
+
 /**
  * Reusable Bottom Sheet supporting both fixed height bounds and wrap-content layouts.
+ * Provides unified smooth slide-down exit animations via LocalBottomSheetDismiss.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +61,16 @@ fun AppBottomSheet(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
+    val dismissWithAnimation: () -> Unit = {
+        coroutineScope.launch {
+            sheetState.hide()
+        }.invokeOnCompletion {
+            if (!sheetState.isVisible) {
+                onDismissRequest()
+            }
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
@@ -62,68 +81,62 @@ fun AppBottomSheet(
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         modifier = modifier
     ) {
-        Box(
-            modifier = if (heightFraction != null) {
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(heightFraction)
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-            }
-        ) {
-            Column(
+        CompositionLocalProvider(LocalBottomSheetDismiss provides dismissWithAnimation) {
+            Box(
                 modifier = if (heightFraction != null) {
                     Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()
+                        .fillMaxWidth()
+                        .fillMaxHeight(heightFraction)
                 } else {
                     Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .navigationBarsPadding()
                 }
             ) {
-                // Header Bar with Drag Handle & Theme-Aware Close Button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
+                Column(
+                    modifier = if (heightFraction != null) {
+                        Modifier
+                            .fillMaxSize()
+                            .navigationBarsPadding()
+                    } else {
+                        Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .navigationBarsPadding()
+                    }
                 ) {
-                    if (dragHandle != null) {
-                        Box(
-                            modifier = Modifier.align(Alignment.Center)
-                        ) {
-                            dragHandle()
+                    // Header Bar with Drag Handle & Theme-Aware Close Button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        if (dragHandle != null) {
+                            Box(
+                                modifier = Modifier.align(Alignment.Center)
+                            ) {
+                                dragHandle()
+                            }
+                        }
+
+                        if (showCloseIcon) {
+                            IconButton(
+                                onClick = dismissWithAnimation,
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close Sheet",
+                                    tint = contentColor.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
 
-                    if (showCloseIcon) {
-                        IconButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    sheetState.hide()
-                                }.invokeOnCompletion {
-                                    if (!sheetState.isVisible) {
-                                        onDismissRequest()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.align(Alignment.CenterEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close Sheet",
-                                tint = contentColor.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                    // Slot Content
+                    content()
                 }
-
-                // Slot Content
-                content()
             }
         }
     }

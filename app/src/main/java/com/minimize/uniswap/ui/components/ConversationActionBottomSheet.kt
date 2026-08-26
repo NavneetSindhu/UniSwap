@@ -1,4 +1,4 @@
-﻿package com.minimize.uniswap.ui.components
+package com.minimize.uniswap.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -82,20 +82,28 @@ fun ConversationActionBottomSheet(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
 
+            val dismissSheet = LocalBottomSheetDismiss.current
+
             // Action: Delete Conversation
             ActionSheetRow(
                 icon = Icons.Outlined.Delete,
                 title = stringResource(R.string.action_delete_conversation),
                 iconTint = MaterialTheme.colorScheme.error,
                 textColor = MaterialTheme.colorScheme.error,
-                onClick = onDeleteConversationClick
+                onClick = {
+                    dismissSheet()
+                    onDeleteConversationClick()
+                }
             )
 
             // Action: Report User
             ActionSheetRow(
                 icon = Icons.Outlined.Flag,
                 title = stringResource(R.string.action_report_user),
-                onClick = onReportClick
+                onClick = {
+                    dismissSheet()
+                    onReportClick()
+                }
             )
 
             // Action: Block User
@@ -104,7 +112,10 @@ fun ConversationActionBottomSheet(
                 title = stringResource(R.string.action_block_seller),
                 iconTint = MaterialTheme.colorScheme.error,
                 textColor = MaterialTheme.colorScheme.error,
-                onClick = onBlockClick
+                onClick = {
+                    dismissSheet()
+                    onBlockClick()
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

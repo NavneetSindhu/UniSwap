@@ -84,11 +84,16 @@ fun ItemActionBottomSheet(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
 
+            val dismissSheet = LocalBottomSheetDismiss.current
+
             // Action: Share
             ActionSheetRow(
                 icon = Icons.Outlined.Share,
                 title = stringResource(R.string.action_share_listing),
-                onClick = onShareClick
+                onClick = {
+                    dismissSheet()
+                    onShareClick()
+                }
             )
 
             // Actions for other users' listings (Report & Block)
@@ -97,14 +102,20 @@ fun ItemActionBottomSheet(
                     icon = Icons.Outlined.Flag,
                     title = stringResource(R.string.action_report_listing),
                     iconTint = MaterialTheme.colorScheme.error,
-                    onClick = onReportClick
+                    onClick = {
+                        dismissSheet()
+                        onReportClick()
+                    }
                 )
 
                 ActionSheetRow(
                     icon = Icons.Outlined.Block,
                     title = stringResource(R.string.action_block_seller),
                     iconTint = MaterialTheme.colorScheme.error,
-                    onClick = onBlockClick
+                    onClick = {
+                        dismissSheet()
+                        onBlockClick()
+                    }
                 )
             }
 

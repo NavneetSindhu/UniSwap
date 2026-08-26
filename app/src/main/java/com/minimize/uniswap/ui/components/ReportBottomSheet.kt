@@ -124,8 +124,9 @@ fun ReportBottomSheet(
                     .padding(bottom = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val dismissSheet = LocalBottomSheetDismiss.current
                 OutlinedButton(
-                    onClick = onDismissRequest,
+                    onClick = dismissSheet,
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),

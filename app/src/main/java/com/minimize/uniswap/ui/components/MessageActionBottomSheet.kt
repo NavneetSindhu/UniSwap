@@ -1,4 +1,4 @@
-﻿package com.minimize.uniswap.ui.components
+package com.minimize.uniswap.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -72,12 +72,17 @@ fun MessageActionBottomSheet(
                 modifier = Modifier.padding(bottom = 6.dp)
             )
 
+            val dismissSheet = LocalBottomSheetDismiss.current
+
             // Action: Copy (only if not deleted)
             if (!isDeleted && messageText.isNotBlank()) {
                 ActionSheetRow(
                     icon = Icons.Outlined.ContentCopy,
                     title = stringResource(R.string.action_copy_text),
-                    onClick = onCopyClick
+                    onClick = {
+                        dismissSheet()
+                        onCopyClick()
+                    }
                 )
             }
 
@@ -87,7 +92,10 @@ fun MessageActionBottomSheet(
                 ActionSheetRow(
                     icon = Icons.Outlined.Edit,
                     title = stringResource(R.string.action_edit_message),
-                    onClick = onEditClick
+                    onClick = {
+                        dismissSheet()
+                        onEditClick()
+                    }
                 )
 
                 // Action: Delete
@@ -96,7 +104,10 @@ fun MessageActionBottomSheet(
                     title = stringResource(R.string.action_delete_message),
                     iconTint = MaterialTheme.colorScheme.error,
                     textColor = MaterialTheme.colorScheme.error,
-                    onClick = onDeleteClick
+                    onClick = {
+                        dismissSheet()
+                        onDeleteClick()
+                    }
                 )
             }
 
