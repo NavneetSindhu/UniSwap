@@ -23,6 +23,10 @@ data class UserPreferences(
     val typographyStyle: TypographyStyle = TypographyStyle.MODERN,
     val campusCenter: String = "Main Campus",
     val isVerified: Boolean = false,
+    val collegeEmail: String = "",
+    val studentId: String = "",
+    val isVerificationPending: Boolean = false,
+    val verificationSentTimestamp: Long = 0L,
     val pushNotificationsEnabled: Boolean = true,
     val emailDigestEnabled: Boolean = false
 )
