@@ -494,6 +494,10 @@
     <!-- Campus Email Verification -->
     <string name="verification_sheet_title">Verify Campus Student Identity 🎓</string>
     <string name="verification_sheet_subtitle">UniSwap is exclusively for verified college students. Verify your student email to list items and message peers.</string>
+    <string name="verification_email_label">Campus Student Email</string>
+    <string name="verification_email_placeholder">e.g. rollno@campus.edu</string>
+    <string name="verification_studentid_label">College Roll No / Student ID (Optional)</string>
+    <string name="verification_studentid_placeholder">e.g. 2023BCSE042</string>
     <string name="verification_benefit_1_title">Verified Student Badge</string>
     <string name="verification_benefit_1_body">Gain immediate trust with peers across your college campus</string>
     <string name="verification_benefit_2_title">Unlimited Marketplace Listings</string>
@@ -503,11 +507,14 @@
     <string name="verification_send_link_btn">Send Verification Link</string>
     <string name="verification_sent_title">Verification Link Sent! ✉️</string>
     <string name="verification_sent_body">We sent a verification email to %1$s. Click the link in your inbox, then tap below.</string>
+    <string name="verification_resend_timer">Resend link in %1$ds</string>
+    <string name="verification_resend_action">Resend Link</string>
     <string name="verification_check_status_btn">I\'ve Verified My Email</string>
     <string name="verification_success_title">Campus Identity Verified! 🎉</string>
     <string name="verification_success_body">You are now a verified student member of UniSwap. Happy trading!</string>
     <string name="verification_continue_btn">Awesome, Let\'s Go!</string>
     <string name="verification_later_btn">Maybe Later</string>
+    <string name="error_invalid_email">Please enter a valid campus email address</string>
 
     <!-- Network & Debug Strings -->
     <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
@@ -521,4 +528,35 @@
     <string name="settings_test_toast_error">Error</string>
     <string name="settings_test_toast_warning">Warning</string>
     <string name="settings_test_toast_info">Info</string>
+    <string name="settings_test_sheets_title">Test Prompt &amp; Nudge Sheets</string>
+    <string name="settings_test_sheet_verify">Verify ID Sheet</string>
+    <string name="settings_test_sheet_guest">Guest Nudge</string>
+    <string name="settings_test_sheet_report">Report Sheet</string>
+    <string name="settings_test_sheet_block">Block Dialog</string>
+    <string name="settings_test_sheet_review">Review Sheet</string>
+    <string name="settings_test_sheet_update">Update Sheet</string>
+
+    <!-- App Review & Rating Sheet -->
+    <string name="review_sheet_title">Enjoying UniSwap?</string>
+    <string name="review_sheet_subtitle">Your feedback helps make campus trading safer and faster for everyone!</string>
+    <string name="review_tag_fast_trades">⚡ Fast Trades</string>
+    <string name="review_tag_safe_pickups">🛡️ Safe Pickups</string>
+    <string name="review_tag_great_ui">🎨 Beautiful UI</string>
+    <string name="review_tag_student_community">🎓 Student Community</string>
+    <string name="review_tag_bug_report">🐛 Found Bugs</string>
+    <string name="review_feedback_placeholder">Tell us what you love or what we should improve...</string>
+    <string name="review_submit_btn">Submit Feedback</string>
+    <string name="review_playstore_btn">Rate on Google Play ⭐</string>
+    <string name="review_later_btn">Maybe Later</string>
+
+    <!-- App Update Sheet -->
+    <string name="update_sheet_title">New Version Available! 🚀</string>
+    <string name="update_sheet_subtitle">Upgrade to UniSwap %1$s for the latest features, performance boosts, and bug fixes.</string>
+    <string name="update_whats_new_title">What\'s New</string>
+    <string name="update_feature_1">🎓 Campus &amp; Student ID Verification Flow</string>
+    <string name="update_feature_2">⚡ Faster instant search &amp; filter indexing</string>
+    <string name="update_feature_3">🔔 Offline drop-in header &amp; connectivity alerts</string>
+    <string name="update_feature_4">🎨 Theme enhancements &amp; ultra-smooth animations</string>
+    <string name="update_now_btn">Update Now</string>
+    <string name="update_later_btn">Not Now</string>
 </resources>
