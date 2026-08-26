@@ -20,6 +20,7 @@ data class DetailsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val currentUserId: String = "",
+    val isGuestMode: Boolean = false,
     val isEmailVerified: Boolean = false,
     val userEmail: String = "",
     val showNudge: Boolean = false,
@@ -48,6 +49,12 @@ class DetailsViewModel @Inject constructor(
     init {
         val currentUid = authRepository.getCurrentUserId() ?: ""
         _uiState.update { it.copy(currentUserId = currentUid) }
+
+        authRepository.isGuestMode
+            .onEach { isGuest ->
+                _uiState.update { it.copy(isGuestMode = isGuest) }
+            }
+            .launchIn(viewModelScope)
         
         // Observe User Profile for verification status
         authRepository.getUserFlow()

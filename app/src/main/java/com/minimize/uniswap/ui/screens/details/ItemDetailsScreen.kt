@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.minimize.uniswap.ui.components.BlockUserDialog
 import com.minimize.uniswap.ui.components.ItemActionBottomSheet
 import com.minimize.uniswap.ui.components.ReportBottomSheet
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
 
 @Composable
 fun ItemDetailsScreen(
@@ -63,6 +64,8 @@ fun ItemDetailsScreen(
     onBackClick: () -> Unit = {},
     onChatClick: (String) -> Unit = {},
     onOfferClick: (String, String) -> Unit = { _, _ -> },
+    onSignInClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {},
     viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -71,6 +74,8 @@ fun ItemDetailsScreen(
     var isActionSheetOpen by remember { mutableStateOf(false) }
     var isReportSheetOpen by remember { mutableStateOf(false) }
     var isBlockDialogOpen by remember { mutableStateOf(false) }
+    var isGuestNudgeOpen by remember { mutableStateOf(false) }
+    var guestNudgeSubtitle by remember { mutableStateOf("") }
 
     LaunchedEffect(itemId) {
         viewModel.getItem(itemId)
@@ -92,6 +97,7 @@ fun ItemDetailsScreen(
         )
     }
 
+    // Email Verification Flow
     if (state.showVerificationFlow) {
         EmailVerificationFlow(
             email = state.userEmail,
@@ -104,26 +110,16 @@ fun ItemDetailsScreen(
         )
     }
 
-    // Safety & Moderation Dialogs / Sheets
+    // Item Action Menu (Share, Report, Block)
     if (isActionSheetOpen && state.item != null) {
-        val currentItem = state.item!!
         ItemActionBottomSheet(
             onDismissRequest = { isActionSheetOpen = false },
-            itemTitle = currentItem.title,
-            sellerName = currentItem.sellerName,
-            isSellerSelf = currentItem.sellerId == state.currentUserId,
+            itemTitle = state.item!!.title,
+            sellerName = state.item!!.sellerName,
+            isSellerSelf = state.item!!.sellerId == state.currentUserId,
             onShareClick = {
-                val shareText = context.getString(
-                    R.string.action_share_text,
-                    currentItem.title,
-                    currentItem.price.toInt().toString()
-                )
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.action_share_listing)))
+                com.minimize.uniswap.util.ShareUtils.shareProduct(context, state.item!!)
+                isActionSheetOpen = false
             },
             onReportClick = {
                 isActionSheetOpen = false
@@ -136,6 +132,7 @@ fun ItemDetailsScreen(
         )
     }
 
+    // Report Bottom Sheet
     if (isReportSheetOpen && state.item != null) {
         ReportBottomSheet(
             onDismissRequest = { isReportSheetOpen = false },
@@ -150,16 +147,15 @@ fun ItemDetailsScreen(
         )
     }
 
+    // Block User Dialog
     if (isBlockDialogOpen && state.item != null) {
         BlockUserDialog(
             userName = state.item!!.sellerName,
             isBlocking = state.isBlockingSeller,
             onConfirmBlock = {
-                viewModel.blockSeller { success ->
+                viewModel.blockSeller {
                     isBlockDialogOpen = false
-                    if (success) {
-                        onBackClick()
-                    }
+                    onBackClick()
                 }
             },
             onDismiss = { isBlockDialogOpen = false }
@@ -184,15 +180,38 @@ fun ItemDetailsScreen(
                     item = state.item!!,
                     currentUserId = state.currentUserId,
                     isSaved = state.isSaved,
-                    onSaveClick = { viewModel.toggleSaveItem() },
+                    onSaveClick = {
+                        if (state.isGuestMode) {
+                            guestNudgeSubtitle = context.getString(R.string.guest_nudge_favorite_subtitle)
+                            isGuestNudgeOpen = true
+                        } else {
+                            viewModel.toggleSaveItem()
+                        }
+                    },
                     onBackClick = onBackClick,
                     onActionMenuClick = { isActionSheetOpen = true },
                     onChatClick = {
-                        onChatClick(state.item!!.id)
+                        if (state.isGuestMode) {
+                            guestNudgeSubtitle = context.getString(
+                                R.string.guest_nudge_chat_subtitle,
+                                state.item?.sellerName ?: "seller"
+                            )
+                            isGuestNudgeOpen = true
+                        } else {
+                            onChatClick(state.item!!.id)
+                        }
                     },
                     onOfferClick = {
-                        val defaultOfferMessage = "Hi! I would like to buy ${state.item!!.title} for ₹${state.item!!.price.toInt()}."
-                        onOfferClick(state.item!!.id, defaultOfferMessage)
+                        if (state.isGuestMode) {
+                            guestNudgeSubtitle = context.getString(
+                                R.string.guest_nudge_chat_subtitle,
+                                state.item?.sellerName ?: "seller"
+                            )
+                            isGuestNudgeOpen = true
+                        } else {
+                            val defaultOfferMessage = "Hi! I would like to buy ${state.item!!.title} for ₹${state.item!!.price.toInt()}."
+                            onOfferClick(state.item!!.id, defaultOfferMessage)
+                        }
                     },
                     onToggleSold = { viewModel.markAsSold() },
                     onDeleteClick = { viewModel.deleteListing { onBackClick() } }
@@ -216,6 +235,21 @@ fun ItemDetailsScreen(
                 }
             }
         }
+    }
+
+    if (isGuestNudgeOpen) {
+        GuestNudgeBottomSheet(
+            onDismissRequest = { isGuestNudgeOpen = false },
+            onSignInClick = {
+                isGuestNudgeOpen = false
+                onSignInClick()
+            },
+            onSignUpClick = {
+                isGuestNudgeOpen = false
+                onSignUpClick()
+            },
+            subtitle = guestNudgeSubtitle
+        )
     }
 }
 
