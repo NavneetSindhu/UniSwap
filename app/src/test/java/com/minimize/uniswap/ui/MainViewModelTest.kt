@@ -3,7 +3,7 @@ package com.minimize.uniswap.ui
 import android.content.Context
 import app.cash.turbine.test
 import com.minimize.uniswap.data.model.ChatThread
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.preferences.UserPreferences
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.repository.AuthRepository
@@ -32,7 +32,7 @@ class MainViewModelTest {
 
     private lateinit var viewModel: MainViewModel
 
-    private val sampleUser = UserProfile(uid = "user_main_1", displayName = "Main User")
+    private val sampleUser = User(uid = "user_main_1", displayName = "Main User")
     private val samplePrefs = UserPreferences(campusCenter = "Main Campus")
 
     private val unreadThread = ChatThread(

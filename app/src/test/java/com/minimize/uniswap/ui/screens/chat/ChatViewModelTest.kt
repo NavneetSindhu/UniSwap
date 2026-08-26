@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.data.model.Message
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ItemRepository
@@ -51,7 +51,7 @@ class ChatViewModelTest {
     fun setUp() {
         every { authRepository.getCurrentUserId() } returns "buyer_123"
         every { authRepository.isGuestMode } returns MutableStateFlow(false)
-        every { authRepository.getCurrentUser() } returns UserProfile(uid = "buyer_123", displayName = "Buyer Bob")
+        every { authRepository.getCurrentUser() } returns User(uid = "buyer_123", displayName = "Buyer Bob")
         every { reportRepository.getBlockedUserIdsFlow() } returns MutableStateFlow(emptySet())
         every { itemRepository.getItemByIdFlow("item_chat_1") } returns flowOf(sampleItem)
         every { chatRepository.getMessages("item_chat_1", "buyer_123", "seller_999") } returns flowOf(sampleMessages)

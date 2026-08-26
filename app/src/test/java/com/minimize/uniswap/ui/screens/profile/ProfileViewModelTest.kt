@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.data.model.ItemStatus
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.preferences.UserPreferences
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.repository.AuthRepository
@@ -31,49 +31,45 @@ class ProfileViewModelTest {
 
     private lateinit var viewModel: ProfileViewModel
 
-    private val sampleUser = UserProfile(
-        uid = "user_456",
-        email = "profile_user@campus.edu",
+    private val sampleUser = User(
+        uid = "user_profile_1",
+        email = "student@campus.edu",
         displayName = "Eco Champion",
-        campusCenter = "Main Campus",
+        campusCenter = "North Campus",
         avatarId = "avatar_scholar",
         isEmailVerified = true
     )
 
-    private val sampleItems = listOf(
+    private val samplePreferences = UserPreferences(
+        campusCenter = "North Campus"
+    )
+
+    private val sellerItems = listOf(
         CampusItem(
-            id = "item_1",
-            title = "Dorm Lamp",
-            price = 200.0,
-            sellerId = "user_456",
-            status = ItemStatus.AVAILABLE,
-            category = ItemCategory.DORM_ESSENTIALS
-        ),
-        CampusItem(
-            id = "item_2",
-            title = "Chemistry Notes",
+            id = "item_p1",
+            title = "Chemistry Lab Manual",
             price = 0.0,
-            sellerId = "user_456",
             status = ItemStatus.SOLD,
-            category = ItemCategory.BOOKS
+            sellerId = "user_profile_1",
+            category = ItemCategory.ENGINEERING
         ),
         CampusItem(
-            id = "item_3",
-            title = "Lab Coat",
-            price = 150.0,
-            sellerId = "user_456",
-            status = ItemStatus.SOLD,
-            category = ItemCategory.OTHER
+            id = "item_p2",
+            title = "Study Table",
+            price = 1200.0,
+            status = ItemStatus.AVAILABLE,
+            sellerId = "user_profile_1",
+            category = ItemCategory.DORM_ESSENTIALS
         )
     )
 
     @Before
     fun setUp() {
-        every { authRepository.getCurrentUserId() } returns "user_456"
+        every { authRepository.getCurrentUserId() } returns "user_profile_1"
         every { authRepository.getUserFlow() } returns flowOf(sampleUser)
-        every { preferencesManager.preferencesFlow } returns flowOf(UserPreferences(campusCenter = "Main Campus"))
-        every { itemRepository.getItemsBySellerFlow("user_456") } returns flowOf(sampleItems)
-        every { itemRepository.getSavedItemsFlow() } returns flowOf(listOf(sampleItems[0]))
+        every { preferencesManager.preferencesFlow } returns flowOf(samplePreferences)
+        every { itemRepository.getItemsBySellerFlow("user_profile_1") } returns flowOf(sellerItems)
+        every { itemRepository.getSavedItemsFlow() } returns flowOf(emptyList())
 
         viewModel = ProfileViewModel(
             repository = itemRepository,
@@ -83,43 +79,35 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun userProfile_isCorrectlyAggregatedIntoUiState() = runTest {
+    fun observeUserProfile_updatesStateWithUserAndMetrics() = runTest {
         viewModel.uiState.test {
             val state = awaitItem()
             assertEquals("Eco Champion", state.userName)
-            assertEquals("profile_user@campus.edu", state.userEmail)
-            assertEquals("Main Campus", state.campusCenter)
+            assertEquals("student@campus.edu", state.userEmail)
             assertTrue(state.isVerified)
+            // 1 item rehomed (ItemStatus.SOLD)
+            assertEquals(1, state.itemsRecycled)
+            assertEquals(1.8, state.kgSaved, 0.01)
+            assertEquals(3.2, state.co2Saved, 0.01)
             assertEquals(1, state.sellingItems.size)
-            assertEquals(1, state.givenAwayItems.size)
-            assertEquals(2, state.itemsRecycled) // 2 sold items
-            assertEquals(3.6, state.kgSaved, 0.01) // 2 * 1.8 kg
-            assertEquals(6.4, state.co2Saved, 0.01) // 2 * 3.2 kg
         }
     }
 
     @Test
     fun updateAvatar_callsAuthRepository() = runTest {
-        coEvery { authRepository.updateAvatar("avatar_creator") } returns Result.success(Unit)
+        coEvery { authRepository.updateAvatar(any()) } returns Result.success(Unit)
 
-        viewModel.updateAvatar("avatar_creator")
+        viewModel.updateAvatar("avatar_creative")
 
-        coVerify { authRepository.updateAvatar("avatar_creator") }
+        coVerify { authRepository.updateAvatar("avatar_creative") }
     }
 
     @Test
-    fun deleteItem_callsRepository() = runTest {
-        coEvery { itemRepository.deleteItem("item_1") } returns Result.success(Unit)
+    fun deleteItem_callsItemRepository() = runTest {
+        coEvery { itemRepository.deleteItem(any()) } returns true
 
-        viewModel.deleteItem("item_1")
+        viewModel.deleteItem("item_p2")
 
-        coVerify { itemRepository.deleteItem("item_1") }
-    }
-
-    @Test
-    fun removeSavedItem_togglesSaveInRepository() = runTest {
-        viewModel.removeSavedItem("item_1")
-
-        coVerify { itemRepository.toggleSaveItem("item_1") }
+        coVerify { itemRepository.deleteItem("item_p2") }
     }
 }

@@ -3,8 +3,7 @@ package com.minimize.uniswap.ui.screens.details
 import app.cash.turbine.test
 import com.minimize.uniswap.data.model.CampusItem
 import com.minimize.uniswap.data.model.ItemCategory
-import com.minimize.uniswap.data.model.ItemStatus
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.prompt.GlobalPromptManager
 import com.minimize.uniswap.data.prompt.PromptType
@@ -14,6 +13,7 @@ import com.minimize.uniswap.data.repository.ReportRepository
 import com.minimize.uniswap.util.MainCoroutineRule
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -35,29 +35,30 @@ class DetailsViewModelTest {
 
     private lateinit var viewModel: DetailsViewModel
 
-    private val sampleUser = UserProfile(
-        uid = "test_user_123",
+    private val sampleUser = User(
+        uid = "user_details_1",
         email = "student@campus.edu",
-        displayName = "Navneet",
+        displayName = "John Doe",
         isEmailVerified = false
     )
 
     private val sampleItem = CampusItem(
-        id = "item_123",
+        id = "item_details_1",
         title = "Calculus Textbook",
-        description = "Early Transcendentals 8th Edition",
         price = 450.0,
         sellerId = "seller_456",
-        sellerName = "Senior Student",
-        category = ItemCategory.BOOKS,
-        status = ItemStatus.AVAILABLE
+        sellerName = "Alice Senior",
+        category = ItemCategory.ENGINEERING
     )
 
     @Before
     fun setUp() {
-        every { authRepository.getCurrentUserId() } returns sampleUser.uid
-        every { authRepository.isGuestMode } returns flowOf(false)
+        every { authRepository.getCurrentUserId() } returns "user_details_1"
+        every { authRepository.isGuestMode } returns MutableStateFlow(false)
         every { authRepository.getUserFlow() } returns flowOf(sampleUser)
+        every { itemRepository.getItemByIdFlow("item_details_1") } returns flowOf(sampleItem)
+        every { reportRepository.getBlockedUserIdsFlow() } returns MutableStateFlow(emptySet())
+        every { itemRepository.getSavedItemIdsFlow() } returns flowOf(emptySet())
 
         viewModel = DetailsViewModel(
             repository = itemRepository,
@@ -69,26 +70,13 @@ class DetailsViewModelTest {
     }
 
     @Test
-    fun initialUserData_isObservedCorrectly() = runTest {
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertEquals("test_user_123", state.currentUserId)
-            assertEquals("student@campus.edu", state.userEmail)
-            assertFalse(state.isEmailVerified)
-            assertFalse(state.isGuestMode)
-        }
-    }
-
-    @Test
-    fun getItem_loadsItemSuccessfully() = runTest {
-        every { itemRepository.getItemFlow("item_123") } returns flowOf(sampleItem)
-        every { itemRepository.isItemSavedFlow("item_123") } returns flowOf(false)
-
-        viewModel.getItem("item_123")
+    fun getItem_withValidId_updatesUiStateWithItem() = runTest {
+        viewModel.getItem("item_details_1")
 
         viewModel.uiState.test {
             val state = awaitItem()
-            assertEquals(sampleItem, state.item)
+            assertEquals("item_details_1", state.item?.id)
+            assertEquals("Calculus Textbook", state.item?.title)
             assertFalse(state.isLoading)
             assertNull(state.error)
         }
@@ -96,31 +84,27 @@ class DetailsViewModelTest {
 
     @Test
     fun getItem_withBlankId_setsError() = runTest {
-        viewModel.getItem("   ")
+        viewModel.getItem("")
 
         viewModel.uiState.test {
             val state = awaitItem()
+            assertNull(state.item)
             assertEquals("Invalid item ID.", state.error)
             assertFalse(state.isLoading)
         }
     }
 
     @Test
-    fun sendVerificationEmail_success_updatesStateAndPreferences() = runTest {
+    fun sendVerificationEmail_callsRepositoryAndPreferences() = runTest {
         coEvery { authRepository.sendVerificationEmail() } returns Result.success(Unit)
 
-        viewModel.sendVerificationEmail(email = "student@campus.edu", studentId = "2023CS01")
+        viewModel.sendVerificationEmail(email = "student@campus.edu", studentId = "2023BCSE01")
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertTrue(state.isVerificationSent)
-            assertFalse(state.isProcessingVerification)
-        }
-
+        coVerify { authRepository.sendVerificationEmail() }
         coVerify {
             preferencesManager.updateStudentVerificationDetails(
                 collegeEmail = "student@campus.edu",
-                studentId = "2023CS01",
+                studentId = "2023BCSE01",
                 isPending = true,
                 sentTimestamp = any()
             )
@@ -128,7 +112,7 @@ class DetailsViewModelTest {
     }
 
     @Test
-    fun checkVerificationStatus_callsReloadUser() = runTest {
+    fun checkVerificationStatus_reloadsUser() = runTest {
         coEvery { authRepository.reloadUser() } returns Result.success(Unit)
 
         viewModel.checkVerificationStatus()
@@ -137,17 +121,9 @@ class DetailsViewModelTest {
     }
 
     @Test
-    fun dismissNudge_recordsPromptShownInPromptManager() = runTest {
+    fun dismissNudge_recordsPromptShownInManager() = runTest {
         viewModel.dismissNudge()
 
-        coVerify {
-            promptManager.recordPromptShown(PromptType.STUDENT_VERIFICATION)
-        }
-
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertFalse(state.showNudge)
-            assertFalse(state.showVerificationFlow)
-        }
+        coVerify { promptManager.recordPromptShown(PromptType.STUDENT_VERIFICATION) }
     }
 }

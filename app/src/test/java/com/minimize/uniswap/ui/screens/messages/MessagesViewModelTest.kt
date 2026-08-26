@@ -3,7 +3,7 @@ package com.minimize.uniswap.ui.screens.messages
 import app.cash.turbine.test
 import com.minimize.uniswap.data.model.ChatThread
 import com.minimize.uniswap.data.model.MessageStatus
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.repository.AuthRepository
 import com.minimize.uniswap.data.repository.ChatRepository
 import com.minimize.uniswap.data.repository.ReportRepository
@@ -47,7 +47,7 @@ class MessagesViewModelTest {
     @Before
     fun setUp() {
         every { authRepository.getCurrentUserId() } returns "user_me"
-        every { authRepository.getUserFlow() } returns flowOf(UserProfile(uid = "user_me", displayName = "Me"))
+        every { authRepository.getUserFlow() } returns flowOf(User(uid = "user_me", displayName = "Me"))
         every { chatRepository.getChatThreadsFlow("user_me") } returns flowOf(listOf(sampleThread))
 
         viewModel = MessagesViewModel(

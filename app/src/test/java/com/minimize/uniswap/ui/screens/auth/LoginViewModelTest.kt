@@ -69,7 +69,7 @@ class LoginViewModelTest {
     fun onSignInClick_withValidCredentials_callsLogin() = runTest {
         viewModel.email = "student@campus.edu"
         viewModel.password = "password123"
-        coEvery { authRepository.login(any(), any()) } returns Result.success(Unit)
+        coEvery { authRepository.login(any(), any()) } returns Result.success("Login successful")
 
         viewModel.onSignInClick()
 

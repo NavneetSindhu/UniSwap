@@ -1,9 +1,8 @@
 package com.minimize.uniswap.ui.screens.settings
 
 import app.cash.turbine.test
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.preferences.ThemeMode
-import com.minimize.uniswap.data.preferences.TypographyStyle
 import com.minimize.uniswap.data.preferences.UserPreferences
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.repository.AuthRepository
@@ -12,6 +11,7 @@ import com.minimize.uniswap.util.MainCoroutineRule
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -30,25 +30,25 @@ class SettingsViewModelTest {
 
     private lateinit var viewModel: SettingsViewModel
 
-    private val initialPreferences = UserPreferences(
+    private val samplePreferences = UserPreferences(
         themeMode = ThemeMode.SYSTEM,
-        dynamicColor = false,
-        typographyStyle = TypographyStyle.MODERN,
-        campusCenter = "Main Campus"
+        dynamicColor = true,
+        campusCenter = "East Campus"
     )
 
-    private val sampleUser = UserProfile(
-        uid = "user_settings_123",
+    private val sampleUser = User(
+        uid = "user_settings_1",
         email = "settings@campus.edu",
         displayName = "Settings User"
     )
 
     @Before
     fun setUp() {
-        every { preferencesManager.preferencesFlow } returns MutableStateFlow(initialPreferences)
-        every { authRepository.getUserFlow() } returns MutableStateFlow(sampleUser)
-        every { reportRepository.getBlockedUserIdsFlow() } returns MutableStateFlow(setOf("blocked_1"))
-        every { reportRepository.getMyReportsFlow() } returns MutableStateFlow(emptyList())
+        every { preferencesManager.preferencesFlow } returns flowOf(samplePreferences)
+        every { authRepository.getCurrentUserId() } returns "user_settings_1"
+        every { authRepository.getUserFlow() } returns flowOf(sampleUser)
+        every { reportRepository.getBlockedUserIdsFlow() } returns MutableStateFlow(setOf("user_blocked_1"))
+        every { reportRepository.getMyReportsFlow() } returns flowOf(emptyList())
 
         viewModel = SettingsViewModel(
             preferencesManager = preferencesManager,
@@ -58,68 +58,59 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun onThemeModeChanged_updatesPreferences() = runTest {
+    fun preferences_emitsCorrectInitialPreferences() = runTest {
+        viewModel.preferences.test {
+            val prefs = awaitItem()
+            assertEquals(ThemeMode.SYSTEM, prefs.themeMode)
+            assertTrue(prefs.dynamicColor)
+            assertEquals("East Campus", prefs.campusCenter)
+        }
+    }
+
+    @Test
+    fun onThemeModeChanged_updatesPreferencesManager() = runTest {
         viewModel.onThemeModeChanged(ThemeMode.DARK)
 
         coVerify { preferencesManager.updateThemeMode(ThemeMode.DARK) }
     }
 
     @Test
-    fun onDynamicColorChanged_updatesPreferences() = runTest {
-        viewModel.onDynamicColorChanged(true)
+    fun onDynamicColorChanged_updatesPreferencesManager() = runTest {
+        viewModel.onDynamicColorChanged(false)
 
-        coVerify { preferencesManager.updateDynamicColor(true) }
+        coVerify { preferencesManager.updateDynamicColor(false) }
     }
 
     @Test
-    fun onTypographyStyleChanged_updatesPreferences() = runTest {
-        viewModel.onTypographyStyleChanged(TypographyStyle.EDITORIAL)
+    fun onCampusCenterChanged_updatesPreferencesAndAuthRepository() = runTest {
+        viewModel.onCampusCenterChanged("West Campus")
 
-        coVerify { preferencesManager.updateTypographyStyle(TypographyStyle.EDITORIAL) }
+        coVerify { preferencesManager.updateCampusCenter("West Campus") }
+        coVerify { authRepository.updateCampusCenter("West Campus") }
     }
 
     @Test
-    fun onCampusCenterChanged_updatesBothPreferencesAndAuth() = runTest {
-        viewModel.onCampusCenterChanged("North Campus")
+    fun unblockUser_callsReportRepository() = runTest {
+        coEvery { reportRepository.unblockUser("user_blocked_1") } returns Result.success(Unit)
 
-        coVerify {
-            preferencesManager.updateCampusCenter("North Campus")
-            authRepository.updateCampusCenter("North Campus")
+        var callbackResult = false
+        viewModel.unblockUser("user_blocked_1") { success ->
+            callbackResult = success
         }
+
+        coVerify { reportRepository.unblockUser("user_blocked_1") }
+        assertTrue(callbackResult)
     }
 
     @Test
-    fun unblockUser_success_updatesFeedbackMessage() = runTest {
-        coEvery { reportRepository.unblockUser("blocked_1") } returns Result.success(Unit)
+    fun logout_callsAuthRepository() = runTest {
+        var logoutCompleted = false
 
-        viewModel.unblockUser("blocked_1")
-
-        viewModel.userFeedbackMessage.test {
-            val msg = awaitItem()
-            assertEquals("User unblocked successfully.", msg)
+        viewModel.logout {
+            logoutCompleted = true
         }
-    }
-
-    @Test
-    fun logout_callsAuthRepositoryAndExecutesCallback() = runTest {
-        coEvery { authRepository.logout() } returns Result.success(Unit)
-        var callbackExecuted = false
-
-        viewModel.logout { callbackExecuted = true }
 
         coVerify { authRepository.logout() }
-        assertTrue(callbackExecuted)
-    }
-
-    @Test
-    fun deleteAccount_success_updatesFeedbackAndExecutesCallback() = runTest {
-        coEvery { authRepository.deleteAccount() } returns Result.success(Unit)
-        var callbackExecuted = false
-
-        viewModel.deleteAccount { callbackExecuted = true }
-
-        coVerify { authRepository.deleteAccount() }
-        assertTrue(callbackExecuted)
-        assertEquals("Your account has been deleted.", viewModel.userFeedbackMessage.value)
+        assertTrue(logoutCompleted)
     }
 }

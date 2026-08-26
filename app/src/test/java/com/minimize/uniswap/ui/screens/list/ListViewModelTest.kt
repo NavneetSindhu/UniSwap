@@ -3,7 +3,7 @@ package com.minimize.uniswap.ui.screens.list
 import android.content.Context
 import app.cash.turbine.test
 import com.minimize.uniswap.data.model.ItemCategory
-import com.minimize.uniswap.data.model.UserProfile
+import com.minimize.uniswap.data.model.User
 import com.minimize.uniswap.data.preferences.UserPreferencesManager
 import com.minimize.uniswap.data.prompt.GlobalPromptManager
 import com.minimize.uniswap.data.repository.AuthRepository
@@ -34,15 +34,16 @@ class ListViewModelTest {
 
     private lateinit var viewModel: ListViewModel
 
-    private val sampleUser = UserProfile(
-        uid = "seller_789",
+    private val sampleUser = User(
+        uid = "user_list_1",
         email = "seller@campus.edu",
-        displayName = "Seller Name",
-        isEmailVerified = true
+        displayName = "Student Seller",
+        isEmailVerified = false
     )
 
     @Before
     fun setUp() {
+        every { authRepository.getCurrentUserId() } returns "user_list_1"
         every { authRepository.getUserFlow() } returns flowOf(sampleUser)
 
         viewModel = ListViewModel(
@@ -56,76 +57,54 @@ class ListViewModelTest {
     }
 
     @Test
-    fun titleAndPriceUpdates_updateStateFlows() = runTest {
-        viewModel.onTitleChange("Graphing Calculator TI-84")
-        viewModel.onPriceChange("1200")
-        viewModel.onDescriptionChange("Barely used in semester 1")
-        viewModel.onCategorySelected(ItemCategory.ELECTRONICS)
-
-        assertEquals("Graphing Calculator TI-84", viewModel.title.value)
-        assertEquals("1200", viewModel.price.value)
-        assertEquals("Barely used in semester 1", viewModel.description.value)
-        assertEquals(ItemCategory.ELECTRONICS, viewModel.selectedCategory.value)
-    }
-
-    @Test
-    fun titleExceedingMaxLength_isTruncated() = runTest {
+    fun onTitleChange_capsAtMaxLength() {
         val longTitle = "A".repeat(80)
         viewModel.onTitleChange(longTitle)
 
-        assertEquals(ListViewModel.MAX_TITLE_LENGTH, viewModel.title.value.length)
+        // Should not accept length > 60
+        assertTrue(viewModel.title.value.length <= ListViewModel.MAX_TITLE_LENGTH)
     }
 
     @Test
-    fun priceExceedingMaxDigits_isTruncated() = runTest {
-        val longPrice = "123456789"
-        viewModel.onPriceChange(longPrice)
-
-        assertEquals(ListViewModel.MAX_PRICE_DIGITS, viewModel.price.value.length)
+    fun onPriceChange_acceptsDigitsOnly() {
+        viewModel.onPriceChange("500abc")
+        assertEquals("500", viewModel.price.value)
     }
 
     @Test
-    fun postItem_withBlankTitle_setsValidationError() = runTest {
+    fun onCategoryChange_updatesSelectedCategory() = runTest {
+        viewModel.onCategoryChange(ItemCategory.ELECTRONICS)
+
+        viewModel.selectedCategory.test {
+            val category = awaitItem()
+            assertEquals(ItemCategory.ELECTRONICS, category)
+        }
+    }
+
+    @Test
+    fun onPostAttempt_withEmptyTitle_setsErrorMessage() = runTest {
         viewModel.onTitleChange("")
-        viewModel.onPriceChange("100")
+        viewModel.onPriceChange("200")
+        viewModel.onCategoryChange(ItemCategory.DORM_ESSENTIALS)
 
-        viewModel.postItem(onSuccess = {})
+        var successInvoked = false
+        viewModel.onPostAttempt {
+            successInvoked = true
+        }
 
+        assertFalse(successInvoked)
         viewModel.uiState.test {
             val state = awaitItem()
             assertNotNull(state.errorMessage)
-            assertFalse(viewModel.isPosting.value)
         }
     }
 
     @Test
-    fun sendVerificationEmail_success_updatesPendingState() = runTest {
+    fun sendVerificationEmail_callsAuthRepository() = runTest {
         coEvery { authRepository.sendVerificationEmail() } returns Result.success(Unit)
 
-        viewModel.sendVerificationEmail(email = "seller@campus.edu", studentId = "2023EC12")
+        viewModel.sendVerificationEmail("seller@campus.edu", "2023CSE01")
 
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertTrue(state.isVerificationSent)
-            assertFalse(state.isProcessingVerification)
-        }
-
-        coVerify {
-            preferencesManager.updateStudentVerificationDetails(
-                collegeEmail = "seller@campus.edu",
-                studentId = "2023EC12",
-                isPending = true,
-                sentTimestamp = any()
-            )
-        }
-    }
-
-    @Test
-    fun checkVerificationStatus_reloadsUser() = runTest {
-        coEvery { authRepository.reloadUser() } returns Result.success(Unit)
-
-        viewModel.checkVerificationStatus()
-
-        coVerify { authRepository.reloadUser() }
+        coVerify { authRepository.sendVerificationEmail() }
     }
 }

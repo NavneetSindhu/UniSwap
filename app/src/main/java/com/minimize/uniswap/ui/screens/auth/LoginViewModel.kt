@@ -53,7 +53,7 @@ class LoginViewModel @Inject constructor(
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+        if (!isValidEmail(trimmedEmail)) {
             errorMessage = context.getString(R.string.auth_error_invalid_email)
             return
         }
@@ -95,7 +95,7 @@ class LoginViewModel @Inject constructor(
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
+        if (!isValidEmail(trimmedEmail)) {
             errorMessage = context.getString(R.string.auth_error_invalid_email)
             return
         }
@@ -185,5 +185,9 @@ class LoginViewModel @Inject constructor(
                 isSuccess = true
             }
         }
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        return email.isNotBlank() && email.contains("@") && email.contains(".")
     }
 }

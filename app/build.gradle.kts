@@ -67,6 +67,9 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
