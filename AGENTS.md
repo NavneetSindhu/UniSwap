@@ -42,3 +42,7 @@
 ## 8. Smooth Motion & Animated State Transitions
 - **No Abrupt UI Swaps**: Filter toggles, chips, segmented tabs, and dynamic content states (empty vs populated lists) MUST animate smoothly using `animateColorAsState`, `AnimatedVisibility`, `AnimatedContent`, and `Modifier.animateItem()` / `Modifier.animateItemPlacement()`.
 - **Micro-Interactions**: Pill filters, toggle indicators, and selection badges must utilize subtle expand/shrink and crossfade transitions (e.g. `tween(220, easing = FastOutSlowInEasing)`) for fluid, tactile feedback.
+
+## 9. Smooth Bottom Sheet Dismissal & Interaction
+- **Mandatory `LocalBottomSheetDismiss.current` Usage**: Never directly toggle outer boolean visibility flags (e.g., `showSheet = false`) inside sheet action buttons, cancel buttons, or item click callbacks. Directly toggling the boolean unmounts the composable immediately, skipping the downward exit transition and causing an abrupt fade or screen pop.
+- **Natural Slide-Down Physics**: Always consume `val dismissSheet = LocalBottomSheetDismiss.current` within the bottom sheet content and invoke `dismissSheet()`. This animates `sheetState.hide()` smoothly before delegating to the parent `onDismissRequest` cleanup callback.

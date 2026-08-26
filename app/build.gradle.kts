@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -24,6 +27,23 @@ android {
         buildConfigField("String", "WEB_CLIENT_ID", "\"528542780411-q023u67a1cqth5m27ckdur2a5i9vt66e.apps.googleusercontent.com\"")
     }
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties.getProperty("storeFile") ?: "")
+                storePassword = keystoreProperties.getProperty("storePassword") ?: ""
+                keyAlias = keystoreProperties.getProperty("keyAlias") ?: ""
+                keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -32,6 +52,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
@@ -94,10 +119,10 @@ dependencies {
     implementation(libs.lottie.compose)
     implementation(libs.timber)
 
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.retrofit.converter.scalars)
+    implementation(libs.androidx.datastore.preferences)
 
     // Testing
     testImplementation(libs.junit)
