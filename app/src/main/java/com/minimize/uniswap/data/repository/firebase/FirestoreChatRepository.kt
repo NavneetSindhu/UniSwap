@@ -31,7 +31,7 @@ class FirestoreChatRepository @Inject constructor(
      */
     private fun getChatId(itemId: String, userId1: String, userId2: String): String {
         val uids = listOf(userId1, userId2).sorted()
-        return "__"
+        return "${itemId}_${uids[0]}_${uids[1]}"
     }
 
     override fun getMessages(itemId: String, buyerId: String, sellerId: String): Flow<List<Message>> {

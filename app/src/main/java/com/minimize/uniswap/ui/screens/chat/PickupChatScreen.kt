@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.MessageStatus
 import com.minimize.uniswap.ui.components.*
+import com.minimize.uniswap.ui.components.nudge.GuestNudgeBottomSheet
 import com.minimize.uniswap.ui.theme.*
 
 data class ChatBubbleMessage(
@@ -71,6 +72,8 @@ fun PickupChatScreen(
     initialMessage: String? = null,
     buyerId: String? = null,
     onBackClick: () -> Unit,
+    onSignInClick: () -> Unit = {},
+    onSignUpClick: () -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val item by viewModel.item.collectAsState()
@@ -80,6 +83,7 @@ fun PickupChatScreen(
     val isBlockingUser by viewModel.isBlockingUser.collectAsState()
     val userMessage by viewModel.userMessage.collectAsState()
     val blockedUserIds by viewModel.blockedUserIds.collectAsState()
+    val isGuestMode by viewModel.isGuestMode.collectAsState()
 
     val context = LocalContext.current
     var inputText by remember(initialMessage) { mutableStateOf(initialMessage ?: "") }
@@ -89,6 +93,7 @@ fun PickupChatScreen(
     var isActionSheetOpen by remember { mutableStateOf(false) }
     var isReportSheetOpen by remember { mutableStateOf(false) }
     var isBlockDialogOpen by remember { mutableStateOf(false) }
+    var isGuestNudgeOpen by remember { mutableStateOf(false) }
 
     var selectedMessageForAction by remember { mutableStateOf<ChatBubbleMessage?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatBubbleMessage?>(null) }
@@ -608,12 +613,20 @@ fun PickupChatScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(
+                                            if (isGuestMode) {
+                                                Modifier.clickable { isGuestNudgeOpen = true }
+                                            } else {
+                                                Modifier
+                                            }
+                                        ),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     if (inputText.isEmpty()) {
                                         Text(
-                                            text = stringResource(R.string.type_here_placeholder),
+                                            text = if (isGuestMode) stringResource(R.string.guest_nudge_sign_in_btn) else stringResource(R.string.type_here_placeholder),
                                             fontFamily = MatterFontFamily,
                                             fontWeight = FontWeight.Normal,
                                             fontSize = 13.sp,
@@ -625,6 +638,7 @@ fun PickupChatScreen(
                                     BasicTextField(
                                         value = inputText,
                                         onValueChange = { inputText = it },
+                                        enabled = !isGuestMode,
                                         singleLine = true,
                                         textStyle = TextStyle(
                                             fontFamily = MatterFontFamily,
@@ -640,7 +654,9 @@ fun PickupChatScreen(
                                         ),
                                         keyboardActions = KeyboardActions(
                                             onSend = {
-                                                if (inputText.isNotBlank()) {
+                                                if (isGuestMode) {
+                                                    isGuestNudgeOpen = true
+                                                } else if (inputText.isNotBlank()) {
                                                     val currentEdit = editingMessage
                                                     if (currentEdit != null) {
                                                         viewModel.editMessage(currentEdit.id, inputText)
@@ -663,14 +679,18 @@ fun PickupChatScreen(
                                         .clip(CircleShape)
                                         .background(if (inputText.isNotBlank()) themeColors.textPrimary else themeColors.btnBackBg.copy(alpha = 0.5f))
                                         .clickable(enabled = inputText.isNotBlank()) {
-                                            val currentEdit = editingMessage
-                                            if (currentEdit != null) {
-                                                viewModel.editMessage(currentEdit.id, inputText)
-                                                editingMessage = null
+                                            if (isGuestMode) {
+                                                isGuestNudgeOpen = true
                                             } else {
-                                                viewModel.sendMessage(inputText)
+                                                val currentEdit = editingMessage
+                                                if (currentEdit != null) {
+                                                    viewModel.editMessage(currentEdit.id, inputText)
+                                                    editingMessage = null
+                                                } else {
+                                                    viewModel.sendMessage(inputText)
+                                                }
+                                                inputText = ""
                                             }
-                                            inputText = ""
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -750,6 +770,21 @@ fun PickupChatScreen(
                 }
             }
         }
+    }
+
+    if (isGuestNudgeOpen) {
+        GuestNudgeBottomSheet(
+            onDismissRequest = { isGuestNudgeOpen = false },
+            onSignInClick = {
+                isGuestNudgeOpen = false
+                onSignInClick()
+            },
+            onSignUpClick = {
+                isGuestNudgeOpen = false
+                onSignUpClick()
+            },
+            subtitle = stringResource(R.string.guest_nudge_chat_subtitle, studentName)
+        )
     }
 }
 

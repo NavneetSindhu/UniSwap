@@ -26,7 +26,9 @@ class ChatViewModel @Inject constructor(
     private val reportRepository: ReportRepository
 ) : ViewModel() {
 
-    val currentUserId: String = authRepository.getCurrentUserId() ?: ""
+    val currentUserId: String
+        get() = authRepository.getCurrentUserId() ?: ""
+    val isGuestMode: StateFlow<Boolean> = authRepository.isGuestMode
     private var activeBuyerId: String = ""
 
     private val _item = MutableStateFlow<CampusItem?>(null)
