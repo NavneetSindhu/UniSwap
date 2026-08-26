@@ -51,7 +51,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.minimize.uniswap.ui.components.AppBottomSheet
+import com.minimize.uniswap.ui.components.LocalToastHostState
 
 /**
  * Fully functional Settings Screen matching UniSwap dark aesthetic and AGENTS.md guidelines.
@@ -78,12 +83,21 @@ fun SettingsScreen(
     var showBlockedUsersDialog by remember { mutableStateOf(false) }
     var showMyReportsDialog by remember { mutableStateOf(false) }
     var showTermsDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    val isDeletingAccount by viewModel.isDeletingAccount.collectAsState()
+
+    val toastHostState = LocalToastHostState.current
 
     LaunchedEffect(userFeedbackMessage) {
         userFeedbackMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            if (msg.contains("failed", ignoreCase = true) || msg.contains("error", ignoreCase = true)) {
+                toastHostState.showError(msg)
+            } else {
+                toastHostState.showSuccess(msg)
+            }
             viewModel.clearFeedbackMessage()
         }
     }
@@ -138,7 +152,140 @@ fun SettingsScreen(
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Theme & Appearance Section
+            // 1. Developer Options (Debug Build Only - gated strictly by BuildConfig.DEBUG)
+            if (BuildConfig.DEBUG) {
+                item {
+                    val isDebugActive by com.minimize.uniswap.util.DebugConfig.isDebugModeEnabled.collectAsState()
+                    val forceShimmer by com.minimize.uniswap.util.DebugConfig.forceShimmerLoading.collectAsState()
+                    val forceOffline by com.minimize.uniswap.util.DebugConfig.forceOfflineMode.collectAsState()
+                    SettingsSectionCard(title = stringResource(R.string.settings_section_developer)) {
+                        SettingsSwitchItem(
+                            icon = Icons.Outlined.Code,
+                            title = stringResource(R.string.settings_debug_mode_toggle),
+                            subtitle = stringResource(R.string.settings_debug_mode_toggle_subtitle),
+                            checked = isDebugActive,
+                            onCheckedChange = { com.minimize.uniswap.util.DebugConfig.setDebugModeEnabled(it) }
+                        )
+                        SettingsDivider()
+                        SettingsSwitchItem(
+                            icon = Icons.Outlined.BugReport,
+                            title = stringResource(R.string.settings_force_shimmer),
+                            subtitle = stringResource(R.string.settings_force_shimmer_subtitle),
+                            checked = forceShimmer,
+                            onCheckedChange = { com.minimize.uniswap.util.DebugConfig.setForceShimmer(it) }
+                        )
+                        SettingsDivider()
+                        SettingsSwitchItem(
+                            icon = Icons.Outlined.CloudOff,
+                            title = stringResource(R.string.settings_force_offline),
+                            subtitle = stringResource(R.string.settings_force_offline_subtitle),
+                            checked = forceOffline,
+                            onCheckedChange = { com.minimize.uniswap.util.DebugConfig.setForceOffline(it) }
+                        )
+                        SettingsDivider()
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_test_toasts_title),
+                                fontFamily = MatterFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                color = themeColors.textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        toastHostState.showSuccess("Item listed successfully! 📦", "Success")
+                                    },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = themeColors.wasteMetricGreen.copy(alpha = 0.2f),
+                                        contentColor = themeColors.wasteMetricGreen
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_toast_success),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        toastHostState.showError("Failed to upload image. Please try again.", "Upload Error")
+                                    },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_toast_error),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        toastHostState.showWarning("Your student session expires soon.", "Warning")
+                                    },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = CampusAmber.copy(alpha = 0.2f),
+                                        contentColor = CampusAmber
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_toast_warning),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        toastHostState.showInfo("UniSwap Campus sync is active.", "Info")
+                                    },
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = ActionLinkBlue.copy(alpha = 0.2f),
+                                        contentColor = ActionLinkBlue
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_test_toast_info),
+                                        fontFamily = MatterFontFamily,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Theme & Appearance Section
             item {
                 SettingsSectionCard(title = stringResource(R.string.settings_section_appearance)) {
                     ThemeSelectionRow(
@@ -212,13 +359,34 @@ fun SettingsScreen(
                 }
             }
 
-            // 5. About Section
+            // 5. About & Community Section
             item {
                 SettingsSectionCard(title = stringResource(R.string.settings_section_about)) {
+                    SettingsNavigationItem(
+                        icon = Icons.Outlined.Star,
+                        title = stringResource(R.string.settings_rate_us),
+                        subtitle = stringResource(R.string.settings_rate_us_subtitle),
+                        onClick = {
+                            val appPackageName = context.packageName
+                            try {
+                                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$appPackageName")))
+                            } catch (e: android.content.ActivityNotFoundException) {
+                                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=$appPackageName")))
+                            }
+                        }
+                    )
+                    SettingsDivider()
                     SettingsNavigationItem(
                         icon = Icons.AutoMirrored.Outlined.Assignment,
                         title = stringResource(R.string.settings_terms_of_service),
                         onClick = { showTermsDialog = true }
+                    )
+                    SettingsDivider()
+                    SettingsNavigationItem(
+                        icon = Icons.Outlined.Policy,
+                        title = stringResource(R.string.settings_privacy_policy),
+                        subtitle = stringResource(R.string.settings_privacy_policy_subtitle),
+                        onClick = { showPrivacyDialog = true }
                     )
                     SettingsDivider()
                     SettingsNavigationItem(
@@ -229,34 +397,31 @@ fun SettingsScreen(
                 }
             }
 
-            // 6. Developer Options (Debug Build Only)
-            if (BuildConfig.DEBUG) {
-                item {
-                    val forceShimmer by com.minimize.uniswap.util.DebugConfig.forceShimmerLoading.collectAsState()
-                    SettingsSectionCard(title = stringResource(R.string.settings_section_developer)) {
-                        SettingsSwitchItem(
-                            icon = Icons.Outlined.BugReport,
-                            title = stringResource(R.string.settings_force_shimmer),
-                            subtitle = stringResource(R.string.settings_force_shimmer_subtitle),
-                            checked = forceShimmer,
-                            onCheckedChange = { com.minimize.uniswap.util.DebugConfig.setForceShimmer(it) }
-                        )
-                    }
+            // 6. Danger Zone (Account Deletion)
+            item {
+                SettingsSectionCard(title = stringResource(R.string.settings_section_danger_zone)) {
+                    SettingsNavigationItem(
+                        icon = Icons.Outlined.DeleteForever,
+                        title = stringResource(R.string.settings_delete_account),
+                        subtitle = stringResource(R.string.settings_delete_account_subtitle),
+                        onClick = { showDeleteAccountDialog = true }
+                    )
                 }
             }
 
-            // 7. Log Out Button
+            // 7. Log Out Button (Rich High-Contrast Red)
             item {
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = { showLogoutConfirmDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(53.dp),
+                        .height(53.dp)
+                        .border(1.dp, Color(0xFFFF4545).copy(alpha = 0.35f), RoundedCornerShape(50.dp)),
                     shape = RoundedCornerShape(50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = themeColors.btnBackBg,
-                        contentColor = MaterialTheme.colorScheme.error
+                        containerColor = Color(0xFF261214), // Dark crimson background
+                        contentColor = Color(0xFFFF5252)    // Crisp vibrant red
                     )
                 ) {
                     Row(
@@ -266,14 +431,16 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.Logout,
                             contentDescription = stringResource(R.string.settings_logout),
-                            tint = MaterialTheme.colorScheme.error,
+                            tint = Color(0xFFFF5252),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.settings_logout),
                             fontFamily = MatterFontFamily,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = Color(0xFFFF5252)
                         )
                     }
                 }
@@ -953,6 +1120,282 @@ fun SettingsScreen(
             }
         )
     }
+
+    // 8. Delete Account Rich Full-Screen Bottom Sheet (Lottie Animation + Feedback Form + Permanent Delete)
+    if (showDeleteAccountDialog) {
+        var selectedReason by remember { mutableStateOf<String?>(null) }
+        var feedbackText by remember { mutableStateOf("") }
+        val sadCatComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.anim_cat_relaxing))
+
+        AppBottomSheet(
+            onDismissRequest = { if (!isDeletingAccount) showDeleteAccountDialog = false },
+            heightFraction = 0.95f,
+            containerColor = themeColors.cardSurface,
+            contentColor = themeColors.textPrimary
+        ) {
+            val dismissSheet = com.minimize.uniswap.ui.components.LocalBottomSheetDismiss.current
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Centered Lottie Animation
+                LottieAnimation(
+                    composition = sadCatComposition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier
+                        .size(140.dp)
+                        .padding(vertical = 4.dp)
+                )
+
+                Text(
+                    text = stringResource(R.string.delete_account_sheet_title),
+                    fontFamily = MatterFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    color = themeColors.textPrimary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = stringResource(R.string.delete_account_sheet_subtitle),
+                    fontFamily = MatterFontFamily,
+                    fontSize = 13.sp,
+                    color = themeColors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Reasons Radio Group
+                val reasons = listOf(
+                    stringResource(R.string.delete_account_reason_1),
+                    stringResource(R.string.delete_account_reason_2),
+                    stringResource(R.string.delete_account_reason_3),
+                    stringResource(R.string.delete_account_reason_4)
+                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    reasons.forEach { reason ->
+                        val isSelected = selectedReason == reason
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isSelected) themeColors.btnBackBg else Color.Transparent)
+                                .clickable { selectedReason = reason }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = { selectedReason = reason },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = MaterialTheme.colorScheme.error,
+                                    unselectedColor = themeColors.textSubtle
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = reason,
+                                fontFamily = MatterFontFamily,
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) themeColors.textPrimary else themeColors.textSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Optional Feedback Text
+                OutlinedTextField(
+                    value = feedbackText,
+                    onValueChange = { feedbackText = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(96.dp),
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.delete_account_feedback_placeholder),
+                            fontFamily = MatterFontFamily,
+                            fontSize = 13.sp,
+                            color = themeColors.textSubtle
+                        )
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = themeColors.textPrimary,
+                        unfocusedBorderColor = themeColors.btnBackBg,
+                        focusedContainerColor = themeColors.btnBackBg,
+                        unfocusedContainerColor = themeColors.btnBackBg,
+                        focusedTextColor = themeColors.textPrimary,
+                        unfocusedTextColor = themeColors.textPrimary
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Warning Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF2E1517))
+                        .border(1.dp, Color(0xFFFF4545).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                        .padding(14.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete_account_warning),
+                        fontFamily = MatterFontFamily,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        color = Color(0xFFFF8B8B)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Action Buttons
+                Button(
+                    onClick = { dismissSheet() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = themeColors.textPrimary,
+                        contentColor = themeColors.background
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete_account_cancel_btn),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        viewModel.deleteAccount(onLogoutClick)
+                    },
+                    enabled = !isDeletingAccount,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(50.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF4545).copy(alpha = 0.6f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF5252)
+                    )
+                ) {
+                    if (isDeletingAccount) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color(0xFFFF5252),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Permanently deleting...",
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFFFF5252)
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.delete_account_confirm_btn),
+                            fontFamily = MatterFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFFFF5252)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+
+    // 9. Privacy Policy Bottom Sheet
+    if (showPrivacyDialog) {
+        AppBottomSheet(
+            onDismissRequest = { showPrivacyDialog = false },
+            heightFraction = 0.95f,
+            containerColor = themeColors.cardSurface,
+            contentColor = themeColors.textPrimary
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.settings_privacy_policy),
+                        fontFamily = MatterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = themeColors.textPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Last updated: August 2026 • Verified Student Protection",
+                        fontFamily = MatterFontFamily,
+                        fontSize = 12.sp,
+                        color = themeColors.textSubtle
+                    )
+                }
+
+                AboutRuleItem(
+                    icon = Icons.Outlined.Security,
+                    title = "1. Student Data Protection",
+                    body = "UniSwap uses your university email solely to authenticate campus residency. Your personal identity is guarded by industry-grade Firebase security rules.",
+                    accentColor = themeColors.wasteMetricGreen
+                )
+
+                AboutRuleItem(
+                    icon = Icons.Outlined.VerifiedUser,
+                    title = "2. Zero Data Monetization",
+                    body = "We do not sell, rent, or trade student profiles, chat transcripts, or buying patterns to third-party ad networks or brokers.",
+                    accentColor = themeColors.wasteMetricGreen
+                )
+
+                AboutRuleItem(
+                    icon = Icons.Outlined.ChatBubbleOutline,
+                    title = "3. End-to-End Peer Safety",
+                    body = "Direct chats are private between buyer and seller. Image uploads are sanitized on-device to strip GPS coordinates and private EXIF metadata.",
+                    accentColor = themeColors.wasteMetricGreen
+                )
+
+                AboutRuleItem(
+                    icon = Icons.Outlined.DeleteForever,
+                    title = "4. Complete Data Deletion Rights",
+                    body = "You have full ownership of your data. Deleting your account immediately and permanently purges your listings, conversations, and records.",
+                    accentColor = MaterialTheme.colorScheme.error
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
 }
 
 @Composable
@@ -1152,16 +1595,17 @@ private fun AboutRuleItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(themeColors.btnBackBg)
+            .clip(RoundedCornerShape(16.dp))
+            .background(themeColors.cardSurface)
+            .border(0.75.dp, themeColors.divider, RoundedCornerShape(16.dp))
             .padding(14.dp),
         verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(36.dp)
                 .clip(CircleShape)
-                .background(accentColor.copy(alpha = 0.12f)),
+                .background(accentColor.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(

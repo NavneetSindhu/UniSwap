@@ -38,6 +38,14 @@ class MainViewModel @Inject constructor(
     private val _hasUnreadMessages = MutableStateFlow(false)
     val hasUnreadMessages: StateFlow<Boolean> = _hasUnreadMessages.asStateFlow()
 
+    val isOffline: StateFlow<Boolean> = com.minimize.uniswap.util.NetworkUtils.observeConnectivity(context)
+        .map { connected -> !connected }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     val isGuestMode: StateFlow<Boolean> = authRepository.isGuestMode
 
     private val notifiedMessageTimestamps = mutableSetOf<Long>()

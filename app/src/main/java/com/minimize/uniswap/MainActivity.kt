@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            // Observe preferences from ViewModel
+            val toastHostState = androidx.compose.runtime.remember { com.minimize.uniswap.ui.components.UniSwapToastHostState() }
             val preferences by viewModel.userPreferences.collectAsState()
 
             // Only render once preferences are loaded
@@ -59,11 +59,15 @@ class MainActivity : ComponentActivity() {
                     dynamicColor = prefs.dynamicColor,
                     typographyStyle = prefs.typographyStyle
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.minimize.uniswap.ui.components.LocalToastHostState provides toastHostState
                     ) {
-                        MainScreen()
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                        ) {
+                            MainScreen()
+                        }
                     }
                 }
             }

@@ -462,4 +462,63 @@
     <!-- Centralized Sharing -->
     <string name="share_item_template">Check out "%1$s" on UniSwap for ₹%2$d!\n\n📱 Open in UniSwap: %3$s\n📥 Get UniSwap: %4$s</string>
     <string name="share_item_free_template">Check out "%1$s" on UniSwap (Free Giveaway)!\n\n📱 Open in UniSwap: %2$s\n📥 Get UniSwap: %3$s</string>
+
+    <!-- Settings & Production Readiness -->
+    <string name="settings_rate_us">Rate on Google Play</string>
+    <string name="settings_rate_us_subtitle">Support UniSwap with a 5-star review</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy_subtitle">How your campus data is protected</string>
+    <string name="settings_section_danger_zone">Danger Zone</string>
+    <string name="settings_delete_account">Delete Account &amp; Data</string>
+    <string name="settings_delete_account_subtitle">Permanently wipe profile, listings &amp; chats</string>
+    <string name="settings_delete_account_confirm_title">Delete Account Permanently?</string>
+    <string name="settings_delete_account_confirm_message">This action cannot be undone. All your active listings, direct chats, favorites, and profile data will be permanently deleted from UniSwap servers.</string>
+    <string name="settings_delete_account_btn">Permanently Delete Account</string>
+
+    <!-- Account Deletion Flow -->
+    <string name="delete_account_sheet_title">We\'re Sad to See You Go 💔</string>
+    <string name="delete_account_sheet_subtitle">Before you leave, please let us know why you\'re deleting your UniSwap account.</string>
+    <string name="delete_account_reason_1">Graduated or leaving university</string>
+    <string name="delete_account_reason_2">Not enough items on my campus</string>
+    <string name="delete_account_reason_3">Technical issues or app bugs</string>
+    <string name="delete_account_reason_4">Other reason</string>
+    <string name="delete_account_feedback_placeholder">Any additional feedback or suggestions? (Optional)</string>
+    <string name="delete_account_warning">Permanent Action: All your active campus listings, direct chats, and profile data will be permanently wiped and cannot be recovered.</string>
+    <string name="delete_account_cancel_btn">Keep My Account</string>
+    <string name="delete_account_confirm_btn">Permanently Delete My Account</string>
+
+    <!-- Developer Options -->
+    <string name="settings_debug_mode_toggle">Debug Mode Active</string>
+    <string name="settings_debug_mode_toggle_subtitle">Toggle off to simulate production behavior &amp; release flags</string>
+
+    <!-- Campus Email Verification -->
+    <string name="verification_sheet_title">Verify Campus Student Identity 🎓</string>
+    <string name="verification_sheet_subtitle">UniSwap is exclusively for verified college students. Verify your student email to list items and message peers.</string>
+    <string name="verification_benefit_1_title">Verified Student Badge</string>
+    <string name="verification_benefit_1_body">Gain immediate trust with peers across your college campus</string>
+    <string name="verification_benefit_2_title">Unlimited Marketplace Listings</string>
+    <string name="verification_benefit_2_body">Sell and giveaway textbooks, dorm gear, notes, and gadgets</string>
+    <string name="verification_benefit_3_title">Direct Campus Chat</string>
+    <string name="verification_benefit_3_body">Negotiate safe daylight pickups in campus public zones</string>
+    <string name="verification_send_link_btn">Send Verification Link</string>
+    <string name="verification_sent_title">Verification Link Sent! ✉️</string>
+    <string name="verification_sent_body">We sent a verification email to %1$s. Click the link in your inbox, then tap below.</string>
+    <string name="verification_check_status_btn">I\'ve Verified My Email</string>
+    <string name="verification_success_title">Campus Identity Verified! 🎉</string>
+    <string name="verification_success_body">You are now a verified student member of UniSwap. Happy trading!</string>
+    <string name="verification_continue_btn">Awesome, Let\'s Go!</string>
+    <string name="verification_later_btn">Maybe Later</string>
+
+    <!-- Network & Debug Strings -->
+    <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
+    <string name="offline_banner_title">You\'re offline</string>
+    <string name="offline_banner_subtitle">Showing cached campus feed</string>
+    <string name="offline_badge_tag">Offline</string>
+    <string name="settings_force_offline">Simulate Offline Mode</string>
+    <string name="settings_force_offline_subtitle">Forces disconnected state to test offline headers &amp; local cache</string>
+    <string name="settings_test_toasts_title">Test Floating Island Toasts</string>
+    <string name="settings_test_toast_success">Success</string>
+    <string name="settings_test_toast_error">Error</string>
+    <string name="settings_test_toast_warning">Warning</string>
+    <string name="settings_test_toast_info">Info</string>
 </resources>

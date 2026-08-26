@@ -72,10 +72,15 @@ fun HomeScreen(
     var itemToBlock by remember { mutableStateOf<CampusItem?>(null) }
     var isGuestNudgeOpen by remember { mutableStateOf(false) }
     var guestNudgeSubtitle by remember { mutableStateOf("") }
+    val toastHostState = com.minimize.uniswap.ui.components.LocalToastHostState.current
 
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            if (msg.contains("failed", ignoreCase = true) || msg.contains("error", ignoreCase = true)) {
+                toastHostState.showError(msg)
+            } else {
+                toastHostState.showSuccess(msg)
+            }
             viewModel.clearUserMessage()
         }
     }

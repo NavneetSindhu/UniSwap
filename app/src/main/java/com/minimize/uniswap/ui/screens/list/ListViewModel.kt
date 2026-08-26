@@ -207,6 +207,11 @@ class ListViewModel @Inject constructor(
             return
         }
 
+        if (!com.minimize.uniswap.util.NetworkUtils.isInternetAvailable(context)) {
+            _uiState.update { it.copy(errorMessage = context.getString(com.minimize.uniswap.R.string.error_no_internet)) }
+            return
+        }
+
         postItem(onSuccess)
     }
 

@@ -229,7 +229,7 @@ fun ProfileScreen(
                                 )
                             )
                             .border(1.dp, colors.wasteMetricGreen.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                            .padding(20.dp)
+                            .padding(14.dp)
                     ) {
                         Column {
                             // Header Row: Leaf Icon + Title + Eco Tier Badge
@@ -286,12 +286,12 @@ fun ProfileScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(18.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             // 3-Metric Circular Grid
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 // Metric 1: Items Rehomed
                                 Box(
@@ -299,7 +299,7 @@ fun ProfileScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(colors.cardSurface.copy(alpha = 0.7f))
-                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -307,7 +307,7 @@ fun ProfileScreen(
                                             text = state.itemsRecycled.toString(),
                                             fontFamily = MatterFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 19.sp,
+                                            fontSize = 18.sp,
                                             color = colors.wasteMetricGreen
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -329,7 +329,7 @@ fun ProfileScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(colors.cardSurface.copy(alpha = 0.7f))
-                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -337,7 +337,7 @@ fun ProfileScreen(
                                             text = stringResource(R.string.profile_metric_kg_unit, state.kgSaved),
                                             fontFamily = MatterFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 19.sp,
+                                            fontSize = 18.sp,
                                             color = colors.textPrimary
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -359,7 +359,7 @@ fun ProfileScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(colors.cardSurface.copy(alpha = 0.7f))
-                                        .padding(horizontal = 6.dp, vertical = 12.dp),
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -367,7 +367,7 @@ fun ProfileScreen(
                                             text = stringResource(R.string.profile_metric_kg_unit, state.co2Saved),
                                             fontFamily = MatterFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 19.sp,
+                                            fontSize = 18.sp,
                                             color = colors.textPrimary
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -384,7 +384,7 @@ fun ProfileScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             // Sustainability Motto Subtitle
                             Text(
@@ -504,8 +504,8 @@ fun ProfileScreen(
                                 subtitle = emptySubtitle,
                                 lottieRes = lottieAnim,
                                 fallbackIcon = fallbackIcon,
-                                animationSize = 190.dp,
-                                modifier = Modifier.padding(vertical = 24.dp)
+                                animationSize = 135.dp,
+                                modifier = Modifier.padding(vertical = 4.dp)
                             )
                         } else {
                             val metaSaved = stringResource(R.string.profile_meta_saved)

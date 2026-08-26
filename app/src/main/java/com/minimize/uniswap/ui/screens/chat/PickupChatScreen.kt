@@ -4,7 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
+import com.minimize.uniswap.ui.components.LocalToastHostState
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -104,9 +104,14 @@ fun PickupChatScreen(
         viewModel.loadItem(itemId, buyerId)
     }
 
+    val toastHostState = LocalToastHostState.current
     LaunchedEffect(userMessage) {
         userMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            if (msg.contains("failed", ignoreCase = true) || msg.contains("error", ignoreCase = true)) {
+                toastHostState.showError(msg)
+            } else {
+                toastHostState.showSuccess(msg)
+            }
             viewModel.clearUserMessage()
         }
     }
@@ -238,7 +243,7 @@ fun PickupChatScreen(
             onCopyClick = {
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("chat_message", msg.text))
-                Toast.makeText(context, context.getString(R.string.toast_text_copied), Toast.LENGTH_SHORT).show()
+                toastHostState.showInfo(context.getString(R.string.toast_text_copied))
                 selectedMessageForAction = null
             },
             onEditClick = {

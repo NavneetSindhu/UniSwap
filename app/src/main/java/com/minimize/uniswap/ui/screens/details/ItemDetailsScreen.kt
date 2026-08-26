@@ -82,9 +82,14 @@ fun ItemDetailsScreen(
     }
 
     // Toast feedback for reporting and blocking
+    val toastHostState = com.minimize.uniswap.ui.components.LocalToastHostState.current
     LaunchedEffect(state.userMessage) {
         state.userMessage?.let { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            if (msg.contains("failed", ignoreCase = true) || msg.contains("error", ignoreCase = true)) {
+                toastHostState.showError(msg)
+            } else {
+                toastHostState.showSuccess(msg)
+            }
             viewModel.clearUserMessage()
         }
     }

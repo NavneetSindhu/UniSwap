@@ -115,6 +115,23 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private val _isDeletingAccount = MutableStateFlow(false)
+    val isDeletingAccount: StateFlow<Boolean> = _isDeletingAccount.asStateFlow()
+
+    fun deleteAccount(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isDeletingAccount.value = true
+            val result = authRepository.deleteAccount()
+            _isDeletingAccount.value = false
+            if (result.isSuccess) {
+                _userFeedbackMessage.value = "Your account has been deleted."
+                onSuccess()
+            } else {
+                _userFeedbackMessage.value = result.exceptionOrNull()?.message ?: "Failed to delete account."
+            }
+        }
+    }
+
     fun clearFeedbackMessage() {
         _userFeedbackMessage.value = null
     }

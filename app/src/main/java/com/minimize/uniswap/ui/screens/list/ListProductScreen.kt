@@ -51,6 +51,7 @@ import coil.compose.AsyncImage
 import com.minimize.uniswap.R
 import com.minimize.uniswap.data.model.ItemCategory
 import com.minimize.uniswap.ui.components.AppBottomSheet
+import com.minimize.uniswap.ui.components.LocalToastHostState
 import com.minimize.uniswap.ui.components.nudge.EmailVerificationFlow
 import com.minimize.uniswap.ui.components.nudge.VerificationNudgeDialog
 import com.minimize.uniswap.ui.theme.*
@@ -86,6 +87,7 @@ fun ListProductScreen(
     var showPhotoSourceDialog by remember { mutableStateOf(false) }
 
     val themeColors = UniSwapTheme.colors
+    val toastHostState = LocalToastHostState.current
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -104,10 +106,11 @@ fun ListProductScreen(
         }
     }
 
-    // Auto-clear error messages after 4 seconds
+    // Show validation and network error messages in the Floating Island Toast
     LaunchedEffect(uiState.errorMessage) {
-        if (uiState.errorMessage != null) {
-            kotlinx.coroutines.delay(4000)
+        val error = uiState.errorMessage
+        if (error != null) {
+            toastHostState.showError(error)
             viewModel.clearError()
         }
     }
@@ -309,20 +312,6 @@ fun ListProductScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
                     .padding(horizontal = 24.dp, vertical = 12.dp)
             ) {
-                if (uiState.errorMessage != null) {
-                    Text(
-                        text = uiState.errorMessage!!,
-                        fontFamily = MatterFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp,
-                        color = Color(0xFFEF4444),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
                 Button(
                     onClick = { viewModel.onPostAttempt(onPostSuccess) },
                     modifier = Modifier
@@ -331,13 +320,15 @@ fun ListProductScreen(
                     shape = RoundedCornerShape(50.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = NavIndicatorBg,
-                        contentColor = PaletteLight.Gray950
+                        contentColor = PaletteLight.Gray950,
+                        disabledContainerColor = Color(0xFF1E2124),
+                        disabledContentColor = Color.White
                     ),
                     enabled = !isPosting && !uiState.isSanitizing
                 ) {
                     if (isPosting) {
                         CircularProgressIndicator(
-                            color = PaletteLight.Gray950,
+                            color = Color.White,
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.5.dp
                         )
