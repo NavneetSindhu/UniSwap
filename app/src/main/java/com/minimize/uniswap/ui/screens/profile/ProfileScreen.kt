@@ -497,10 +497,7 @@ fun ProfileScreen(
                                 1 -> Icons.Outlined.CheckCircleOutline
                                 else -> Icons.Outlined.FavoriteBorder
                             }
-                            val lottieAnim = when (tabIndex) {
-                                0 -> R.raw.anim_user_search
-                                else -> R.raw.anim_cat_relaxing
-                            }
+                            val lottieAnim = R.raw.anim_cat_relaxing
 
                             EmptyStateView(
                                 title = emptyTitle,
@@ -713,12 +710,7 @@ fun ProfileItemCard(
                         },
                         onClick = {
                             showMenu = false
-                            val sendIntent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, "Check out ${item.title} on UniSwap!")
-                                type = "text/plain"
-                            }
-                            context.startActivity(Intent.createChooser(sendIntent, "Share Item"))
+                            com.minimize.uniswap.util.ShareUtils.shareProduct(context, item)
                         },
                         leadingIcon = {
                             Icon(
