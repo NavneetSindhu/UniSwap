@@ -133,26 +133,53 @@ class FirebaseAuthRepository @Inject constructor(
     }
 
     override fun getUserFlow(): Flow<User?> = callbackFlow {
-        val uid = firebaseAuth.currentUser?.uid
-        if (uid == null) {
-            trySend(null)
-            close()
-            return@callbackFlow
+        var firestoreListener: com.google.firebase.firestore.ListenerRegistration? = null
+
+        val authListener = FirebaseAuth.AuthStateListener { auth ->
+            val firebaseUser = auth.currentUser
+            firestoreListener?.remove()
+            firestoreListener = null
+
+            if (firebaseUser == null) {
+                trySend(null)
+            } else {
+                firestoreListener = firestore.collection("users").document(firebaseUser.uid)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            Timber.e(error, "Error listening to user document: %s", firebaseUser.uid)
+                            trySend(
+                                User(
+                                    uid = firebaseUser.uid,
+                                    email = firebaseUser.email ?: "",
+                                    displayName = firebaseUser.displayName ?: "Campus User",
+                                    isEmailVerified = firebaseUser.isEmailVerified,
+                                    profilePicUrl = firebaseUser.photoUrl?.toString() ?: ""
+                                )
+                            )
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null && snapshot.exists()) {
+                            trySend(snapshot.toObject(User::class.java))
+                        } else {
+                            trySend(
+                                User(
+                                    uid = firebaseUser.uid,
+                                    email = firebaseUser.email ?: "",
+                                    displayName = firebaseUser.displayName ?: "Campus User",
+                                    isEmailVerified = firebaseUser.isEmailVerified,
+                                    profilePicUrl = firebaseUser.photoUrl?.toString() ?: ""
+                                )
+                            )
+                        }
+                    }
+            }
         }
 
-        val registration = firestore.collection("users").document(uid)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                if (snapshot != null && snapshot.exists()) {
-                    trySend(snapshot.toObject(User::class.java))
-                } else {
-                    trySend(null)
-                }
-            }
-        awaitClose { registration.remove() }
+        firebaseAuth.addAuthStateListener(authListener)
+        awaitClose {
+            firebaseAuth.removeAuthStateListener(authListener)
+            firestoreListener?.remove()
+        }
     }
 
     private fun isTestVerificationEmail(email: String): Boolean {

@@ -265,7 +265,13 @@ class FirestoreItemRepository @Inject constructor(
                 imageUrls = rawImageUrls,
                 isVerified = getBoolean("isVerified") ?: false,
                 status = status,
-                timestamp = timestampMillis
+                sellerAvatarId = getString("sellerAvatarId") ?: "avatar_scholar",
+                timestamp = timestampMillis,
+                viewsCount = (getLong("viewsCount") ?: (get("viewsCount") as? Number)?.toLong() ?: 0L).toInt(),
+                favoritesCount = (getLong("favoritesCount") ?: (get("favoritesCount") as? Number)?.toLong() ?: 0L).toInt(),
+                condition = getString("condition") ?: "Good",
+                campusCenter = getString("campusCenter") ?: "",
+                customCategory = getString("customCategory") ?: ""
             )
         } catch (e: Exception) {
             null
