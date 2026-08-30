@@ -142,10 +142,20 @@ class FeedViewModel @Inject constructor(
             val matchesCampus = if (scope == CampusScope.MY_CAMPUS && userCampus.isNotBlank()) {
                 val itemLoc = item.location.trim()
                 val itemCampus = item.campusCenter.trim()
-                itemLoc.isBlank() ||
-                        itemLoc.contains(userCampus, ignoreCase = true) ||
-                        itemCampus.contains(userCampus, ignoreCase = true) ||
-                        userCampus.contains(itemLoc, ignoreCase = true)
+
+                val hasSpecificCampus = itemCampus.isNotBlank() && !itemCampus.equals("Campus", ignoreCase = true)
+                val hasSpecificLocation = itemLoc.isNotBlank() && !itemLoc.equals("Campus", ignoreCase = true)
+
+                if (hasSpecificCampus) {
+                    itemCampus.contains(userCampus, ignoreCase = true) ||
+                            userCampus.contains(itemCampus, ignoreCase = true)
+                } else if (hasSpecificLocation) {
+                    itemLoc.contains(userCampus, ignoreCase = true) ||
+                            userCampus.contains(itemLoc, ignoreCase = true)
+                } else {
+                    // Generic campus-wide listing
+                    true
+                }
             } else {
                 true
             }

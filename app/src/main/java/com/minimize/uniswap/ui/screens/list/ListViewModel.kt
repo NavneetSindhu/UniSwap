@@ -284,6 +284,7 @@ class ListViewModel @Inject constructor(
             val currentUser = authRepository.getCurrentUser()
             val sellerDisplayName = currentUser?.displayName?.ifBlank { "Campus User" } ?: "Campus User"
             val sellerAvatar = currentUser?.avatarId?.ifBlank { "avatar_scholar" } ?: "avatar_scholar"
+            val sellerCampusCenter = currentUser?.campusCenter.orEmpty()
 
             val newItem = CampusItem(
                 id = UUID.randomUUID().toString(),
@@ -294,6 +295,7 @@ class ListViewModel @Inject constructor(
                 customCategory = _customCategory.value.trim(),
                 condition = _selectedCondition.value.ifBlank { "Good" },
                 location = "Campus",
+                campusCenter = sellerCampusCenter,
                 sellerId = userId,
                 sellerName = sellerDisplayName,
                 sellerAvatarId = sellerAvatar,

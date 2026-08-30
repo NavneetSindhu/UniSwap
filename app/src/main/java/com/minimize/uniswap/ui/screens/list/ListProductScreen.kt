@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -439,7 +440,9 @@ fun ListProductScreen(
 
             // 50% / 50% Shared Row for Category & Condition Dropdowns
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Field 2: Category (clickable dropdown, 50% width)
@@ -461,7 +464,9 @@ fun ListProductScreen(
                         showCategorySheet = true
                     },
                     minHeight = 74.dp,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
 
                 // Field 3: Condition (clickable dropdown, 50% width)
@@ -475,7 +480,9 @@ fun ListProductScreen(
                         showConditionSheet = true
                     },
                     minHeight = 74.dp,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
             }
 
@@ -932,7 +939,9 @@ private fun ListProductCardField(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 letterSpacing = (-0.26).sp,
-                color = themeColors.textPrimary
+                color = themeColors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             if (!counterText.isNullOrBlank()) {
                 Text(
@@ -966,6 +975,8 @@ private fun ListProductCardField(
                         fontSize = 13.sp,
                         letterSpacing = (-0.26).sp,
                         color = if (value.isEmpty()) themeColors.textSubtle else themeColors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
 

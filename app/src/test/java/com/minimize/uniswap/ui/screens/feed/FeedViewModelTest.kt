@@ -74,6 +74,17 @@ class FeedViewModelTest {
             category = ItemCategory.DORM_ESSENTIALS,
             location = "West Campus Hostel",
             campusCenter = "West Campus"
+        ),
+        CampusItem(
+            id = "item_4",
+            title = "Generic Notebook",
+            description = "Campus wide item",
+            price = 50.0,
+            sellerId = "seller_3",
+            sellerName = "Charlie",
+            category = ItemCategory.ENGINEERING,
+            location = "Campus",
+            campusCenter = ""
         )
     )
 
@@ -102,7 +113,7 @@ class FeedViewModelTest {
             val items = awaitItem()
             // item_2 is from seller_blocked, should be excluded
             assertTrue(items.none { it.sellerId == "seller_blocked" })
-            assertEquals(2, items.size)
+            assertEquals(3, items.size)
         }
     }
 
@@ -119,14 +130,15 @@ class FeedViewModelTest {
     }
 
     @Test
-    fun campusScope_filtersByCampus() = runTest {
+    fun campusScope_filtersByCampusAndIncludesGenericCampusItems() = runTest {
         viewModel.setCampusScope(CampusScope.MY_CAMPUS)
 
         viewModel.filteredItems.test {
             val items = awaitItem()
-            // Only East Campus items (excluding blocked)
-            assertTrue(items.isNotEmpty())
-            assertTrue(items.all { it.campusCenter == "East Campus" || it.location.contains("East Campus") })
+            // Should include East Campus items (item_1) and generic campus item (item_4), excluding blocked (item_2) and West Campus (item_3)
+            assertEquals(2, items.size)
+            assertTrue(items.any { it.id == "item_1" })
+            assertTrue(items.any { it.id == "item_4" })
         }
     }
 
